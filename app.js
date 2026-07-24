@@ -172,6 +172,67 @@ let prj2Units = [
   { no: 5, id: 'TRF-240522-A05', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 7, operator: 'Ahmad Fauzi', dead: '30/05/2024' }
 ];
 
+// PT Project Data — Hierarchy: PT Company → Project → Trafo Units
+let ptProjects = [
+  {
+    id: 'PT-PTM-01',
+    pt: 'PT Pertamina Persero',
+    ptShort: 'PTM',
+    ptColor: '#16a34a',
+    ptBg: '#dcfce7',
+    project: 'TRAFO POWER 20kV',
+    contract: 'SPK/PTM/2024/001',
+    location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+    startDate: '01/05/2024',
+    endDate: '30/06/2024',
+    units: [
+      { no: 1, id: 'TRF-PTM-001', nama: 'Trafo Power', cap: '500 kVA',  volt: '20 kV / 400 V',   status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 60,  stage: 'ASSEMBLY',      operator: 'Ahmad Fauzi',   dead: '20/06/2024' },
+      { no: 2, id: 'TRF-PTM-002', nama: 'Trafo Power', cap: '1000 kVA', volt: '20 kV / 400 V',   status: 'FINISHING',     badge: 'badge-finishing', progress: 80,  stage: 'FINISHING',     operator: 'Rudi Hartono',  dead: '18/06/2024' },
+      { no: 3, id: 'TRF-PTM-003', nama: 'Trafo Power', cap: '1500 kVA', volt: '20 kV / 6300 V',  status: 'INTERNAL TEST', badge: 'badge-internal',  progress: 40,  stage: 'INTERNAL TEST', operator: 'Joko Susilo',   dead: '22/06/2024' },
+      { no: 4, id: 'TRF-PTM-004', nama: 'Trafo Power', cap: '2000 kVA', volt: '30 kV / 6300 V',  status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Budi Santoso',  dead: '28/06/2024' },
+      { no: 5, id: 'TRF-PTM-005', nama: 'Trafo Power', cap: '2500 kVA', volt: '30 kV / 6300 V',  status: 'SELESAI',      badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'Ahmad Fauzi',   dead: '15/06/2024' }
+    ]
+  },
+  {
+    id: 'PT-PLN-01',
+    pt: 'PT PLN (Persero)',
+    ptShort: 'PLN',
+    ptColor: '#2563eb',
+    ptBg: '#dbeafe',
+    project: 'TRAFO DISTRIBUSI 20kV',
+    contract: 'SPK/PLN/2024/007',
+    location: 'GI Kembangan, Jakarta Barat',
+    startDate: '10/05/2024',
+    endDate: '25/07/2024',
+    units: [
+      { no: 1, id: 'TRF-PLN-001', nama: 'Trafo Distribusi', cap: '100 kVA',  volt: '20 kV / 400 V',  status: 'SELESAI',       badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'Budi Santoso',  dead: '02/06/2024' },
+      { no: 2, id: 'TRF-PLN-002', nama: 'Trafo Distribusi', cap: '250 kVA',  volt: '20 kV / 400 V',  status: 'FAT',           badge: 'badge-assembly',  progress: 90,  stage: 'FAT',           operator: 'Rudi Hartono',  dead: '10/06/2024' },
+      { no: 3, id: 'TRF-PLN-003', nama: 'Trafo Distribusi', cap: '500 kVA',  volt: '20 kV / 400 V',  status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 55,  stage: 'ASSEMBLY',      operator: 'Joko Susilo',   dead: '18/06/2024' },
+      { no: 4, id: 'TRF-PLN-004', nama: 'Trafo Distribusi', cap: '630 kVA',  volt: '20 kV / 400 V',  status: 'CORE MAKING',   badge: 'badge-core',      progress: 30,  stage: 'CORE MAKING',   operator: 'Ahmad Fauzi',   dead: '25/06/2024' },
+      { no: 5, id: 'TRF-PLN-005', nama: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V',  status: 'BELUM MULAI',   badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Budi Santoso',  dead: '05/07/2024' }
+    ]
+  },
+  {
+    id: 'PT-PKT-01',
+    pt: 'PT Pupuk Kaltim',
+    ptShort: 'PKT',
+    ptColor: '#d97706',
+    ptBg: '#fef3c7',
+    project: 'TRAFO POWER 30kV',
+    contract: 'SPK/PKT/2024/003',
+    location: 'Pabrik Bontang, Kalimantan Timur',
+    startDate: '15/05/2024',
+    endDate: '15/08/2024',
+    units: [
+      { no: 1, id: 'TRF-PKT-001', nama: 'Trafo Power', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'COIL MAKING',   badge: 'badge-core',      progress: 25,  stage: 'COIL MAKING',   operator: 'Rudi Hartono',  dead: '20/07/2024' },
+      { no: 2, id: 'TRF-PKT-002', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'TANK MAKING',   badge: 'badge-tank',      progress: 10,  stage: 'TANK MAKING',   operator: 'Joko Susilo',   dead: '25/07/2024' },
+      { no: 3, id: 'TRF-PKT-003', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Ahmad Fauzi',   dead: '30/07/2024' },
+      { no: 4, id: 'TRF-PKT-004', nama: 'Trafo Power', cap: '7500 kVA', volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Budi Santoso',  dead: '05/08/2024' },
+      { no: 5, id: 'TRF-PKT-005', nama: 'Trafo Power', cap: '10000 kVA',volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Rudi Hartono',  dead: '10/08/2024' }
+    ]
+  }
+];
+
 // Activity Feed Log Data
 let activityLogs = [
   {
@@ -222,6 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render Multi-Project View components
   renderProjectView(prj1Units, 'prj1TableBody', 'prj1GanttBody', 'prj1');
   renderProjectView(prj2Units, 'prj2TableBody', 'prj2GanttBody', 'prj2');
+
+  // Render PT Projects View
+  renderPTProjects();
 });
 
 // Live Clock Updater
@@ -577,22 +641,20 @@ function renderProjectView(units, tableBodyId, ganttBodyId, prefix) {
   });
 }
 
-// Switch between Main Views (Overview, Multi-Project, Pengaturan)
+// Switch between Main Views (Overview, Multi-Project, Pengaturan, Project PT)
 function switchView(viewName) {
-  const viewSingle = document.getElementById('viewSingleFlow');
-  const viewMulti = document.getElementById('viewMultiProject');
+  const viewSingle     = document.getElementById('viewSingleFlow');
+  const viewMulti      = document.getElementById('viewMultiProject');
   const viewPengaturan = document.getElementById('viewPengaturan');
+  const viewProjectPT  = document.getElementById('viewProjectPT');
   
-  const tabSingle = document.getElementById('tabSingleFlow');
-  const tabMulti = document.getElementById('tabMultiProject');
+  const tabSingle    = document.getElementById('tabSingleFlow');
+  const tabMulti     = document.getElementById('tabMultiProject');
+  const tabProjectPT = document.getElementById('tabProjectPT');
 
   // Hide all sections first
-  if (viewSingle) viewSingle.classList.remove('active');
-  if (viewMulti) viewMulti.classList.remove('active');
-  if (viewPengaturan) viewPengaturan.classList.remove('active');
-
-  if (tabSingle) tabSingle.classList.remove('active');
-  if (tabMulti) tabMulti.classList.remove('active');
+  [viewSingle, viewMulti, viewPengaturan, viewProjectPT].forEach(v => v && v.classList.remove('active'));
+  [tabSingle, tabMulti, tabProjectPT].forEach(t => t && t.classList.remove('active'));
 
   if (viewName === 'single-flow') {
     if (viewSingle) viewSingle.classList.add('active');
@@ -603,6 +665,9 @@ function switchView(viewName) {
   } else if (viewName === 'pengaturan') {
     if (viewPengaturan) viewPengaturan.classList.add('active');
     loadUserAccountsUI();
+  } else if (viewName === 'project-pt') {
+    if (viewProjectPT) viewProjectPT.classList.add('active');
+    if (tabProjectPT) tabProjectPT.classList.add('active');
   }
 }
 
@@ -614,6 +679,136 @@ function filterOrders() {
   rows.forEach(row => {
     const text = row.innerText.toLowerCase();
     row.style.display = text.includes(input) ? '' : 'none';
+  });
+}
+
+// Render PT Projects View
+function renderPTProjects() {
+  const container = document.getElementById('ptProjectsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  ptProjects.forEach(pt => {
+    const totalUnits = pt.units.length;
+    const selesai    = pt.units.filter(u => u.status === 'SELESAI').length;
+    const proses     = pt.units.filter(u => u.status !== 'SELESAI' && u.status !== 'BELUM MULAI' && u.progress > 0).length;
+    const belumMulai = pt.units.filter(u => u.status === 'BELUM MULAI').length;
+    const avgProgress = Math.round(pt.units.reduce((s, u) => s + u.progress, 0) / totalUnits);
+
+    // Rows for each trafo unit
+    const unitRows = pt.units.map(u => {
+      const pctColor = u.progress === 100 ? '#10b981' : u.progress >= 50 ? '#f59e0b' : '#3b82f6';
+      return `
+        <tr>
+          <td style="font-weight:700; color:#64748b; text-align:center;">${u.no}</td>
+          <td style="font-weight:700; color:${pt.ptColor}; font-size:11px;">${u.id}</td>
+          <td style="font-weight:600;">${u.nama}</td>
+          <td><span style="font-size:12px; font-weight:700; color:#0f172a;">${u.cap}</span></td>
+          <td style="font-size:11px; color:#64748b;">${u.volt}</td>
+          <td><span class="badge-status ${u.badge}" style="font-size:10px;">${u.status}</span></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:6px; min-width:110px;">
+              <div style="flex:1; background:#f1f5f9; border-radius:999px; height:6px; overflow:hidden;">
+                <div style="height:100%; width:${u.progress}%; background:${pctColor}; border-radius:999px; transition:width 0.4s;"></div>
+              </div>
+              <span style="font-size:11px; font-weight:700; color:${pctColor}; min-width:30px;">${u.progress}%</span>
+            </div>
+          </td>
+          <td style="font-size:11px; color:#64748b;">${u.dead}</td>
+          <td style="font-size:11px; color:#0f172a; font-weight:500;">${u.operator}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.style.marginBottom = '0';
+    card.innerHTML = `
+      <!-- PT Header Bar -->
+      <div style="background: linear-gradient(135deg, ${pt.ptColor} 0%, ${pt.ptColor}cc 100%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="width:52px; height:52px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:#fff; letter-spacing:-1px; flex-shrink:0;">
+            ${pt.ptShort}
+          </div>
+          <div>
+            <div style="font-size:18px; font-weight:800; color:#fff; letter-spacing:0.3px;">${pt.pt}</div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.8); margin-top:2px;">
+              <i class="fa-solid fa-folder-open" style="margin-right:5px;"></i>${pt.project}
+              <span style="margin:0 8px; opacity:0.5;">|</span>
+              <i class="fa-solid fa-file-contract" style="margin-right:5px;"></i>${pt.contract}
+            </div>
+            <div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;">
+              <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>${pt.location}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-shrink:0;">
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
+            <div style="font-size:22px; font-weight:900; color:#fff;">${totalUnits}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Total Unit</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
+            <div style="font-size:22px; font-weight:900; color:#4ade80;">${selesai}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Selesai</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
+            <div style="font-size:22px; font-weight:900; color:#fbbf24;">${proses}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">On Process</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
+            <div style="font-size:22px; font-weight:900; color:rgba(255,255,255,0.6);">${belumMulai}</div>
+            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Belum Mulai</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Overall Bar -->
+      <div style="background:${pt.ptBg}; padding:12px 22px; border-bottom:1px solid ${pt.ptColor}22; display:flex; align-items:center; gap:12px;">
+        <div style="font-size:11px; font-weight:700; color:${pt.ptColor}; min-width:80px;">PROGRESS TOTAL</div>
+        <div style="flex:1; background:#e2e8f0; border-radius:999px; height:10px; overflow:hidden;">
+          <div style="height:100%; width:${avgProgress}%; background:${pt.ptColor}; border-radius:999px; transition:width 0.6s;"></div>
+        </div>
+        <div style="font-size:15px; font-weight:800; color:${pt.ptColor}; min-width:40px;">${avgProgress}%</div>
+        <div style="font-size:10px; color:#64748b;">
+          <i class="fa-regular fa-calendar" style="margin-right:3px;"></i>${pt.startDate} — ${pt.endDate}
+        </div>
+      </div>
+
+      <!-- Trafo Units Table -->
+      <div style="padding:0; overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:2px solid var(--border-color);">
+              <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; width:40px;">No</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">ID Trafo</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Nama</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tegangan</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Status / Stage</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Progress</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Deadline</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Operator</th>
+            </tr>
+          </thead>
+          <tbody id="ptTbody-${pt.id}" style="font-size:12px;">
+            ${unitRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Add hover effect to rows
+    container.appendChild(card);
+
+    // Striped rows effect
+    const rows = card.querySelectorAll('tbody tr');
+    rows.forEach((row, i) => {
+      if (i % 2 === 0) row.style.background = '#fafafa';
+      row.style.borderBottom = '1px solid #f1f5f9';
+      row.style.cursor = 'pointer';
+      row.addEventListener('mouseenter', () => row.style.background = pt.ptBg);
+      row.addEventListener('mouseleave', () => row.style.background = i % 2 === 0 ? '#fafafa' : '#fff');
+    });
   });
 }
 

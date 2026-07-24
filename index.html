@@ -230,6 +230,10 @@
           <i class="fa-solid fa-bars-progress"></i>
           <span>Multi-Project (Gantt Matrix)</span>
         </button>
+        <button class="view-tab-btn" id="tabProjectPT" onclick="switchView('project-pt')">
+          <i class="fa-solid fa-building"></i>
+          <span>Project PT (Perusahaan)</span>
+        </button>
       </div>
 
       <div class="action-bar-right">
@@ -815,7 +819,14 @@
 
       </div>
 
-      <!-- ================= VIEW 3: PENGATURAN USER (SUPER ADMIN & ADMIN) ================= -->
+      <!-- ================= VIEW 3: PROJECT PT (HIERARKI PERUSAHAAN & TRAFO) ================= -->
+      <div class="view-section" id="viewProjectPT">
+        <div style="display:flex; flex-direction:column; gap:20px;" id="ptProjectsContainer">
+          <!-- Rendered dynamically via JS renderPTProjects() -->
+        </div>
+      </div>
+
+      <!-- ================= VIEW 4: PENGATURAN USER (SUPER ADMIN & ADMIN) ================= -->
       <div class="view-section" id="viewPengaturan">
         <div class="section-card">
           <div class="section-header">
