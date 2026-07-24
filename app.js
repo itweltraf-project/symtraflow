@@ -701,6 +701,23 @@ function handleCreateOrder(e) {
   orders.unshift(newOrd);
   selectedOrder = newOrd;
   
+  // Send to Supabase if configured
+  if (typeof createOrderInSupabase === 'function' && isSupabaseConfigured()) {
+    createOrderInSupabase({
+      id: newOrd.id,
+      nama: newOrd.nama,
+      kapasitas: newOrd.kapasitas,
+      tegangan: newOrd.tegangan,
+      status: newOrd.status,
+      current_stage_index: newOrd.currentStageIndex,
+      progress: newOrd.progress,
+      deadline: newOrd.deadline,
+      operator: newOrd.operator,
+      operator_avatar: newOrd.operatorAvatar,
+      timeline: newOrd.timeline
+    });
+  }
+
   // Update KPI counts
   document.getElementById('kpiTotalOrder').innerText = orders.length;
 
@@ -711,6 +728,65 @@ function handleCreateOrder(e) {
   closeModal('newOrderModal');
   showToast(`✅ Order ${code} berhasil dibuat!`);
 }
+
+// Supabase Connection Modal Handlers
+function openSupabaseModal() {
+  const urlInp = document.getElementById('inpSupabaseUrl');
+  const keyInp = document.getElementById('inpSupabaseKey');
+  
+  if (window.SUPABASE_CONFIG) {
+    if (urlInp) urlInp.value = window.SUPABASE_CONFIG.url || '';
+    if (keyInp) keyInp.value = window.SUPABASE_CONFIG.anonKey || '';
+  }
+  
+  document.getElementById('supabaseModal').classList.add('active');
+}
+
+function saveSupabaseConfig(e) {
+  e.preventDefault();
+  const url = document.getElementById('inpSupabaseUrl').value.trim();
+  const key = document.getElementById('inpSupabaseKey').value.trim();
+
+  window.SUPABASE_CONFIG = { url, anonKey: key };
+  localStorage.setItem('SYMTRAFLOW_SUPABASE_URL', url);
+  localStorage.setItem('SYMTRAFLOW_SUPABASE_KEY', key);
+
+  closeModal('supabaseModal');
+
+  if (typeof getSupabaseClient === 'function' && getSupabaseClient()) {
+    document.getElementById('supabaseStatusText').innerText = 'Supabase Connected';
+    document.getElementById('btnConnectSupabase').style.borderColor = '#10b981';
+    document.getElementById('btnConnectSupabase').style.backgroundColor = '#ecfdf5';
+    showToast('⚡ Terhubung ke Supabase Realtime Database!');
+
+    // Subscribe to realtime updates
+    if (typeof subscribeSupabaseRealtime === 'function') {
+      subscribeSupabaseRealtime(
+        (payload) => {
+          showToast(`⚡ Realtime Update Supabase: ${payload.eventType} order ${payload.new ? payload.new.id : ''}`);
+        },
+        (log) => {
+          showToast(`📢 ${log.bold_text}`);
+        }
+      );
+    }
+  } else {
+    showToast('⚠️ Gagal terhubung ke Supabase. Periksa URL & Anon Key.');
+  }
+}
+
+// Auto load stored Supabase Config on startup
+document.addEventListener('DOMContentLoaded', () => {
+  const savedUrl = localStorage.getItem('SYMTRAFLOW_SUPABASE_URL');
+  const savedKey = localStorage.getItem('SYMTRAFLOW_SUPABASE_KEY');
+  if (savedUrl && savedKey) {
+    window.SUPABASE_CONFIG = { url: savedUrl, anonKey: savedKey };
+    if (typeof getSupabaseClient === 'function' && getSupabaseClient()) {
+      const btnText = document.getElementById('supabaseStatusText');
+      if (btnText) btnText.innerText = 'Supabase Connected';
+    }
+  }
+});
 
 // Modal Toggle Helpers
 function openNewOrderModal() {

@@ -246,6 +246,9 @@
       </div>
 
       <div class="action-bar-right">
+        <button class="btn-secondary" id="btnConnectSupabase" onclick="openSupabaseModal()" style="border-color: #10b981; color: #047857;">
+          <i class="fa-solid fa-database" style="color: #10b981;"></i> <span id="supabaseStatusText">Supabase Config</span>
+        </button>
         <button class="btn-secondary" id="btnSimulate" onclick="toggleSimulation()">
           <i class="fa-solid fa-play"></i> <span id="simBtnText">Live Simulation</span>
         </button>
@@ -975,10 +978,41 @@
     </div>
   </div>
 
+  <!-- Modal 4: Supabase Config Modal -->
+  <div class="modal-overlay" id="supabaseModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-database" style="color: #10b981;"></i> Konfigurasi Supabase Realtime</span>
+        <button class="modal-close-btn" onclick="closeModal('supabaseModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="supabaseForm" onsubmit="saveSupabaseConfig(event)">
+        <div class="modal-body">
+          <div style="font-size: 11px; background: #ecfdf5; padding: 10px; border-radius: var(--radius-md); border: 1px solid #a7f3d0; color: #065f46;">
+            <i class="fa-solid fa-circle-info"></i> Masukkan <b>Project URL</b> dan <b>Anon Key</b> dari Supabase Dashboard Anda (<b>Project Settings -> API</b>) untuk mengaktifkan sinkronisasi real-time.
+          </div>
+          <div class="form-group" style="margin-top: 8px;">
+            <label class="form-label">Supabase Project URL</label>
+            <input type="url" class="form-input" id="inpSupabaseUrl" placeholder="https://xyzcompany.supabase.co" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Supabase Anon Key</label>
+            <input type="password" class="form-input" id="inpSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('supabaseModal')">Batal</button>
+          <button type="submit" class="btn-primary" style="background-color: #10b981;"><i class="fa-solid fa-plug"></i> Hubungkan Supabase</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Custom JavaScript Logic -->
+  <!-- Supabase JS Client & App Logic -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
