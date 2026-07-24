@@ -844,9 +844,13 @@ function showToast(msg) {
 
 // User Accounts State (Stored in LocalStorage & Synced with Supabase)
 let systemAccounts = JSON.parse(localStorage.getItem('SYMTRAFLOW_USERS')) || {
-  superadmin: { username: 'SuperAdmin', name: 'Super Administrator', pass: 'super123', role: 'Super Admin' },
-  admin: { username: 'Admin', name: 'Administrator Produksi', pass: 'admin123', role: 'Admin' }
+  superadmin: { username: 'SuperAdmin', name: 'Super Administrator', pass: 'super123', role: 'Super Admin', avatar: '' },
+  admin: { username: 'Admin', name: 'Administrator Produksi', pass: 'admin123', role: 'Admin', avatar: '' }
 };
+
+// Ensure avatar field exists on older localStorage data
+if (!systemAccounts.superadmin.avatar) systemAccounts.superadmin.avatar = '';
+if (!systemAccounts.admin.avatar) systemAccounts.admin.avatar = '';
 
 // Populate Settings UI with current user account data
 function loadUserAccountsUI() {
@@ -865,6 +869,10 @@ function loadUserAccountsUI() {
   if (admUser) admUser.value = systemAccounts.admin.username;
   if (admName) admName.value = systemAccounts.admin.name;
   if (admPass) admPass.value = systemAccounts.admin.pass;
+
+  // Restore saved avatars
+  applyAvatarToCard('superadmin', systemAccounts.superadmin.avatar);
+  applyAvatarToCard('admin', systemAccounts.admin.avatar);
 }
 
 // Toggle Password Field Visibility
@@ -872,6 +880,62 @@ function togglePassVisibility(inputId) {
   const inp = document.getElementById(inputId);
   if (inp) {
     inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+}
+
+// Apply avatar Base64 image to the card avatar display
+function applyAvatarToCard(roleKey, base64) {
+  const isSuper = roleKey === 'superadmin';
+  const wrapperSuffix = isSuper ? 'SuperAdmin' : 'Admin';
+  const icon = document.getElementById(`avatar${wrapperSuffix}Icon`);
+  const img  = document.getElementById(`avatar${wrapperSuffix}Img`);
+  if (!img) return;
+  if (base64) {
+    img.src = base64;
+    img.style.display = 'block';
+    if (icon) icon.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    if (icon) icon.style.display = '';
+  }
+}
+
+// Handle Avatar File Upload
+function handleAvatarChange(roleKey, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Validate file size (max 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('⚠️ Ukuran foto terlalu besar! Maksimal 2MB.');
+    input.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    systemAccounts[roleKey].avatar = base64;
+    localStorage.setItem('SYMTRAFLOW_USERS', JSON.stringify(systemAccounts));
+    applyAvatarToCard(roleKey, base64);
+
+    // Update top navbar avatar if current logged-in user
+    updateNavAvatar(roleKey);
+    showToast(`✅ Foto ${roleKey === 'superadmin' ? 'Super Admin' : 'Admin'} berhasil diperbarui!`);
+  };
+  reader.readAsDataURL(file);
+}
+
+// Update the top navigation bar user avatar
+function updateNavAvatar(roleKey) {
+  const navAvatar = document.getElementById('navUserAvatar');
+  const navAvatarIcon = document.getElementById('navUserAvatarIcon');
+  if (!navAvatar) return;
+  const base64 = systemAccounts[roleKey].avatar;
+  if (base64) {
+    navAvatar.src = base64;
+    navAvatar.style.display = 'block';
+    if (navAvatarIcon) navAvatarIcon.style.display = 'none';
   }
 }
 
@@ -918,14 +982,18 @@ function handleLogin(e) {
 
   // Verify against SuperAdmin or Admin credentials
   let authenticatedUser = null;
+  let roleKey = null;
 
   if (inputUser.toLowerCase() === systemAccounts.superadmin.username.toLowerCase() && inputPass === systemAccounts.superadmin.pass) {
     authenticatedUser = systemAccounts.superadmin;
+    roleKey = 'superadmin';
   } else if (inputUser.toLowerCase() === systemAccounts.admin.username.toLowerCase() && inputPass === systemAccounts.admin.pass) {
     authenticatedUser = systemAccounts.admin;
+    roleKey = 'admin';
   } else if (inputUser.toLowerCase() === 'admin' && inputPass === 'admin123') {
     // Fallback default
     authenticatedUser = systemAccounts.admin;
+    roleKey = 'admin';
   }
 
   if (authenticatedUser) {
@@ -943,6 +1011,18 @@ function handleLogin(e) {
       navRole.innerText = authenticatedUser.role;
     }
 
+    // Set navbar avatar photo from saved profile
+    const navAvatar = document.getElementById('navUserAvatar');
+    const navAvatarIcon = document.getElementById('navUserAvatarIcon');
+    if (navAvatar && authenticatedUser.avatar) {
+      navAvatar.src = authenticatedUser.avatar;
+      navAvatar.style.display = 'block';
+      if (navAvatarIcon) navAvatarIcon.style.display = 'none';
+    } else if (navAvatar) {
+      navAvatar.style.display = 'none';
+      if (navAvatarIcon) navAvatarIcon.style.display = '';
+    }
+
     showToast(`👋 Selamat datang kembali, ${authenticatedUser.name}! Login sebagai ${authenticatedUser.role}.`);
   } else {
     showToast(`⚠️ Username atau Password salah! Periksa Pengaturan.`);
@@ -954,6 +1034,10 @@ function handleLogout() {
   if (loginScreen) {
     loginScreen.classList.remove('hidden');
   }
+  // Reset nav avatar
+  const navAvatar = document.getElementById('navUserAvatar');
+  const navAvatarIcon = document.getElementById('navUserAvatarIcon');
+  if (navAvatar) navAvatar.style.display = 'none';
+  if (navAvatarIcon) navAvatarIcon.style.display = '';
   showToast('🔒 Anda telah keluar dari sistem.');
 }
-

@@ -223,7 +223,10 @@
 
         <!-- Admin Profile -->
         <div class="user-nav-profile" onclick="handleLogout()" title="Klik untuk Logout / Keluar">
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="Admin" class="user-nav-avatar">
+          <div style="position:relative; width:36px; height:36px; flex-shrink:0;">
+            <i class="fa-solid fa-user-circle" id="navUserAvatarIcon" style="font-size:36px; color:#94a3b8; line-height:1;"></i>
+            <img id="navUserAvatar" src="" alt="Avatar" class="user-nav-avatar" style="display:none; width:36px; height:36px; border-radius:50%; object-fit:cover; position:absolute; top:0; left:0;">
+          </div>
           <div class="user-nav-info">
             <span class="user-nav-name">Admin <i class="fa-solid fa-right-from-bracket" style="font-size: 10px; margin-left: 4px; color: #ef4444;"></i></span>
             <span class="user-nav-role">Administrator</span>
@@ -845,12 +848,21 @@
             <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; background: #ffffff; box-shadow: var(--shadow-sm);">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 42px; height: 42px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
-                    <i class="fa-solid fa-user-shield"></i>
+                  <!-- Avatar Upload Super Admin -->
+                  <div style="position: relative; cursor: pointer;" onclick="document.getElementById('avatarInputSuperAdmin').click()" title="Klik untuk ubah foto">
+                    <div id="avatarSuperAdminWrapper" style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; overflow: hidden; border: 3px solid #dc2626;">
+                      <i class="fa-solid fa-user-shield" id="avatarSuperAdminIcon"></i>
+                      <img id="avatarSuperAdminImg" src="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" alt="Foto Super Admin">
+                    </div>
+                    <div style="position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; background: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;">
+                      <i class="fa-solid fa-camera" style="font-size: 9px; color: #fff;"></i>
+                    </div>
                   </div>
+                  <input type="file" id="avatarInputSuperAdmin" accept="image/*" style="display:none;" onchange="handleAvatarChange('superadmin', this)">
                   <div>
                     <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">Super Admin</div>
                     <div style="font-size: 10px; color: #dc2626; font-weight: 700; text-transform: uppercase;">Hak Akses Penuh (Full Control)</div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;"><i class="fa-solid fa-camera" style="margin-right:3px;"></i>Klik foto untuk ganti</div>
                   </div>
                 </div>
                 <span class="badge-status" style="background: #fee2e2; color: #dc2626;">SUPER ADMIN</span>
@@ -887,12 +899,21 @@
             <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; background: #ffffff; box-shadow: var(--shadow-sm);">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 42px; height: 42px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
-                    <i class="fa-solid fa-user-gear"></i>
+                  <!-- Avatar Upload Admin -->
+                  <div style="position: relative; cursor: pointer;" onclick="document.getElementById('avatarInputAdmin').click()" title="Klik untuk ubah foto">
+                    <div id="avatarAdminWrapper" style="width: 56px; height: 56px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; overflow: hidden; border: 3px solid #2563eb;">
+                      <i class="fa-solid fa-user-gear" id="avatarAdminIcon"></i>
+                      <img id="avatarAdminImg" src="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;" alt="Foto Admin">
+                    </div>
+                    <div style="position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;">
+                      <i class="fa-solid fa-camera" style="font-size: 9px; color: #fff;"></i>
+                    </div>
                   </div>
+                  <input type="file" id="avatarInputAdmin" accept="image/*" style="display:none;" onchange="handleAvatarChange('admin', this)">
                   <div>
                     <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">Admin</div>
                     <div style="font-size: 10px; color: #2563eb; font-weight: 700; text-transform: uppercase;">Akses Operasional Produksi</div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;"><i class="fa-solid fa-camera" style="margin-right:3px;"></i>Klik foto untuk ganti</div>
                   </div>
                 </div>
                 <span class="badge-status" style="background: #eff6ff; color: #2563eb;">ADMIN</span>
