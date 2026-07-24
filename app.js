@@ -701,7 +701,11 @@ function renderPTProjects() {
       return `
         <tr>
           <td style="font-weight:700; color:#64748b; text-align:center;">${u.no}</td>
-          <td style="font-weight:700; color:${pt.ptColor}; font-size:11px;">${u.id}</td>
+          <td style="font-weight:700; font-size:11px;">
+            <span style="background:${pt.ptBg}; color:${pt.ptColor}; padding:4px 8px; border-radius:6px; border:1px solid ${pt.ptColor}44; display:inline-flex; align-items:center; gap:5px; font-weight:800;" title="Klik untuk lihat progres detail trafo">
+              <i class="fa-solid fa-up-right-from-square" style="font-size:9px;"></i> ${u.id}
+            </span>
+          </td>
           <td style="font-weight:600;">${u.nama}</td>
           <td><span style="font-size:12px; font-weight:700; color:#0f172a;">${u.cap}</span></td>
           <td style="font-size:11px; color:#64748b;">${u.volt}</td>
@@ -797,10 +801,10 @@ function renderPTProjects() {
       </div>
     `;
 
-    // Add hover effect to rows
+    // Add hover effect & click handler to rows
     container.appendChild(card);
 
-    // Striped rows effect
+    // Striped rows effect & modal trigger on row click
     const rows = card.querySelectorAll('tbody tr');
     rows.forEach((row, i) => {
       if (i % 2 === 0) row.style.background = '#fafafa';
@@ -808,6 +812,9 @@ function renderPTProjects() {
       row.style.cursor = 'pointer';
       row.addEventListener('mouseenter', () => row.style.background = pt.ptBg);
       row.addEventListener('mouseleave', () => row.style.background = i % 2 === 0 ? '#fafafa' : '#fff');
+      row.addEventListener('click', () => {
+        openTrafoDetailModal(pt.units[i], pt);
+      });
     });
   });
 }
@@ -992,16 +999,88 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Helper to derive 0-indexed stage number from status text
+function getStageIdxFromStatus(statusStr) {
+  if (!statusStr || statusStr === 'BELUM MULAI') return -1;
+  if (statusStr === 'SELESAI') return 10;
+  const idx = STAGES.findIndex(s => s.code.toUpperCase() === statusStr.toUpperCase());
+  return idx !== -1 ? idx : 0;
+}
+
+// Open Detailed Progress & Specs Modal for any Trafo Unit
+function openTrafoDetailModal(unit, ptObj) {
+  const modal = document.getElementById('trafoDetailModal');
+  if (!modal) return;
+
+  const stageIdx = unit.currentStageIndex !== undefined 
+    ? unit.currentStageIndex 
+    : (unit.stageIdx !== undefined ? unit.stageIdx : getStageIdxFromStatus(unit.status));
+  
+  // Header values
+  document.getElementById('mTrafoId').innerText = unit.id;
+  document.getElementById('mTrafoNama').innerText = `${unit.nama || 'Trafo'} - ${unit.cap || unit.kapasitas}`;
+  document.getElementById('mTrafoPT').innerText = ptObj ? ptObj.pt : 'Internal SYMTRAFLOW';
+  
+  const badgeEl = document.getElementById('mTrafoBadge');
+  badgeEl.className = `badge-status ${unit.badge || 'badge-assembly'}`;
+  badgeEl.innerText = unit.status;
+  
+  // Progress pct
+  const pct = unit.progress !== undefined ? unit.progress : 0;
+  document.getElementById('mTrafoProgressPct').innerText = `${pct}%`;
+  document.getElementById('mTrafoProgressBar').style.width = `${pct}%`;
+  
+  // Specs
+  document.getElementById('mTrafoCap').innerText = unit.cap || unit.kapasitas || '-';
+  document.getElementById('mTrafoVolt').innerText = unit.volt || unit.tegangan || '-';
+  document.getElementById('mTrafoOperator').innerText = unit.operator || 'Ahmad Fauzi';
+  document.getElementById('mTrafoDeadline').innerText = unit.dead || unit.deadline || '-';
+  document.getElementById('mTrafoProject').innerText = ptObj ? `${ptObj.project}` : (unit.proyek || 'Proyek Regular');
+  document.getElementById('mTrafoLocation').innerText = ptObj ? ptObj.location : 'Pabrik Utama SYMTRAFLOW';
+
+  // Render 11 Stepper Grid inside Modal
+  const stepperGrid = document.getElementById('mTrafoStepperGrid');
+  if (stepperGrid) {
+    stepperGrid.innerHTML = '';
+    STAGES.forEach((stg, idx) => {
+      let statusClass = 'waiting';
+      let icon = 'fa-circle';
+      
+      if (unit.status === 'SELESAI' || idx < stageIdx) {
+        statusClass = 'finished';
+        icon = 'fa-circle-check';
+      } else if (idx === stageIdx && unit.status !== 'BELUM MULAI') {
+        statusClass = 'process';
+        icon = 'fa-spinner fa-spin';
+      }
+
+      const item = document.createElement('div');
+      item.style.cssText = `
+        display:flex; flex-direction:column; align-items:center; text-align:center; padding:8px 4px;
+        border-radius:6px; background:${statusClass === 'finished' ? '#ecfdf5' : statusClass === 'process' ? '#fffbe6' : '#f8fafc'};
+        border:1px solid ${statusClass === 'finished' ? '#a7f3d0' : statusClass === 'process' ? '#fde68a' : '#e2e8f0'};
+      `;
+      item.innerHTML = `
+        <div style="font-size:9px; font-weight:800; color:${statusClass === 'finished' ? '#047857' : statusClass === 'process' ? '#b45309' : '#64748b'}; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${idx+1}. ${stg.code}</div>
+        <i class="fa-solid ${icon}" style="font-size:13px; margin:4px 0; color:${statusClass === 'finished' ? '#10b981' : statusClass === 'process' ? '#f59e0b' : '#cbd5e1'};"></i>
+        <div style="font-size:9px; font-weight:700; color:${statusClass === 'finished' ? '#059669' : statusClass === 'process' ? '#d97706' : '#94a3b8'};">
+          ${statusClass === 'finished' ? 'Selesai' : statusClass === 'process' ? 'Proses' : 'Menunggu'}
+        </div>
+      `;
+      stepperGrid.appendChild(item);
+    });
+  }
+
+  modal.classList.add('active');
+}
+
 // Modal Toggle Helpers
 function openNewOrderModal() {
   document.getElementById('newOrderModal').classList.add('active');
 }
 
 function openFullDetailModal() {
-  document.getElementById('modalDetailOrderCode').innerText = selectedOrder.id;
-  document.getElementById('modalDetailTrafoName').innerText = `${selectedOrder.nama} - ${selectedOrder.kapasitas}`;
-  document.getElementById('modalDetailBadge').innerText = selectedOrder.status;
-  document.getElementById('fullDetailModal').classList.add('active');
+  openTrafoDetailModal(selectedOrder);
 }
 
 function openExportModal() {
