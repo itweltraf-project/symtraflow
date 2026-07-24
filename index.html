@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRAFO Production System - Monitoring Produksi</title>
+  
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Login Screen Overlay (Matching Reference Image) -->
+  <div class="login-wrapper" id="loginScreen">
+    <div class="login-card">
+      <!-- Left Panel: Form -->
+      <div class="login-left">
+        <div class="login-brand-logo">
+          <div class="brand-icon-sm">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <span class="login-brand-title">Weltraf</span>
+        </div>
+
+        <div class="login-user-icon-box">
+          <i class="fa-regular fa-user"></i>
+        </div>
+
+        <h2 class="login-title">LOGIN</h2>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="login-form-group">
+            <label class="login-label">USERNAME</label>
+            <div class="login-input-box">
+              <i class="fa-regular fa-user login-input-icon"></i>
+              <input type="text" id="loginUsername" placeholder="Username" required value="Admin">
+            </div>
+          </div>
+
+          <div class="login-form-group">
+            <label class="login-label">PASSWORD</label>
+            <div class="login-input-box">
+              <i class="fa-solid fa-lock login-input-icon"></i>
+              <input type="password" id="loginPassword" placeholder="••••••••" required value="admin123">
+            </div>
+          </div>
+
+          <button type="submit" class="login-submit-btn">
+            MASUK SEKARANG
+          </button>
+        </form>
+      </div>
+
+      <!-- Right Panel: Dark Crimson Banner -->
+      <div class="login-right">
+        <div class="login-live-badge">
+          <span class="live-dot-red"></span> SYSTEM LIVE
+        </div>
+
+        <div class="login-hero-heading">
+          <div>Monitoring</div>
+          <div class="text-highlight-red">Produksi</div>
+          <div>Transformator</div>
+        </div>
+
+        <div class="login-features-list">
+          <div class="login-feature-item">
+            <div class="feature-icon-box">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div>
+              <div class="feature-title">Real-time Data Tracking</div>
+              <div class="feature-desc">Monitoring proses produksi secara instan</div>
+            </div>
+          </div>
+
+          <div class="login-feature-item">
+            <div class="feature-icon-box">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+              <div class="feature-title">Secure Production Management</div>
+              <div class="feature-desc">Keamanan data dan manajemen terpusat</div>
+            </div>
+          </div>
+
+          <div class="login-feature-item">
+            <div class="feature-icon-box">
+              <i class="fa-solid fa-table-cells-large"></i>
+            </div>
+            <div>
+              <div class="feature-title">Centralized Operational Control</div>
+              <div class="feature-desc">Sistem kendali produksi terintegrasi SYMTRAFLOW</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-right-footer">
+          © 2026 SYMTRAFLOW. ALL RIGHTS RESERVED.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Left Sidebar Navigation -->
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-icon">
+        <i class="fa-solid fa-bolt"></i>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">TRAFO</span>
+        <span class="brand-subtitle">Production System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <button class="menu-item active" data-tab="dashboard">
+        <i class="fa-solid fa-square-poll-vertical"></i>
+        <span>Dashboard</span>
+      </button>
+
+      <button class="menu-item" data-tab="orders">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <span>Order Produksi</span>
+      </button>
+
+      <button class="menu-item" data-tab="monitoring">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Monitoring</span>
+        <i class="fa-solid fa-chevron-down arrow"></i>
+      </button>
+
+      <button class="menu-item" data-tab="workcenter">
+        <i class="fa-solid fa-city"></i>
+        <span>Work Center</span>
+      </button>
+
+      <button class="menu-item" data-tab="qc">
+        <i class="fa-solid fa-shield-check"></i>
+        <span>Quality Control</span>
+      </button>
+
+      <button class="menu-item" data-tab="material">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Material</span>
+      </button>
+
+      <button class="menu-item" data-tab="laporan">
+        <i class="fa-solid fa-file-invoice"></i>
+        <span>Laporan</span>
+      </button>
+
+      <button class="menu-item" data-tab="notifikasi">
+        <i class="fa-solid fa-bell"></i>
+        <span>Notifikasi</span>
+        <span class="badge-count">5</span>
+      </button>
+
+      <button class="menu-item" data-tab="pengaturan">
+        <i class="fa-solid fa-gear"></i>
+        <span>Pengaturan</span>
+      </button>
+    </nav>
+
+    <!-- Sidebar Footer User Profile -->
+    <div class="sidebar-footer">
+      <div class="shift-tag">
+        <i class="fa-regular fa-sun"></i> SHIFT PAGI (07:00 - 15:00)
+      </div>
+      <div class="user-profile-sm">
+        <div class="avatar-wrapper">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Budi Santoso" class="avatar-img">
+          <span class="status-dot-online"></span>
+        </div>
+        <div class="user-details">
+          <span class="user-name">Budi Santoso</span>
+          <span class="user-role">Operator</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-wrapper">
+    <!-- Top Header Navbar -->
+    <header class="top-navbar">
+      <div class="navbar-left">
+        <button class="toggle-sidebar-btn" id="toggleSidebar">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <h1 class="page-title">Monitoring Produksi</h1>
+      </div>
+
+      <div class="navbar-right">
+        <!-- Live Realtime Status -->
+        <div class="realtime-status">
+          <span class="pulse-dot"></span>
+          <span>Realtime</span>
+        </div>
+
+        <!-- Digital Clock -->
+        <div class="time-display" id="timeDisplay">
+          <i class="fa-regular fa-clock"></i>
+          <span id="liveClock">22 Mei 2024 10:24:35</span>
+        </div>
+
+        <!-- Notifications Icon -->
+        <button class="nav-icon-btn" id="btnNotifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="nav-icon-badge">5</span>
+        </button>
+
+        <!-- Admin Profile -->
+        <div class="user-nav-profile" onclick="handleLogout()" title="Klik untuk Logout / Keluar">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="Admin" class="user-nav-avatar">
+          <div class="user-nav-info">
+            <span class="user-nav-name">Admin <i class="fa-solid fa-right-from-bracket" style="font-size: 10px; margin-left: 4px; color: #ef4444;"></i></span>
+            <span class="user-nav-role">Administrator</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sub-header / View Tabs Bar -->
+    <div class="view-mode-bar">
+      <div class="view-tabs">
+        <button class="view-tab-btn active" id="tabSingleFlow" onclick="switchView('single-flow')">
+          <i class="fa-solid fa-diagram-project"></i>
+          <span>Overview (Single Order Flow)</span>
+        </button>
+        <button class="view-tab-btn" id="tabMultiProject" onclick="switchView('multi-project')">
+          <i class="fa-solid fa-bars-progress"></i>
+          <span>Multi-Project (Gantt Matrix)</span>
+        </button>
+      </div>
+
+      <div class="action-bar-right">
+        <button class="btn-secondary" id="btnSimulate" onclick="toggleSimulation()">
+          <i class="fa-solid fa-play"></i> <span id="simBtnText">Live Simulation</span>
+        </button>
+        <button class="btn-secondary" onclick="openExportModal()">
+          <i class="fa-solid fa-download"></i> Export Laporan
+        </button>
+        <button class="btn-primary" onclick="openNewOrderModal()">
+          <i class="fa-solid fa-plus"></i> Tambah Order
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="content-body">
+      
+      <!-- ================= VIEW 1: SINGLE ORDER FLOW (IMAGE 1 REPLICA) ================= -->
+      <div class="view-section active" id="viewSingleFlow">
+        
+        <!-- Top 5 KPI Cards Grid -->
+        <div class="kpi-cards-grid">
+          <!-- Card 1: Total Order -->
+          <div class="kpi-card">
+            <div class="kpi-icon blue">
+              <i class="fa-solid fa-box-archive"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">TOTAL ORDER</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiTotalOrder">15</span>
+                <span class="kpi-unit">Order</span>
+              </div>
+              <a href="#" class="kpi-subtext">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Card 2: Selesai -->
+          <div class="kpi-card">
+            <div class="kpi-icon green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">SELESAI</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiSelesai">6</span>
+                <span class="kpi-unit" id="kpiSelesaiPct">Order (40%)</span>
+              </div>
+              <a href="#" class="kpi-subtext">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Card 3: Proses -->
+          <div class="kpi-card">
+            <div class="kpi-icon amber">
+              <i class="fa-solid fa-gears"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">PROSES</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiProses">7</span>
+                <span class="kpi-unit" id="kpiProsesPct">Order (46.7%)</span>
+              </div>
+              <a href="#" class="kpi-subtext">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Card 4: Belum Mulai -->
+          <div class="kpi-card">
+            <div class="kpi-icon purple">
+              <i class="fa-solid fa-hourglass-start"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">BELUM MULAI</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiBelum">2</span>
+                <span class="kpi-unit" id="kpiBelumPct">Order (13.3%)</span>
+              </div>
+              <a href="#" class="kpi-subtext">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+
+          <!-- Card 5: Rata-Rata Progress -->
+          <div class="kpi-card">
+            <div class="kpi-icon cyan">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <div class="kpi-content">
+              <span class="kpi-label">RATA-RATA PROGRESS</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiAvgProgress">67%</span>
+                <span class="trend-badge"><i class="fa-solid fa-arrow-up"></i> 12%</span>
+              </div>
+              <span class="kpi-unit" style="font-size: 10px; color: var(--text-muted);">Dari kemarin</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FLOW PRODUKSI TRAFO - 11 STEPPER PIPELINE -->
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">
+              <i class="fa-solid fa-diagram-next" style="color: var(--color-primary);"></i> FLOW PRODUKSI TRAFO
+            </span>
+            <div class="stepper-legend">
+              <div class="legend-item">
+                <span class="legend-dot finished"></span>
+                <span>Selesai</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot process"></span>
+                <span>Proses</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot waiting"></span>
+                <span>Menunggu</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 11 Steps Grid Pipeline -->
+          <div class="flow-stepper-wrapper">
+            <div class="flow-stepper-grid" id="flowStepperGrid">
+              <!-- Rendered via JS dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle Section: Table 2/3 + Detail Side Card 1/3 -->
+        <div class="grid-2-1">
+          
+          <!-- Table: DAFTAR ORDER PRODUKSI -->
+          <div class="table-card">
+            <div class="table-controls">
+              <span class="section-title">DAFTAR ORDER PRODUKSI</span>
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Cari Order.." onkeyup="filterOrders()">
+              </div>
+            </div>
+
+            <div class="custom-table-container">
+              <table class="custom-table" id="ordersTable">
+                <thead>
+                  <tr>
+                    <th>No. Order</th>
+                    <th>Nama Trafo</th>
+                    <th>Kapasitas</th>
+                    <th>Tegangan</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Mulai</th>
+                    <th>Deadline</th>
+                    <th>Operator Aktif</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Detail Order Side Panel -->
+          <div class="detail-card">
+            <div class="detail-header">
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL ORDER</div>
+                <span class="detail-order-id" id="detailOrderId">TRF-240522-001</span>
+              </div>
+              <span class="badge-status badge-assembly" id="detailStatusBadge">ASSEMBLY</span>
+            </div>
+
+            <!-- Spec list -->
+            <div class="detail-spec-grid">
+              <span class="spec-key">Nama Trafo</span>
+              <span class="spec-val" id="detailNamaTrafo">: Trafo Distribusi</span>
+              
+              <span class="spec-key">Kapasitas</span>
+              <span class="spec-val" id="detailKapasitas">: 500 kVA</span>
+              
+              <span class="spec-key">Tegangan</span>
+              <span class="spec-val" id="detailTegangan">: 20 kV / 400 V</span>
+              
+              <span class="spec-key">Mulai</span>
+              <span class="spec-val" id="detailMulai">: 22/05/2024 07:30</span>
+              
+              <span class="spec-key">Deadline</span>
+              <span class="spec-val deadline-alert" id="detailDeadline">: 25/05/2024</span>
+              
+              <span class="spec-key">Status Saat Ini</span>
+              <span class="spec-val active-status" id="detailStatusSaatIni">: ASSEMBLY (60%)</span>
+              
+              <span class="spec-key">Operator Aktif</span>
+              <span class="spec-val operator-cell" id="detailOperator">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" class="operator-avatar"> Ahmad Fauzi
+              </span>
+            </div>
+
+            <!-- Detail Progress Bar -->
+            <div class="detail-progress-wrapper">
+              <div class="detail-progress-label">
+                <span>PROGRESS</span>
+                <span class="detail-progress-pct" id="detailProgressPct">60%</span>
+              </div>
+              <div class="detail-progress-bg">
+                <div class="detail-progress-fill" id="detailProgressBar" style="width: 60%;"></div>
+              </div>
+            </div>
+
+            <!-- Timeline Proses Vertical Stepper -->
+            <span class="timeline-title">TIMELINE PROSES</span>
+            <div class="timeline-list" id="timelineProsesList">
+              <!-- Dynamically populated -->
+            </div>
+
+            <button class="btn-primary btn-full-width" onclick="openFullDetailModal()">
+              LIHAT DETAIL LENGKAP
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Grafik Progress (Chart.js) + Aktivitas Terakhir -->
+        <div class="grid-chart-activity">
+          <!-- Grafik Progress Card -->
+          <div class="chart-card">
+            <div class="section-header">
+              <span class="section-title">GRAFIK PROGRESS (Semua Order)</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Real-time Hourly Average</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="progressChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Aktivitas Terakhir Card -->
+          <div class="activity-card">
+            <div class="section-header">
+              <span class="section-title">AKTIVITAS TERAKHIR</span>
+              <a href="#" style="font-size: 11px; color: var(--color-primary); font-weight: 600;">Lihat Semua</a>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ================= VIEW 2: MULTI-PROJECT GANTT MATRIX (IMAGE 2 REPLICA) ================= -->
+      <div class="view-section" id="viewMultiProject">
+        
+        <!-- Project 1 Card Container -->
+        <div class="project-card">
+          <div class="project-card-header">
+            <div class="project-title-box">
+              <span class="project-code-title">PROJECT: PRJ-240522-01 - PROYEK TRAFO 10 UNIT</span>
+            </div>
+            <span class="project-unit-badge">10 UNIT TRAFO</span>
+          </div>
+
+          <!-- Micro KPI Summary -->
+          <div class="project-micro-kpi">
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Total Trafo</div>
+                <div class="micro-kpi-val">10 <span style="font-size: 10px; font-weight: 500;">Unit</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon green"><i class="fa-solid fa-circle-check"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Selesai</div>
+                <div class="micro-kpi-val">3 <span style="font-size: 10px; font-weight: 500;">Unit</span> <span class="micro-kpi-pct" style="color: var(--color-success);">30%</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon amber"><i class="fa-solid fa-gears"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Proses</div>
+                <div class="micro-kpi-val">5 <span style="font-size: 10px; font-weight: 500;">Unit</span> <span class="micro-kpi-pct" style="color: var(--color-process);">50%</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon purple"><i class="fa-solid fa-hourglass"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Belum Mulai</div>
+                <div class="micro-kpi-val">2 <span style="font-size: 10px; font-weight: 500;">Unit</span> <span class="micro-kpi-pct" style="color: var(--text-muted);">20%</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon cyan"><i class="fa-solid fa-chart-line"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Rata-rata Progress</div>
+                <div class="micro-kpi-val">56% <span class="trend-badge"><i class="fa-solid fa-arrow-up"></i> 12%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Split Table & Gantt Matrix -->
+          <div class="project-split-grid">
+            <div class="project-table-gantt-box">
+              
+              <!-- Left: Unit List Table -->
+              <div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;">
+                  DAFTAR TRAFO DALAM PROJECT (10 UNIT)
+                </div>
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>No. Trafo</th>
+                      <th>Kapasitas</th>
+                      <th>Tegangan</th>
+                      <th>Status</th>
+                      <th>Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prj1TableBody">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Right: 11-Stage Flow Proses (Realtime Matrix Gantt) -->
+              <div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; text-align: center;">
+                  FLOW PROSES (Realtime)
+                </div>
+                <div class="gantt-header-row">
+                  <div class="gantt-head-col">1. TANK</div>
+                  <div class="gantt-head-col">2. CORE</div>
+                  <div class="gantt-head-col">3. COIL</div>
+                  <div class="gantt-head-col">4. ASSY</div>
+                  <div class="gantt-head-col">5. CONN</div>
+                  <div class="gantt-head-col">6. FINAL</div>
+                  <div class="gantt-head-col">7. TEST</div>
+                  <div class="gantt-head-col">8. FINISH</div>
+                  <div class="gantt-head-col">9. FAT</div>
+                  <div class="gantt-head-col">10. PUNCH</div>
+                  <div class="gantt-head-col">11. DELIV</div>
+                </div>
+
+                <div class="gantt-body" id="prj1GanttBody">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Detail Panel for Project 1 -->
+            <div class="detail-card">
+              <div class="detail-header">
+                <div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL TRAFO</div>
+                  <span class="detail-order-id" id="prj1DetailId">TRF-240522-001</span>
+                </div>
+                <span class="badge-status badge-assembly" id="prj1DetailStatus">ASSEMBLY</span>
+              </div>
+
+              <div class="detail-spec-grid">
+                <span class="spec-key">Kapasitas</span>
+                <span class="spec-val" id="prj1DetailCap">: 500 kVA</span>
+                
+                <span class="spec-key">Tegangan</span>
+                <span class="spec-val" id="prj1DetailVolt">: 20 kV / 400 V</span>
+                
+                <span class="spec-key">Mulai Proses</span>
+                <span class="spec-val" id="prj1DetailStart">: 22/05/2024 07:30</span>
+                
+                <span class="spec-key">Deadline</span>
+                <span class="spec-val deadline-alert" id="prj1DetailDead">: 28/05/2024</span>
+                
+                <span class="spec-key">Progress</span>
+                <span class="spec-val" id="prj1DetailProg">: 60%</span>
+                
+                <span class="spec-key">Proses Saat Ini</span>
+                <span class="spec-val active-status" id="prj1DetailStage">: 4. ASSEMBLY</span>
+                
+                <span class="spec-key">Operator</span>
+                <span class="spec-val operator-cell" id="prj1DetailOp">
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" class="operator-avatar"> Ahmad Fauzi
+                </span>
+              </div>
+
+              <button class="btn-primary btn-full-width" style="margin-top: auto;" onclick="openFullDetailModal()">
+                LIHAT DETAIL
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- Project 2 Card Container -->
+        <div class="project-card">
+          <div class="project-card-header">
+            <div class="project-title-box">
+              <span class="project-code-title">PROJECT: PRJ-240522-02 - PROYEK TRAFO 5 UNIT</span>
+            </div>
+            <span class="project-unit-badge">5 UNIT TRAFO</span>
+          </div>
+
+          <!-- Micro KPI Summary -->
+          <div class="project-micro-kpi">
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Total Trafo</div>
+                <div class="micro-kpi-val">5 <span style="font-size: 10px; font-weight: 500;">Unit</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon green"><i class="fa-solid fa-circle-check"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Selesai</div>
+                <div class="micro-kpi-val">2 <span style="font-size: 10px; font-weight: 500;">Unit</span> <span class="micro-kpi-pct" style="color: var(--color-success);">40%</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon amber"><i class="fa-solid fa-gears"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Proses</div>
+                <div class="micro-kpi-val">2 <span style="font-size: 10px; font-weight: 500;">Unit</span> <span class="micro-kpi-pct" style="color: var(--color-process);">40%</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon purple"><i class="fa-solid fa-hourglass"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Belum Mulai</div>
+                <div class="micro-kpi-val">1 <span style="font-size: 10px; font-weight: 500;">Unit</span> <span class="micro-kpi-pct" style="color: var(--text-muted);">20%</span></div>
+              </div>
+            </div>
+
+            <div class="micro-kpi-item">
+              <div class="micro-kpi-icon cyan"><i class="fa-solid fa-chart-line"></i></div>
+              <div>
+                <div class="micro-kpi-lbl">Rata-rata Progress</div>
+                <div class="micro-kpi-val">62% <span class="trend-badge"><i class="fa-solid fa-arrow-up"></i> 15%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Split Table & Gantt Matrix -->
+          <div class="project-split-grid">
+            <div class="project-table-gantt-box">
+              <div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;">
+                  DAFTAR TRAFO DALAM PROJECT (5 UNIT)
+                </div>
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>No. Trafo</th>
+                      <th>Kapasitas</th>
+                      <th>Tegangan</th>
+                      <th>Status</th>
+                      <th>Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prj2TableBody">
+                    <!-- Dynamically filled -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; text-align: center;">
+                  FLOW PROSES (Realtime)
+                </div>
+                <div class="gantt-header-row">
+                  <div class="gantt-head-col">1. TANK</div>
+                  <div class="gantt-head-col">2. CORE</div>
+                  <div class="gantt-head-col">3. COIL</div>
+                  <div class="gantt-head-col">4. ASSY</div>
+                  <div class="gantt-head-col">5. CONN</div>
+                  <div class="gantt-head-col">6. FINAL</div>
+                  <div class="gantt-head-col">7. TEST</div>
+                  <div class="gantt-head-col">8. FINISH</div>
+                  <div class="gantt-head-col">9. FAT</div>
+                  <div class="gantt-head-col">10. PUNCH</div>
+                  <div class="gantt-head-col">11. DELIV</div>
+                </div>
+
+                <div class="gantt-body" id="prj2GanttBody">
+                  <!-- Dynamically filled -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Detail Panel for Project 2 -->
+            <div class="detail-card">
+              <div class="detail-header">
+                <div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL TRAFO</div>
+                  <span class="detail-order-id" id="prj2DetailId">TRF-240522-A02</span>
+                </div>
+                <span class="badge-status badge-internal" id="prj2DetailStatus">INTERNAL TEST</span>
+              </div>
+
+              <div class="detail-spec-grid">
+                <span class="spec-key">Kapasitas</span>
+                <span class="spec-val" id="prj2DetailCap">: 1000 kVA</span>
+                
+                <span class="spec-key">Tegangan</span>
+                <span class="spec-val" id="prj2DetailVolt">: 20 kV / 400 V</span>
+                
+                <span class="spec-key">Mulai Proses</span>
+                <span class="spec-val" id="prj2DetailStart">: 22/05/2024 07:45</span>
+                
+                <span class="spec-key">Deadline</span>
+                <span class="spec-val deadline-alert" id="prj2DetailDead">: 26/05/2024</span>
+                
+                <span class="spec-key">Progress</span>
+                <span class="spec-val" id="prj2DetailProg">: 30%</span>
+                
+                <span class="spec-key">Proses Saat Ini</span>
+                <span class="spec-val active-status" id="prj2DetailStage">: 7. INTERNAL TEST</span>
+                
+                <span class="spec-key">Operator</span>
+                <span class="spec-val operator-cell" id="prj2DetailOp">
+                  <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" class="operator-avatar"> Rudi Hartono
+                </span>
+              </div>
+
+              <button class="btn-primary btn-full-width" style="margin-top: auto;" onclick="openFullDetailModal()">
+                LIHAT DETAIL
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Bottom Activities & System Notifications -->
+        <div class="grid-2-1">
+          <div class="activity-card">
+            <div class="section-header">
+              <span class="section-title">AKTIVITAS TERBARU (Realtime)</span>
+              <a href="#" style="font-size: 11px; color: var(--color-primary); font-weight: 600;">Lihat Semua Aktivitas <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;" id="activityHorizontalRow">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="activity-card">
+            <div class="section-header">
+              <span class="section-title">NOTIFIKASI SISTEM</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;" id="systemNotifications">
+              <div style="display: flex; align-items: flex-start; gap: 10px; background: #ecfdf5; padding: 10px; border-radius: var(--radius-md); border-left: 3px solid #10b981;">
+                <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #065f46;">Proses INTERNAL TEST pada TRF-240522-A02 telah dimulai oleh Rudi Hartono</div>
+                  <div style="font-size: 10px; color: #047857;">22/05/2024 09:15</div>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: flex-start; gap: 10px; background: #fffbe6; padding: 10px; border-radius: var(--radius-md); border-left: 3px solid #f59e0b;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b; font-size: 14px; margin-top: 2px;"></i>
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: #92400e;">Deadline TRF-240522-003 tinggal 2 hari lagi</div>
+                  <div style="font-size: 10px; color: #b45309;">22/05/2024 08:30</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+  
+  <!-- Modal 1: Tambah Order Baru -->
+  <div class="modal-overlay" id="newOrderModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--color-primary);"></i> Tambah Order Produksi Trafo</span>
+        <button class="modal-close-btn" onclick="closeModal('newOrderModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="newOrderForm" onsubmit="handleCreateOrder(event)">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">No. Order / Code</label>
+              <input type="text" class="form-input" id="inpOrderCode" placeholder="TRF-240522-006" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Trafo</label>
+              <input type="text" class="form-input" id="inpTrafoName" placeholder="Trafo Power 2500 kVA" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Kapasitas (kVA)</label>
+              <input type="text" class="form-input" id="inpKapasitas" placeholder="1000 kVA" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tegangan (V)</label>
+              <input type="text" class="form-input" id="inpTegangan" placeholder="20 kV / 400 V" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Operator Tugasan</label>
+              <select class="form-select" id="inpOperator" required>
+                <option value="Ahmad Fauzi">Ahmad Fauzi</option>
+                <option value="Rudi Hartono">Rudi Hartono</option>
+                <option value="Joko Susilo">Joko Susilo</option>
+                <option value="Budi Santoso">Budi Santoso</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Deadline Produksi</label>
+              <input type="date" class="form-input" id="inpDeadline" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Proyek Asosiasi</label>
+            <select class="form-select" id="inpProyek">
+              <option value="PRJ-240522-01">PRJ-240522-01 (PROYEK TRAFO 10 UNIT)</option>
+              <option value="PRJ-240522-02">PRJ-240522-02 (PROYEK TRAFO 5 UNIT)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('newOrderModal')">Batal</button>
+          <button type="submit" class="btn-primary">Simpan Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Detail Lengkap Spesifikasi Trafo -->
+  <div class="modal-overlay" id="fullDetailModal">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-microchip" style="color: var(--color-primary);"></i> Detail Spesifikasi & Quality Check</span>
+        <button class="modal-close-btn" onclick="closeModal('fullDetailModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 12px; border-radius: var(--radius-md);">
+          <div>
+            <div style="font-size: 16px; font-weight: 800; color: var(--color-primary);" id="modalDetailOrderCode">TRF-240522-001</div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="modalDetailTrafoName">Trafo Distribusi 500 kVA - Step Down</div>
+          </div>
+          <span class="badge-status badge-assembly" id="modalDetailBadge">ASSEMBLY</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px;">
+          <div style="border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md);">
+            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); margin-bottom: 8px;">SPESIFIKASI ELEKTRIKAL</div>
+            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
+              <div>• Kapasitas Nominal: <b>500 kVA</b></div>
+              <div>• Tegangan Primer: <b>20.000 V (20 kV)</b></div>
+              <div>• Tegangan Sekunder: <b>400 V / 231 V</b></div>
+              <div>• Vektor Group: <b>Dyn11</b></div>
+              <div>• Frekuensi: <b>50 Hz</b></div>
+              <div>• Tipe Pendingin: <b>ONAN (Oil Natural Air Natural)</b></div>
+            </div>
+          </div>
+
+          <div style="border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md);">
+            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); margin-bottom: 8px;">CHECKLIST INSPEKSI QC</div>
+            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="color: #10b981;"><i class="fa-solid fa-check-circle"></i> Tank Pressure Leak Test: <b>PASS</b></div>
+              <div style="color: #10b981;"><i class="fa-solid fa-check-circle"></i> Core Losses & Ratio Test: <b>PASS</b></div>
+              <div style="color: #10b981;"><i class="fa-solid fa-check-circle"></i> Winding Resistance: <b>PASS</b></div>
+              <div style="color: #f59e0b;"><i class="fa-solid fa-spinner"></i> High Voltage Dielectric Test: <b>IN PROGRESS</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); margin-bottom: 6px;">CATATAN OPERATOR</div>
+          <div style="font-size: 11px; background: #fffbe6; padding: 10px; border-radius: var(--radius-md); border: 1px solid #fef08a; color: #78350f;">
+            Proses Assembly pembungkusan kumparan inti berjalan sesuai skema. Pengujian tegangan menengah dijadwalkan besok pukul 09:00 WIB oleh tim QC Internal.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('fullDetailModal')">Tutup</button>
+        <button type="button" class="btn-primary" onclick="alert('Cetak Lembar Kerja Produksi...')"><i class="fa-solid fa-print"></i> Cetak SPK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Export Report Modal -->
+  <div class="modal-overlay" id="exportModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-file-export" style="color: var(--color-primary);"></i> Export Laporan Produksi</span>
+        <button class="modal-close-btn" onclick="closeModal('exportModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Format File Export</label>
+          <select class="form-select" id="exportFormat">
+            <option value="pdf">PDF Document (.pdf)</option>
+            <option value="excel">Microsoft Excel (.xlsx)</option>
+            <option value="csv">CSV Spreadsheet (.csv)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rentang Tanggal Laporan</label>
+          <input type="text" class="form-input" value="20/05/2024 - 25/05/2024" readonly>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('exportModal')">Batal</button>
+        <button type="button" class="btn-primary" onclick="triggerDownloadReport()">Unduh Laporan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Custom JavaScript Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
