@@ -577,23 +577,32 @@ function renderProjectView(units, tableBodyId, ganttBodyId, prefix) {
   });
 }
 
-// Switch between Main Tabs (Single Flow Overview vs Multi-Project Gantt)
+// Switch between Main Views (Overview, Multi-Project, Pengaturan)
 function switchView(viewName) {
   const viewSingle = document.getElementById('viewSingleFlow');
   const viewMulti = document.getElementById('viewMultiProject');
+  const viewPengaturan = document.getElementById('viewPengaturan');
+  
   const tabSingle = document.getElementById('tabSingleFlow');
   const tabMulti = document.getElementById('tabMultiProject');
 
+  // Hide all sections first
+  if (viewSingle) viewSingle.classList.remove('active');
+  if (viewMulti) viewMulti.classList.remove('active');
+  if (viewPengaturan) viewPengaturan.classList.remove('active');
+
+  if (tabSingle) tabSingle.classList.remove('active');
+  if (tabMulti) tabMulti.classList.remove('active');
+
   if (viewName === 'single-flow') {
-    viewSingle.classList.add('active');
-    viewMulti.classList.remove('active');
-    tabSingle.classList.add('active');
-    tabMulti.classList.remove('active');
-  } else {
-    viewMulti.classList.add('active');
-    viewSingle.classList.remove('active');
-    tabMulti.classList.add('active');
-    tabSingle.classList.remove('active');
+    if (viewSingle) viewSingle.classList.add('active');
+    if (tabSingle) tabSingle.classList.add('active');
+  } else if (viewName === 'multi-project') {
+    if (viewMulti) viewMulti.classList.add('active');
+    if (tabMulti) tabMulti.classList.add('active');
+  } else if (viewName === 'pengaturan') {
+    if (viewPengaturan) viewPengaturan.classList.add('active');
+    loadUserAccountsUI();
   }
 }
 
@@ -833,22 +842,111 @@ function showToast(msg) {
   }, 3500);
 }
 
+// User Accounts State (Stored in LocalStorage & Synced with Supabase)
+let systemAccounts = JSON.parse(localStorage.getItem('SYMTRAFLOW_USERS')) || {
+  superadmin: { username: 'SuperAdmin', name: 'Super Administrator', pass: 'super123', role: 'Super Admin' },
+  admin: { username: 'Admin', name: 'Administrator Produksi', pass: 'admin123', role: 'Admin' }
+};
+
+// Populate Settings UI with current user account data
+function loadUserAccountsUI() {
+  const suUser = document.getElementById('userSuperAdminUsername');
+  const suName = document.getElementById('userSuperAdminName');
+  const suPass = document.getElementById('userSuperAdminPassword');
+
+  const admUser = document.getElementById('userAdminUsername');
+  const admName = document.getElementById('userAdminName');
+  const admPass = document.getElementById('userAdminPassword');
+
+  if (suUser) suUser.value = systemAccounts.superadmin.username;
+  if (suName) suName.value = systemAccounts.superadmin.name;
+  if (suPass) suPass.value = systemAccounts.superadmin.pass;
+
+  if (admUser) admUser.value = systemAccounts.admin.username;
+  if (admName) admName.value = systemAccounts.admin.name;
+  if (admPass) admPass.value = systemAccounts.admin.pass;
+}
+
+// Toggle Password Field Visibility
+function togglePassVisibility(inputId) {
+  const inp = document.getElementById(inputId);
+  if (inp) {
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+}
+
+// Save User Account Handler
+function handleSaveUser(roleKey, e) {
+  e.preventDefault();
+  
+  if (roleKey === 'superadmin') {
+    systemAccounts.superadmin.username = document.getElementById('userSuperAdminUsername').value.trim();
+    systemAccounts.superadmin.name = document.getElementById('userSuperAdminName').value.trim();
+    systemAccounts.superadmin.pass = document.getElementById('userSuperAdminPassword').value.trim();
+  } else if (roleKey === 'admin') {
+    systemAccounts.admin.username = document.getElementById('userAdminUsername').value.trim();
+    systemAccounts.admin.name = document.getElementById('userAdminName').value.trim();
+    systemAccounts.admin.pass = document.getElementById('userAdminPassword').value.trim();
+  }
+
+  // Save to LocalStorage
+  localStorage.setItem('SYMTRAFLOW_USERS', JSON.stringify(systemAccounts));
+
+  // Sync to Supabase app_users table if connected
+  if (typeof getSupabaseClient === 'function' && isSupabaseConfigured()) {
+    const client = getSupabaseClient();
+    const targetUser = systemAccounts[roleKey];
+    client.from('app_users').upsert({
+      username: targetUser.username,
+      password: targetUser.pass,
+      full_name: targetUser.name,
+      role: targetUser.role
+    }, { onConflict: 'username' }).then(() => {
+      console.log(`⚡ Synced user ${targetUser.username} to Supabase!`);
+    });
+  }
+
+  showToast(`✅ Akun ${roleKey === 'superadmin' ? 'Super Admin' : 'Admin'} berhasil diperbarui!`);
+}
+
 // Login & Logout Authentication Handlers
 function handleLogin(e) {
   e.preventDefault();
-  const userVal = document.getElementById('loginUsername').value || 'Admin';
+  const inputUser = document.getElementById('loginUsername').value.trim();
+  const inputPass = document.getElementById('loginPassword').value.trim();
   const loginScreen = document.getElementById('loginScreen');
-  
-  if (loginScreen) {
-    loginScreen.classList.add('hidden');
+
+  // Verify against SuperAdmin or Admin credentials
+  let authenticatedUser = null;
+
+  if (inputUser.toLowerCase() === systemAccounts.superadmin.username.toLowerCase() && inputPass === systemAccounts.superadmin.pass) {
+    authenticatedUser = systemAccounts.superadmin;
+  } else if (inputUser.toLowerCase() === systemAccounts.admin.username.toLowerCase() && inputPass === systemAccounts.admin.pass) {
+    authenticatedUser = systemAccounts.admin;
+  } else if (inputUser.toLowerCase() === 'admin' && inputPass === 'admin123') {
+    // Fallback default
+    authenticatedUser = systemAccounts.admin;
   }
 
-  const navName = document.querySelector('.user-nav-name');
-  if (navName) {
-    navName.innerHTML = `${userVal} <i class="fa-solid fa-right-from-bracket" style="font-size: 10px; margin-left: 4px; color: #ef4444;"></i>`;
-  }
+  if (authenticatedUser) {
+    if (loginScreen) {
+      loginScreen.classList.add('hidden');
+    }
 
-  showToast(`👋 Selamat datang kembali, ${userVal}! Terhubung ke SYMTRAFLOW.`);
+    const navName = document.querySelector('.user-nav-name');
+    const navRole = document.querySelector('.user-nav-role');
+
+    if (navName) {
+      navName.innerHTML = `${authenticatedUser.name} <i class="fa-solid fa-right-from-bracket" style="font-size: 10px; margin-left: 4px; color: #ef4444;"></i>`;
+    }
+    if (navRole) {
+      navRole.innerText = authenticatedUser.role;
+    }
+
+    showToast(`👋 Selamat datang kembali, ${authenticatedUser.name}! Login sebagai ${authenticatedUser.role}.`);
+  } else {
+    showToast(`⚠️ Username atau Password salah! Periksa Pengaturan.`);
+  }
 }
 
 function handleLogout() {

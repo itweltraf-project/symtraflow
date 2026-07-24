@@ -167,7 +167,7 @@
         <span class="badge-count">5</span>
       </button>
 
-      <button class="menu-item" data-tab="pengaturan">
+      <button class="menu-item" data-tab="pengaturan" onclick="switchView('pengaturan')">
         <i class="fa-solid fa-gear"></i>
         <span>Pengaturan</span>
       </button>
@@ -826,6 +826,107 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- ================= VIEW 3: PENGATURAN USER (SUPER ADMIN & ADMIN) ================= -->
+      <div class="view-section" id="viewPengaturan">
+        <div class="section-card">
+          <div class="section-header">
+            <span class="section-title">
+              <i class="fa-solid fa-user-gear" style="color: var(--color-primary);"></i> PENGATURAN USER & AKUN LOGIN
+            </span>
+            <span style="font-size: 11px; color: var(--text-muted);">Kelola username, password, dan hak akses akun Super Admin & Admin</span>
+          </div>
+
+          <!-- User Management Grid / Cards -->
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 10px;">
+            
+            <!-- Super Admin Card -->
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; background: #ffffff; box-shadow: var(--shadow-sm);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+                    <i class="fa-solid fa-user-shield"></i>
+                  </div>
+                  <div>
+                    <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">Super Admin</div>
+                    <div style="font-size: 10px; color: #dc2626; font-weight: 700; text-transform: uppercase;">Hak Akses Penuh (Full Control)</div>
+                  </div>
+                </div>
+                <span class="badge-status" style="background: #fee2e2; color: #dc2626;">SUPER ADMIN</span>
+              </div>
+
+              <form id="formSuperAdmin" onsubmit="handleSaveUser('superadmin', event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label class="form-label">Username Super Admin</label>
+                  <input type="text" class="form-input" id="userSuperAdminUsername" value="SuperAdmin" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label class="form-label">Nama Lengkap</label>
+                  <input type="text" class="form-input" id="userSuperAdminName" value="Super Administrator" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                  <label class="form-label">Password Baru</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" id="userSuperAdminPassword" value="super123" style="width: 100%; padding-right: 36px;" required>
+                    <button type="button" onclick="togglePassVisibility('userSuperAdminPassword')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: #dc2626;">
+                  <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan Super Admin
+                </button>
+              </form>
+            </div>
+
+            <!-- Admin Card -->
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; background: #ffffff; box-shadow: var(--shadow-sm);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+                    <i class="fa-solid fa-user-gear"></i>
+                  </div>
+                  <div>
+                    <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">Admin</div>
+                    <div style="font-size: 10px; color: #2563eb; font-weight: 700; text-transform: uppercase;">Akses Operasional Produksi</div>
+                  </div>
+                </div>
+                <span class="badge-status" style="background: #eff6ff; color: #2563eb;">ADMIN</span>
+              </div>
+
+              <form id="formAdmin" onsubmit="handleSaveUser('admin', event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label class="form-label">Username Admin</label>
+                  <input type="text" class="form-input" id="userAdminUsername" value="Admin" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label class="form-label">Nama Lengkap</label>
+                  <input type="text" class="form-input" id="userAdminName" value="Administrator Produksi" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                  <label class="form-label">Password Baru</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" id="userAdminPassword" value="admin123" style="width: 100%; padding-right: 36px;" required>
+                    <button type="button" onclick="togglePassVisibility('userAdminPassword')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+                  <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan Admin
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
       </div>
 
     </div>

@@ -119,3 +119,26 @@ VALUES
   ]'::jsonb
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 8. CREATE TABLE: app_users (Manajemen Akun Login Super Admin & Admin)
+CREATE TABLE IF NOT EXISTS public.app_users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'Admin',
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS & Realtime on app_users
+ALTER TABLE public.app_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public all app_users" ON public.app_users FOR ALL USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.app_users;
+
+-- Insert default accounts if not exists
+INSERT INTO public.app_users (username, password, full_name, role)
+VALUES 
+('SuperAdmin', 'super123', 'Super Administrator', 'Super Admin'),
+('Admin', 'admin123', 'Administrator Produksi', 'Admin')
+ON CONFLICT (username) DO NOTHING;
+
