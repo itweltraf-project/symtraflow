@@ -11,15 +11,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Chart.js -->
+  <!-- Chart.js & Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- Login Screen Overlay (Matching Reference Image) -->
+  <!-- Login Screen Overlay (Matching Reference Image with 3D WebGL Engine) -->
   <div class="login-wrapper" id="loginScreen">
     <div class="login-card">
       <!-- Left Panel: Form -->
@@ -60,52 +61,63 @@
         </form>
       </div>
 
-      <!-- Right Panel: Dark Crimson Banner -->
-      <div class="login-right">
-        <div class="login-live-badge">
-          <span class="live-dot-red"></span> SYSTEM LIVE
-        </div>
+      <!-- Right Panel: Dark Crimson Banner with Interactive 3D Weltraf Transformer -->
+      <div class="login-right" id="loginRightPanel">
+        <!-- 3D Canvas Layer -->
+        <canvas id="login3dCanvas"></canvas>
 
-        <div class="login-hero-heading">
-          <div>Monitoring</div>
-          <div class="text-highlight-red">Produksi</div>
-          <div>Transformator</div>
-        </div>
-
-        <div class="login-features-list">
-          <div class="login-feature-item">
-            <div class="feature-icon-box">
-              <i class="fa-solid fa-chart-line"></i>
+        <!-- Glassmorphism Content Overlay -->
+        <div class="login-right-content">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div class="login-live-badge">
+              <span class="live-dot-red"></span> SYSTEM LIVE
             </div>
-            <div>
-              <div class="feature-title">Real-time Data Tracking</div>
-              <div class="feature-desc">Monitoring proses produksi secara instan</div>
+            <div class="login-3d-badge">
+              <i class="fa-solid fa-cube"></i> WELTRAF 3D MODEL
             </div>
           </div>
 
-          <div class="login-feature-item">
-            <div class="feature-icon-box">
-              <i class="fa-solid fa-lock"></i>
+          <div class="login-hero-heading">
+            <div>Monitoring</div>
+            <div class="text-highlight-red">Produksi</div>
+            <div>Transformator</div>
+          </div>
+
+          <div class="login-features-list">
+            <div class="login-feature-item">
+              <div class="feature-icon-box">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+              <div>
+                <div class="feature-title">Real-time Data Tracking</div>
+                <div class="feature-desc">Monitoring proses produksi secara instan</div>
+              </div>
             </div>
-            <div>
-              <div class="feature-title">Secure Production Management</div>
-              <div class="feature-desc">Keamanan data dan manajemen terpusat</div>
+
+            <div class="login-feature-item">
+              <div class="feature-icon-box">
+                <i class="fa-solid fa-lock"></i>
+              </div>
+              <div>
+                <div class="feature-title">Secure Production Management</div>
+                <div class="feature-desc">Keamanan data dan manajemen terpusat</div>
+              </div>
+            </div>
+
+            <div class="login-feature-item">
+              <div class="feature-icon-box">
+                <i class="fa-solid fa-cube" style="color:#60a5fa;"></i>
+              </div>
+              <div>
+                <div class="feature-title">Interactive 3D Trafo Model</div>
+                <div class="feature-desc">Visualisasi 3D Weltraf 2018-50-H realtime</div>
+              </div>
             </div>
           </div>
 
-          <div class="login-feature-item">
-            <div class="feature-icon-box">
-              <i class="fa-solid fa-table-cells-large"></i>
-            </div>
-            <div>
-              <div class="feature-title">Centralized Operational Control</div>
-              <div class="feature-desc">Sistem kendali produksi terintegrasi SYMTRAFLOW</div>
-            </div>
+          <div class="login-right-footer">
+            © 2026 SYMTRAFLOW · WELTRAF 3D ENGINE. ALL RIGHTS RESERVED.
           </div>
-        </div>
-
-        <div class="login-right-footer">
-          © 2026 SYMTRAFLOW. ALL RIGHTS RESERVED.
         </div>
       </div>
     </div>
@@ -1240,9 +1252,10 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Supabase JS Client & App Logic -->
+  <!-- Supabase JS Client, 3D Engine & App Logic -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabaseClient.js"></script>
+  <script src="login3d.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
