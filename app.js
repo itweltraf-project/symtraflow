@@ -271,6 +271,22 @@ let progressChartInstance = null;
 let isSimulating = false;
 let simulationTimer = null;
 
+// ===== MOBILE SIDEBAR TOGGLE =====
+function openMobileSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar)  sidebar.classList.add('mobile-open');
+  if (backdrop) backdrop.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar)  sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
 // Initialize Application on Page Load
 document.addEventListener('DOMContentLoaded', () => {
   initClock();

@@ -201,12 +201,15 @@
 
   </aside>
 
+  <!-- Mobile sidebar backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
   <!-- Main Content Area -->
   <div class="main-wrapper">
     <!-- Top Header Navbar -->
     <header class="top-navbar">
       <div class="navbar-left">
-        <button class="toggle-sidebar-btn" id="toggleSidebar">
+        <button class="toggle-sidebar-btn" id="toggleSidebar" onclick="openMobileSidebar()">
           <i class="fa-solid fa-bars"></i>
         </button>
         <h1 class="page-title">Monitoring Produksi</h1>

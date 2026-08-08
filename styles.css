@@ -1981,7 +1981,9 @@ body {
   margin-top: 16px;
 }
 
-/* Responsive queries */
+/* ========== RESPONSIVE / MOBILE ========== */
+
+/* Tablet: ≤ 1200px */
 @media (max-width: 1200px) {
   .kpi-cards-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -1991,14 +1993,227 @@ body {
   }
 }
 
-@media (max-width: 850px) {
+/* Small tablet: ≤ 900px */
+@media (max-width: 900px) {
+  .kpi-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .login-card {
     grid-template-columns: 1fr;
   }
   .login-right {
     display: none;
   }
+  .action-bar-right {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .action-bar-right .btn-secondary span,
+  .action-bar-right .btn-primary span {
+    display: none;
+  }
 }
+
+/* Mobile: ≤ 768px */
+@media (max-width: 768px) {
+
+  /* ---- Sidebar: slide-in overlay ---- */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+    box-shadow: none;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.45);
+  }
+
+  /* Overlay backdrop when sidebar open */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 199;
+  }
+  .sidebar-backdrop.active {
+    display: block;
+  }
+
+  /* Main content takes full width */
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  /* Navbar */
+  .top-navbar {
+    padding: 0 14px;
+    height: 54px;
+  }
+  .page-title {
+    font-size: 14px;
+  }
+  .realtime-status span {
+    display: none;
+  }
+  .time-display {
+    display: none;
+  }
+
+  /* Action bar */
+  .view-mode-bar {
+    padding: 8px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-bar-right {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .btn-secondary,
+  .btn-primary {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  /* KPI Cards: 2 columns */
+  .kpi-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .kpi-value {
+    font-size: 17px;
+  }
+  .kpi-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+  }
+
+  /* Content padding */
+  .content-body {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  /* Cards & Panels */
+  .card {
+    padding: 14px;
+  }
+  .grid-2-1,
+  .project-split-grid,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tables: horizontal scroll */
+  .table-wrapper,
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    min-width: 600px;
+  }
+  .orders-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .orders-table-wrapper table {
+    min-width: 700px;
+  }
+
+  /* Stepper / Progress tracker */
+  .stepper-track {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stepper-connector {
+    width: 2px;
+    height: 20px;
+    margin: 0 auto;
+  }
+
+  /* Modal dialogs */
+  .modal-content,
+  .modal-box {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 20px 16px !important;
+    margin: 10px auto;
+  }
+
+  /* Gantt chart */
+  .gantt-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Detail panel */
+  .detail-panel {
+    position: static !important;
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border-color);
+  }
+
+  /* Login screen */
+  .login-card {
+    grid-template-columns: 1fr;
+  }
+  .login-right {
+    display: none;
+  }
+  .login-left {
+    padding: 32px 24px;
+  }
+}
+
+/* Very small mobile: ≤ 480px */
+@media (max-width: 480px) {
+  .kpi-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .page-title {
+    font-size: 13px;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .navbar-right {
+    gap: 10px;
+  }
+  .user-nav-info {
+    display: none;
+  }
+  .kpi-label {
+    font-size: 9px;
+  }
+  .kpi-value {
+    font-size: 15px;
+  }
+  .content-body {
+    padding: 10px;
+    gap: 10px;
+  }
+  .btn-secondary span,
+  .btn-primary span {
+    display: none;
+  }
+  .btn-secondary i,
+  .btn-primary i {
+    margin: 0;
+  }
+  table {
+    min-width: 500px;
+    font-size: 11px;
+  }
+}
+
 
 /* ===== WELCOME POPUP MODAL ===== */
 .welcome-overlay {
