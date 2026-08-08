@@ -190,6 +190,62 @@ body {
 .menu-item .arrow {
   margin-left: auto;
   font-size: 11px;
+  transition: transform 0.25s ease;
+}
+
+.menu-item.open .arrow,
+.menu-monitoring.open .arrow {
+  transform: rotate(180deg);
+}
+
+/* Sidebar Sub-menu */
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-left: 12px;
+}
+
+.submenu.open {
+  max-height: 200px;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  color: #64748b;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: all var(--transition-fast);
+  border-left: 2px solid rgba(255,255,255,0.06);
+  margin-bottom: 2px;
+}
+
+.submenu-item:hover {
+  color: #ffffff;
+  background-color: rgba(255,255,255,0.06);
+  border-left-color: #2563eb;
+}
+
+.submenu-item.active {
+  color: #60a5fa;
+  background-color: rgba(37, 99, 235, 0.15);
+  border-left-color: #2563eb;
+  font-weight: 600;
+}
+
+.submenu-item i {
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
 }
 
 .badge-count {

@@ -147,11 +147,25 @@
         <span>Order Produksi</span>
       </button>
 
-      <button class="menu-item" data-tab="monitoring">
+      <button class="menu-item menu-monitoring" id="menuMonitoring" onclick="toggleMonitoringMenu()">
         <i class="fa-solid fa-chart-line"></i>
         <span>Monitoring</span>
-        <i class="fa-solid fa-chevron-down arrow"></i>
+        <i class="fa-solid fa-chevron-down arrow" id="monitoringArrow"></i>
       </button>
+      <div class="submenu" id="submenuMonitoring">
+        <button class="submenu-item active" id="tabSingleFlow" onclick="switchView('single-flow')">
+          <i class="fa-solid fa-diagram-project"></i>
+          <span>Overview</span>
+        </button>
+        <button class="submenu-item" id="tabMultiProject" onclick="switchView('multi-project')">
+          <i class="fa-solid fa-bars-progress"></i>
+          <span>Multi-Project (Gantt)</span>
+        </button>
+        <button class="submenu-item" id="tabProjectPT" onclick="switchView('project-pt')">
+          <i class="fa-solid fa-building"></i>
+          <span>Project PT</span>
+        </button>
+      </div>
 
       <button class="menu-item" data-tab="workcenter">
         <i class="fa-solid fa-city"></i>
@@ -231,24 +245,9 @@
       </div>
     </header>
 
-    <!-- Sub-header / View Tabs Bar -->
+    <!-- Action Bar -->
     <div class="view-mode-bar">
-      <div class="view-tabs">
-        <button class="view-tab-btn active" id="tabSingleFlow" onclick="switchView('single-flow')">
-          <i class="fa-solid fa-diagram-project"></i>
-          <span>Overview (Single Order Flow)</span>
-        </button>
-        <button class="view-tab-btn" id="tabMultiProject" onclick="switchView('multi-project')">
-          <i class="fa-solid fa-bars-progress"></i>
-          <span>Multi-Project (Gantt Matrix)</span>
-        </button>
-        <button class="view-tab-btn" id="tabProjectPT" onclick="switchView('project-pt')">
-          <i class="fa-solid fa-building"></i>
-          <span>Project PT (Perusahaan)</span>
-        </button>
-      </div>
-
-      <div class="action-bar-right">
+      <div class="action-bar-right" style="margin-left: auto;">
         <button class="btn-secondary" id="btnConnectSupabase" onclick="openSupabaseModal()" style="border-color: #10b981; color: #047857;">
           <i class="fa-solid fa-database" style="color: #10b981;"></i> <span id="supabaseStatusText">Supabase Config</span>
         </button>

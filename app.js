@@ -297,6 +297,12 @@ document.addEventListener('DOMContentLoaded', () => {
   clearLoginFields();
   setTimeout(clearLoginFields, 100);
   setTimeout(clearLoginFields, 300);
+
+  // Auto-open Monitoring submenu on page load (default view is single-flow)
+  const submenu = document.getElementById('submenuMonitoring');
+  const menuBtn = document.getElementById('menuMonitoring');
+  if (submenu) submenu.classList.add('open');
+  if (menuBtn) menuBtn.classList.add('open');
 });
 
 window.addEventListener('load', () => {
@@ -660,6 +666,16 @@ function renderProjectView(units, tableBodyId, ganttBodyId, prefix) {
 }
 
 // Switch between Main Views (Overview, Multi-Project, Pengaturan, Project PT)
+// Toggle sidebar Monitoring sub-menu accordion
+function toggleMonitoringMenu() {
+  const submenu = document.getElementById('submenuMonitoring');
+  const menuBtn = document.getElementById('menuMonitoring');
+  if (!submenu) return;
+  const isOpen = submenu.classList.contains('open');
+  submenu.classList.toggle('open', !isOpen);
+  if (menuBtn) menuBtn.classList.toggle('open', !isOpen);
+}
+
 function switchView(viewName) {
   const viewSingle     = document.getElementById('viewSingleFlow');
   const viewMulti      = document.getElementById('viewMultiProject');
@@ -672,7 +688,18 @@ function switchView(viewName) {
 
   // Hide all sections first
   [viewSingle, viewMulti, viewPengaturan, viewProjectPT].forEach(v => v && v.classList.remove('active'));
+  // Clear all submenu-item active states
   [tabSingle, tabMulti, tabProjectPT].forEach(t => t && t.classList.remove('active'));
+
+  const monitoringViews = ['single-flow', 'multi-project', 'project-pt'];
+
+  // Auto open the monitoring submenu when navigating to a monitoring view
+  if (monitoringViews.includes(viewName)) {
+    const submenu = document.getElementById('submenuMonitoring');
+    const menuBtn = document.getElementById('menuMonitoring');
+    if (submenu) submenu.classList.add('open');
+    if (menuBtn) menuBtn.classList.add('open');
+  }
 
   if (viewName === 'single-flow') {
     if (viewSingle) viewSingle.classList.add('active');
