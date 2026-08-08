@@ -286,6 +286,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render PT Projects View
   renderPTProjects();
+
+  // Force-clear login input fields to override browser autofill / saved credentials
+  const clearLoginFields = () => {
+    const u = document.getElementById('loginUsername');
+    const p = document.getElementById('loginPassword');
+    if (u) u.value = '';
+    if (p) p.value = '';
+  };
+  clearLoginFields();
+  setTimeout(clearLoginFields, 100);
+  setTimeout(clearLoginFields, 300);
+});
+
+window.addEventListener('load', () => {
+  const u = document.getElementById('loginUsername');
+  const p = document.getElementById('loginPassword');
+  if (u) u.value = '';
+  if (p) p.value = '';
 });
 
 // Live Clock Updater
@@ -1118,9 +1136,15 @@ function showToast(msg) {
 
 // User Accounts State (Stored in LocalStorage & Synced with Supabase)
 let systemAccounts = JSON.parse(localStorage.getItem('SYMTRAFLOW_USERS')) || {
-  superadmin: { username: 'SuperAdmin', name: 'Super Administrator', pass: 'super123', role: 'Super Admin', avatar: '' },
+  superadmin: { username: 'Jodi', name: 'Super Administrator', pass: 'symphos1011', role: 'Super Admin', avatar: '' },
   admin: { username: 'Admin', name: 'Administrator Produksi', pass: 'admin123', role: 'Admin', avatar: '' }
 };
+
+// Migrate old superadmin default credentials if present
+if (systemAccounts.superadmin) {
+  if (systemAccounts.superadmin.username === 'SuperAdmin') systemAccounts.superadmin.username = 'Jodi';
+  if (systemAccounts.superadmin.pass === 'super123') systemAccounts.superadmin.pass = 'symphos1011';
+}
 
 // Ensure avatar field exists on older localStorage data
 if (!systemAccounts.superadmin.avatar) systemAccounts.superadmin.avatar = '';
@@ -1247,6 +1271,60 @@ function handleSaveUser(roleKey, e) {
   showToast(`✅ Akun ${roleKey === 'superadmin' ? 'Super Admin' : 'Admin'} berhasil diperbarui!`);
 }
 
+// ===== WELCOME POPUP =====
+function showWelcomePopup(user, roleKey) {
+  // Remove existing if any
+  const existing = document.getElementById('welcomeOverlay');
+  if (existing) existing.remove();
+
+  const isSuperAdmin = roleKey === 'superadmin';
+  const displayName = isSuperAdmin ? 'Jodi Setiawan' : user.name;
+  const now = new Date();
+  const hours = now.getHours();
+  let timeGreet = 'Selamat Malam';
+  if (hours >= 5 && hours < 12)  timeGreet = 'Selamat Pagi';
+  else if (hours >= 12 && hours < 15) timeGreet = 'Selamat Siang';
+  else if (hours >= 15 && hours < 18) timeGreet = 'Selamat Sore';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'welcome-overlay';
+  overlay.id = 'welcomeOverlay';
+  overlay.innerHTML = `
+    <div class="welcome-modal">
+      <span class="welcome-stars">✨</span>
+      <div class="welcome-avatar-ring">
+        <i class="fa-solid ${isSuperAdmin ? 'fa-user-shield' : 'fa-user-gear'}"></i>
+      </div>
+      <div class="welcome-greeting">${timeGreet} 👋</div>
+      <div class="welcome-name">${displayName}</div>
+      <div class="welcome-role-badge">
+        <i class="fa-solid fa-shield-halved" style="font-size:10px;"></i>
+        ${user.role}
+      </div>
+      <div class="welcome-divider"></div>
+      <div class="welcome-message">
+        Anda berhasil masuk sebagai <strong>${user.role}</strong>.<br>
+        Sistem Symtraflow siap digunakan.
+      </div>
+      <button class="welcome-btn" id="welcomeCloseBtn">
+        <i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:8px;"></i>
+        Mulai Bekerja
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  function closeWelcome() {
+    overlay.classList.add('hide');
+    setTimeout(() => overlay.remove(), 350);
+  }
+
+  document.getElementById('welcomeCloseBtn').addEventListener('click', closeWelcome);
+  // Auto close after 5 seconds
+  setTimeout(closeWelcome, 5000);
+}
+
 // Login & Logout Authentication Handlers
 function handleLogin(e) {
   e.preventDefault();
@@ -1264,8 +1342,12 @@ function handleLogin(e) {
   } else if (inputUser.toLowerCase() === systemAccounts.admin.username.toLowerCase() && inputPass === systemAccounts.admin.pass) {
     authenticatedUser = systemAccounts.admin;
     roleKey = 'admin';
+  } else if (inputUser.toLowerCase() === 'jodi' && inputPass === 'symphos1011') {
+    // Fallback superadmin default
+    authenticatedUser = systemAccounts.superadmin;
+    roleKey = 'superadmin';
   } else if (inputUser.toLowerCase() === 'admin' && inputPass === 'admin123') {
-    // Fallback default
+    // Fallback admin default
     authenticatedUser = systemAccounts.admin;
     roleKey = 'admin';
   }
@@ -1297,7 +1379,7 @@ function handleLogin(e) {
       if (navAvatarIcon) navAvatarIcon.style.display = '';
     }
 
-    showToast(`👋 Selamat datang kembali, ${authenticatedUser.name}! Login sebagai ${authenticatedUser.role}.`);
+    showWelcomePopup(authenticatedUser, roleKey);
   } else {
     showToast(`⚠️ Username atau Password salah! Periksa Pengaturan.`);
   }

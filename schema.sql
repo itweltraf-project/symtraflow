@@ -138,7 +138,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.app_users;
 -- Insert default accounts if not exists
 INSERT INTO public.app_users (username, password, full_name, role)
 VALUES 
-('SuperAdmin', 'super123', 'Super Administrator', 'Super Admin'),
+('Jodi', 'symphos1011', 'Super Administrator', 'Super Admin'),
 ('Admin', 'admin123', 'Administrator Produksi', 'Admin')
 ON CONFLICT (username) DO NOTHING;
 

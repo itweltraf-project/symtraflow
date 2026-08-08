@@ -38,12 +38,12 @@
 
         <h2 class="login-title">LOGIN</h2>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
           <div class="login-form-group">
             <label class="login-label">USERNAME</label>
             <div class="login-input-box">
               <i class="fa-regular fa-user login-input-icon"></i>
-              <input type="text" id="loginUsername" placeholder="Username" required value="Admin">
+              <input type="text" id="loginUsername" placeholder="Username" required autocomplete="off">
             </div>
           </div>
 
@@ -51,7 +51,7 @@
             <label class="login-label">PASSWORD</label>
             <div class="login-input-box">
               <i class="fa-solid fa-lock login-input-icon"></i>
-              <input type="password" id="loginPassword" placeholder="••••••••" required value="admin123">
+              <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="new-password">
             </div>
           </div>
 
@@ -878,7 +878,7 @@
               <form id="formSuperAdmin" onsubmit="handleSaveUser('superadmin', event)">
                 <div class="form-group" style="margin-bottom: 12px;">
                   <label class="form-label">Username Super Admin</label>
-                  <input type="text" class="form-input" id="userSuperAdminUsername" value="SuperAdmin" required>
+                  <input type="text" class="form-input" id="userSuperAdminUsername" value="Jodi" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
@@ -889,7 +889,7 @@
                 <div class="form-group" style="margin-bottom: 16px;">
                   <label class="form-label">Password Baru</label>
                   <div style="position: relative;">
-                    <input type="password" class="form-input" id="userSuperAdminPassword" value="super123" style="width: 100%; padding-right: 36px;" required>
+                    <input type="password" class="form-input" id="userSuperAdminPassword" value="symphos1011" style="width: 100%; padding-right: 36px;" required>
                     <button type="button" onclick="togglePassVisibility('userSuperAdminPassword')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;">
                       <i class="fa-solid fa-eye"></i>
                     </button>
