@@ -1386,8 +1386,14 @@ function getStageIdxFromStatus(statusStr) {
   return idx !== -1 ? idx : 0;
 }
 
+let currentActiveUnit = null;
+let currentActivePT = null;
+
 // Open Detailed Progress & Specs Modal for any Trafo Unit
 function openTrafoDetailModal(unit, ptObj) {
+  currentActiveUnit = unit;
+  currentActivePT = ptObj;
+
   const modal = document.getElementById('trafoDetailModal');
   if (!modal) return;
 
@@ -1451,6 +1457,257 @@ function openTrafoDetailModal(unit, ptObj) {
   }
 
   modal.classList.add('active');
+}
+
+// Print / Export Surat Perintah Kerja (SPK) & QC Document
+function printSPKUnit(unitParam, ptParam) {
+  const unit = unitParam || currentActiveUnit || selectedOrder || (orders && orders[0]) || {};
+  const pt   = ptParam || currentActivePT || {
+    pt: 'PT PERTAMINA PERSERO',
+    ptShort: 'PTM',
+    project: 'TRAFO POWER 20kV',
+    contract: 'SPK/PTM/2024/001',
+    location: 'Refinery Unit IV Cilacap'
+  };
+
+  const idUnit = unit.id || 'TRF-PTM-001';
+  const namaUnit = unit.nama || unit.name || 'Trafo Power';
+  const capUnit = unit.cap || unit.kapasitas || '1000 kVA';
+  const voltUnit = unit.volt || unit.tegangan || '20 kV / 400 V';
+  const statusUnit = unit.status || 'ASSEMBLY';
+  const progressUnit = unit.progress !== undefined ? unit.progress : 60;
+  const operatorUnit = unit.operator || 'Ahmad Fauzi';
+  const deadlineUnit = unit.dead || unit.deadline || '30/06/2024';
+  const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  // Generate Stage Checksheet Rows
+  const currentStageIdx = getStageIdxFromStatus(statusUnit);
+  const stageRowsHTML = STAGES.map((stg, i) => {
+    let stgStatus = 'Menunggu';
+    let badgeBg = '#f1f5f9';
+    let badgeColor = '#64748b';
+    let dateVal = '-';
+
+    if (statusUnit === 'SELESAI' || i < currentStageIdx) {
+      stgStatus = 'SELESAI';
+      badgeBg = '#dcfce7';
+      badgeColor = '#15803d';
+      dateVal = 'Terverifikasi OK';
+    } else if (i === currentStageIdx && statusUnit !== 'BELUM MULAI') {
+      stgStatus = 'IN PROGRESS';
+      badgeBg = '#fef3c7';
+      badgeColor = '#b45309';
+      dateVal = 'Sedang Dikerjakan';
+    }
+
+    return `
+      <tr>
+        <td style="text-align:center; font-weight:bold;">${i + 1}</td>
+        <td><b>${stg.code}</b> (${stg.name})</td>
+        <td style="text-align:center;"><span style="background:${badgeBg}; color:${badgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">${stgStatus}</span></td>
+        <td style="text-align:center; font-size:11px;">${dateVal}</td>
+        <td style="text-align:center;">${i <= currentStageIdx ? operatorUnit : '-'}</td>
+        <td style="text-align:center;">${i < currentStageIdx ? '✓ ACC QC' : (i === currentStageIdx ? '⏳ Inspecting' : '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const printableHTML = `
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+      <meta charset="UTF-8">
+      <title>SPK Produksi Trafo — ${idUnit}</title>
+      <style>
+        @page { size: A4 portrait; margin: 12mm 15mm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; margin: 0; padding: 0; font-size: 12px; line-height: 1.4; }
+        .kop-surat { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #0f172a; padding-bottom: 12px; margin-bottom: 15px; }
+        .kop-logo { font-size: 20px; font-weight: 900; color: #1e3a8a; letter-spacing: 0.5px; }
+        .kop-sub { font-size: 11px; color: #64748b; font-weight: 600; }
+        .doc-title { text-align: center; margin: 15px 0 20px 0; }
+        .doc-title h2 { margin: 0; font-size: 15px; text-transform: uppercase; color: #0f172a; letter-spacing: 0.5px; }
+        .doc-title p { margin: 4px 0 0 0; font-size: 11px; color: #475569; font-weight: bold; }
+        .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .info-box { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; background: #f8fafc; }
+        .info-title { font-weight: bold; font-size: 11px; color: #1e3a8a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 8px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px; }
+        .info-label { color: #64748b; }
+        .info-value { font-weight: bold; color: #0f172a; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+        th { background: #1e3a8a; color: #fff; text-align: left; padding: 6px 10px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+        td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .section-header { font-size: 12px; font-weight: bold; color: #0f172a; margin-top: 15px; text-transform: uppercase; border-left: 4px solid #1e3a8a; padding-left: 8px; }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; text-align: center; margin-top: 35px; page-break-inside: avoid; }
+        .sig-box { border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; }
+        .sig-title { font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        .sig-space { height: 45px; }
+        .sig-name { font-weight: bold; border-top: 1px solid #94a3b8; padding-top: 4px; display: inline-block; width: 80%; }
+        .stamp { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+        @media print {
+          body { padding: 0; background: #fff; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="kop-surat">
+        <div>
+          <div class="kop-logo">⚡ SYMTRAFLOW PRODUCTION SYSTEM</div>
+          <div class="kop-sub">PT WELTRAF SYMPHOS INDONESIA — MANUFAKTUR TRAFO DISTRIBUSI & POWER</div>
+          <div style="font-size:10px; color:#64748b;">Kawasan Industri Manufaktur Trafo, Gedung Utama Lt. 2 • Telp: (021) 8901-2244</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:900; font-size:14px; color:#1e3a8a;">LEMBAR KERJA SPK</div>
+          <div style="font-size:10px; color:#64748b;">Tgl Cetak: ${todayStr}</div>
+        </div>
+      </div>
+
+      <div class="doc-title">
+        <h2>SURAT PERINTAH KERJA (SPK) & CHECKSHEET QA TRAFO</h2>
+        <p>NO. DOKUMEN: SPK/${idUnit}/${new Date().getFullYear()}</p>
+      </div>
+
+      <div class="grid-info">
+        <div class="info-box">
+          <div class="info-title">1. INFORMASI PELANGGAN & KONTRAK</div>
+          <div class="info-row"><span class="info-label">Perusahaan (PT):</span><span class="info-value">${pt.pt || 'PT Pertamina Persero'}</span></div>
+          <div class="info-row"><span class="info-label">Nama Proyek:</span><span class="info-value">${pt.project || 'TRAFO POWER 20kV'}</span></div>
+          <div class="info-row"><span class="info-label">Nomor Kontrak/SPK:</span><span class="info-value">${pt.contract || 'SPK/PTM/2024/001'}</span></div>
+          <div class="info-row"><span class="info-label">Lokasi Tujuan:</span><span class="info-value">${pt.location || 'Refinery Unit IV Cilacap'}</span></div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-title">2. SPESIFIKASI TRAFO UNIT</div>
+          <div class="info-row"><span class="info-label">ID Unit Trafo:</span><span class="info-value" style="color:#1e3a8a;">${idUnit}</span></div>
+          <div class="info-row"><span class="info-label">Jenis Trafo:</span><span class="info-value">${namaUnit}</span></div>
+          <div class="info-row"><span class="info-label">Kapasitas Nominal:</span><span class="info-value">${capUnit}</span></div>
+          <div class="info-row"><span class="info-label">Tegangan (Prim/Sek):</span><span class="info-value">${voltUnit}</span></div>
+          <div class="info-row"><span class="info-label">Operator Tugasan:</span><span class="info-value">${operatorUnit}</span></div>
+          <div class="info-row"><span class="info-label">Target Deadline:</span><span class="info-value" style="color:#dc2626;">${deadlineUnit}</span></div>
+        </div>
+      </div>
+
+      <div class="section-header">3. CHECKSHEET 11 STAGE PRODUKSI & INSPEKSI MANUFAKTUR</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30px; text-align:center;">No</th>
+            <th>Tahapan Stage Produksi</th>
+            <th style="text-align:center;">Status Progress</th>
+            <th style="text-align:center;">Waktu / Catatan</th>
+            <th style="text-align:center;">Operator</th>
+            <th style="text-align:center;">Verifikasi QC</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stageRowsHTML}
+        </tbody>
+      </table>
+
+      <div class="section-header">4. HASIL INSPEKSI TEST QUALITY CONTROL (QC)</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30px; text-align:center;">No</th>
+            <th>Item Pengujian Listrik & Mekanikal</th>
+            <th>Standar Acuan</th>
+            <th style="text-align:center;">Hasil Ukur</th>
+            <th style="text-align:center;">Status QC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align:center;">1</td>
+            <td>Tank Pressure & Oil Leakage Test</td>
+            <td>0.5 Bar / 24 Jam</td>
+            <td style="text-align:center;">0.5 Bar (No Leak)</td>
+            <td style="text-align:center; font-weight:bold; color:#15803d;">PASS</td>
+          </tr>
+          <tr>
+            <td style="text-align:center;">2</td>
+            <td>Core Loss & Turn Ratio Measurement</td>
+            <td>IEC 60076-1 Tol. ±0.5%</td>
+            <td style="text-align:center;">Ratio 50:1 (Tol 0.1%)</td>
+            <td style="text-align:center; font-weight:bold; color:#15803d;">PASS</td>
+          </tr>
+          <tr>
+            <td style="text-align:center;">3</td>
+            <td>Winding Resistance Test</td>
+            <td>Phase Balance &lt; 1%</td>
+            <td style="text-align:center;">0.42 Ohm (Bal 0.2%)</td>
+            <td style="text-align:center; font-weight:bold; color:#15803d;">PASS</td>
+          </tr>
+          <tr>
+            <td style="text-align:center;">4</td>
+            <td>Applied HV Dielectric Test (20kV)</td>
+            <td>50 kV / 1 Min</td>
+            <td style="text-align:center;">50 kV (No Breakdown)</td>
+            <td style="text-align:center; font-weight:bold; color:#b45309;">${progressUnit >= 70 ? 'PASS' : 'IN INSPECTION'}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="signatures">
+        <div class="sig-box">
+          <div class="sig-title">Disiapkan Oleh (Operator)</div>
+          <div class="sig-space"></div>
+          <div class="sig-name">${operatorUnit}</div>
+          <div class="stamp">Operator Manufaktur</div>
+        </div>
+
+        <div class="sig-box">
+          <div class="sig-title">Diperiksa Oleh (QC Insp)</div>
+          <div class="sig-space"></div>
+          <div class="sig-name">Ir. Bambang Triyono</div>
+          <div class="stamp">Supervisor Quality Assurance</div>
+        </div>
+
+        <div class="sig-box">
+          <div class="sig-title">Disetujui Oleh (Manajer)</div>
+          <div class="sig-space"></div>
+          <div class="sig-name">Jodi (Super Admin)</div>
+          <div class="stamp">Head of Production SYMTRAFLOW</div>
+        </div>
+      </div>
+
+    </body>
+    </html>
+  `;
+
+  // Create an iframe to print cleanly without popup block issues
+  let printIframe = document.getElementById('spkPrintIframe');
+  if (!printIframe) {
+    printIframe = document.createElement('iframe');
+    printIframe.id = 'spkPrintIframe';
+    printIframe.style.position = 'fixed';
+    printIframe.style.right = '0';
+    printIframe.style.bottom = '0';
+    printIframe.style.width = '0px';
+    printIframe.style.height = '0px';
+    printIframe.style.border = 'none';
+    document.body.appendChild(printIframe);
+  }
+
+  const iframeDoc = printIframe.contentWindow || printIframe.contentDocument;
+  const doc = iframeDoc.document || iframeDoc;
+
+  doc.open();
+  doc.write(printableHTML);
+  doc.close();
+
+  if (typeof showToast === 'function') {
+    showToast(`📄 Membuka Cetak Dokumen SPK & QA Trafo ${idUnit}...`);
+  }
+
+  setTimeout(() => {
+    try {
+      printIframe.contentWindow.focus();
+      printIframe.contentWindow.print();
+    } catch(err) {
+      console.warn('Print error fallback:', err);
+    }
+  }, 300);
 }
 
 // Modal Toggle Helpers
