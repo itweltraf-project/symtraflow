@@ -511,7 +511,12 @@
             <div class="project-title-box">
               <span class="project-code-title">PROJECT: PRJ-240522-01 - PROYEK TRAFO 10 UNIT</span>
             </div>
-            <span class="project-unit-badge">10 UNIT TRAFO</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn-primary" onclick="openAddTrafoModal('PRJ-240522-01')" style="padding:4px 10px; font-size:11px;">
+                <i class="fa-solid fa-plus-circle"></i> Tambah Trafo
+              </button>
+              <span class="project-unit-badge">10 UNIT TRAFO</span>
+            </div>
           </div>
 
           <!-- Micro KPI Summary -->
@@ -658,7 +663,12 @@
             <div class="project-title-box">
               <span class="project-code-title">PROJECT: PRJ-240522-02 - PROYEK TRAFO 5 UNIT</span>
             </div>
-            <span class="project-unit-badge">5 UNIT TRAFO</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn-primary" onclick="openAddTrafoModal('PRJ-240522-02')" style="padding:4px 10px; font-size:11px;">
+                <i class="fa-solid fa-plus-circle"></i> Tambah Trafo
+              </button>
+              <span class="project-unit-badge">5 UNIT TRAFO</span>
+            </div>
           </div>
 
           <!-- Micro KPI Summary -->
@@ -835,6 +845,27 @@
 
       <!-- ================= VIEW 3: PROJECT PT (HIERARKI PERUSAHAAN & TRAFO) ================= -->
       <div class="view-section" id="viewProjectPT">
+        <!-- Top Toolbar Header for PT Projects -->
+        <div style="display:flex; justify-space-between; align-items:center; background:var(--bg-card); padding:16px 22px; border-radius:var(--radius-lg); border:1px solid var(--border-color); box-shadow:var(--shadow-sm); margin-bottom:20px; flex-wrap:wrap; gap:14px;">
+          <div>
+            <div style="font-size:16px; font-weight:800; color:var(--text-dark); display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-building-flag" style="color:var(--color-primary); font-size:18px;"></i>
+              Hierarki Proyek Perusahaan & Manajamen Trafo
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
+              Kelola daftar proyek tiap perusahaan (misalnya PT Pertamina Persero) dan tambahkan unit trafo baru di bawahnya tanpa batasan orderan.
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-primary" onclick="openAddTrafoModal()">
+              <i class="fa-solid fa-plus-circle"></i> + Tambah Trafo Unit
+            </button>
+            <button class="btn-secondary" onclick="openAddPTProjectModal()" style="border-color: var(--color-primary); color: var(--color-primary);">
+              <i class="fa-solid fa-folder-plus"></i> + Tambah Proyek PT Baru
+            </button>
+          </div>
+        </div>
+
         <div style="display:flex; flex-direction:column; gap:20px;" id="ptProjectsContainer">
           <!-- Rendered dynamically via JS renderPTProjects() -->
         </div>
@@ -1246,6 +1277,180 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeModal('supabaseModal')">Batal</button>
           <button type="submit" class="btn-primary" style="background-color: #10b981;"><i class="fa-solid fa-plug"></i> Hubungkan Supabase</button>
+        </div>
+      </form>
+    </div>
+  <!-- Modal: Tambah Unit Trafo Ke Proyek -->
+  <div class="modal-overlay" id="addTrafoModal">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-plus-circle" style="color: var(--color-primary);"></i> Tambah Unit Trafo Ke Proyek</span>
+        <button class="modal-close-btn" onclick="closeModal('addTrafoModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="addTrafoForm" onsubmit="handleAddTrafoSubmit(event)">
+        <div class="modal-body">
+          
+          <div class="form-group">
+            <label class="form-label">Pilih Proyek / Perusahaan (PT)</label>
+            <select class="form-select" id="inpTrafoTargetProject" onchange="onTargetProjectChange()" required>
+              <!-- Populated dynamically via JS -->
+            </select>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">ID / Kode Trafo</label>
+              <input type="text" class="form-input" id="inpTrafoCode" placeholder="TRF-PTM-006" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama / Jenis Trafo</label>
+              <input type="text" class="form-input" id="inpTrafoNamePT" placeholder="Trafo Power 1000 kVA" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Kapasitas</label>
+              <select class="form-select" id="inpTrafoCapPT">
+                <option value="100 kVA">100 kVA</option>
+                <option value="250 kVA">250 kVA</option>
+                <option value="500 kVA">500 kVA</option>
+                <option value="750 kVA">750 kVA</option>
+                <option value="1000 kVA" selected>1000 kVA</option>
+                <option value="1500 kVA">1500 kVA</option>
+                <option value="2000 kVA">2000 kVA</option>
+                <option value="2500 kVA">2500 kVA</option>
+                <option value="3000 kVA">3000 kVA</option>
+                <option value="5000 kVA">5000 kVA</option>
+                <option value="7500 kVA">7500 kVA</option>
+                <option value="10000 kVA">10000 kVA</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tegangan Nominal</label>
+              <select class="form-select" id="inpTrafoVoltPT">
+                <option value="20 kV / 400 V" selected>20 kV / 400 V</option>
+                <option value="20 kV / 6300 V">20 kV / 6300 V</option>
+                <option value="30 kV / 400 V">30 kV / 400 V</option>
+                <option value="30 kV / 6300 V">30 kV / 6300 V</option>
+                <option value="70 kV / 6300 V">70 kV / 6300 V</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Status Stage Awal</label>
+              <select class="form-select" id="inpTrafoStatusPT">
+                <option value="BELUM MULAI">BELUM MULAI</option>
+                <option value="TANK MAKING">1. TANK MAKING</option>
+                <option value="CORE MAKING">2. CORE MAKING</option>
+                <option value="COIL MAKING">3. COIL MAKING</option>
+                <option value="ASSEMBLY" selected>4. ASSEMBLY</option>
+                <option value="CONNECTION">5. CONNECTION</option>
+                <option value="FINAL ASSEMBLY">6. FINAL ASSEMBLY</option>
+                <option value="INTERNAL TEST">7. INTERNAL TEST</option>
+                <option value="FINISHING">8. FINISHING</option>
+                <option value="FAT">9. FAT</option>
+                <option value="PUNCHLIST">10. PUNCHLIST</option>
+                <option value="DELIVERY">11. DELIVERY</option>
+                <option value="SELESAI">SELESAI</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Progress (%)</label>
+              <input type="number" class="form-input" id="inpTrafoProgressPT" min="0" max="100" value="0" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Operator Penanggung Jawab</label>
+              <select class="form-select" id="inpTrafoOperatorPT">
+                <option value="Ahmad Fauzi">Ahmad Fauzi</option>
+                <option value="Rudi Hartono">Rudi Hartono</option>
+                <option value="Joko Susilo">Joko Susilo</option>
+                <option value="Budi Santoso">Budi Santoso</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Deadline</label>
+              <input type="date" class="form-input" id="inpTrafoDeadlinePT" required>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('addTrafoModal')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-plus"></i> Tambahkan Unit Trafo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Proyek PT Baru -->
+  <div class="modal-overlay" id="addPTProjectModal">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-folder-plus" style="color: var(--color-primary);"></i> Tambah Proyek Perusahaan (PT) Baru</span>
+        <button class="modal-close-btn" onclick="closeModal('addPTProjectModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="addPTProjectForm" onsubmit="handleAddPTProjectSubmit(event)">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Nama Perusahaan (PT)</label>
+              <input type="text" class="form-input" id="inpPTName" placeholder="PT Badak NGL" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kode Singkatan PT</label>
+              <input type="text" class="form-input" id="inpPTShort" placeholder="BDK" required maxlength="10">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Nama Proyek</label>
+              <input type="text" class="form-input" id="inpPTProjectTitle" placeholder="TRAFO SUBSTATION 33kV" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Warna Tema PT</label>
+              <select class="form-select" id="inpPTColor">
+                <option value="#16a34a|#dcfce7">Hijau (Pertamina Theme)</option>
+                <option value="#2563eb|#dbeafe">Biru (PLN Theme)</option>
+                <option value="#d97706|#fef3c7">Amber/Kuning (Pupuk Kaltim Theme)</option>
+                <option value="#7c3aed|#f3e8ff">Ungu (Purple Theme)</option>
+                <option value="#0891b2|#cffaff">Cyan (Cyan Theme)</option>
+                <option value="#dc2626|#fee2e2">Merah (Red Theme)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Nomor Kontrak / SPK</label>
+              <input type="text" class="form-input" id="inpPTContract" placeholder="SPK/BDK/2024/001" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lokasi Proyek</label>
+              <input type="text" class="form-input" id="inpPTLocation" placeholder="Bontang, Kalimantan Timur" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Tanggal Mulai Proyek</label>
+              <input type="date" class="form-input" id="inpPTStartDate" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tanggal Target Selesai</label>
+              <input type="date" class="form-input" id="inpPTEndDate" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('addPTProjectModal')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Proyek PT</button>
         </div>
       </form>
     </div>

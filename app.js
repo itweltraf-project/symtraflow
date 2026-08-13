@@ -754,7 +754,7 @@ function renderPTProjects() {
     const selesai    = pt.units.filter(u => u.status === 'SELESAI').length;
     const proses     = pt.units.filter(u => u.status !== 'SELESAI' && u.status !== 'BELUM MULAI' && u.progress > 0).length;
     const belumMulai = pt.units.filter(u => u.status === 'BELUM MULAI').length;
-    const avgProgress = Math.round(pt.units.reduce((s, u) => s + u.progress, 0) / totalUnits);
+    const avgProgress = totalUnits > 0 ? Math.round(pt.units.reduce((s, u) => s + u.progress, 0) / totalUnits) : 0;
 
     // Rows for each trafo unit
     const unitRows = pt.units.map(u => {
@@ -781,6 +781,14 @@ function renderPTProjects() {
           </td>
           <td style="font-size:11px; color:#64748b;">${u.dead}</td>
           <td style="font-size:11px; color:#0f172a; font-weight:500;">${u.operator}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn-secondary" onclick="event.stopPropagation(); openTrafoDetailModalById('${pt.id}', '${u.id}')" style="padding:3px 8px; font-size:10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; margin-right:4px;" title="Lihat Detail Trafo">
+              <i class="fa-solid fa-eye"></i> Detail
+            </button>
+            <button class="btn-icon-danger" onclick="event.stopPropagation(); deleteTrafoUnit('${pt.id}', '${u.id}')" title="Hapus Trafo Unit">
+              <i class="fa-solid fa-trash" style="font-size:10px;"></i>
+            </button>
+          </td>
         </tr>
       `;
     }).join('');
@@ -790,7 +798,7 @@ function renderPTProjects() {
     card.style.marginBottom = '0';
     card.innerHTML = `
       <!-- PT Header Bar -->
-      <div style="background: linear-gradient(135deg, ${pt.ptColor} 0%, ${pt.ptColor}cc 100%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+      <div style="background: linear-gradient(135deg, ${pt.ptColor} 0%, ${pt.ptColor}cc 100%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:16px;">
           <div style="width:52px; height:52px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:#fff; letter-spacing:-1px; flex-shrink:0;">
             ${pt.ptShort}
@@ -807,23 +815,28 @@ function renderPTProjects() {
             </div>
           </div>
         </div>
-        <div style="display:flex; gap:10px; flex-shrink:0;">
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
-            <div style="font-size:22px; font-weight:900; color:#fff;">${totalUnits}</div>
-            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Total Unit</div>
+
+        <div style="display:flex; gap:10px; flex-shrink:0; align-items:center; flex-wrap:wrap;">
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+            <div style="font-size:20px; font-weight:900; color:#fff;">${totalUnits}</div>
+            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Total Unit</div>
           </div>
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
-            <div style="font-size:22px; font-weight:900; color:#4ade80;">${selesai}</div>
-            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Selesai</div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+            <div style="font-size:20px; font-weight:900; color:#4ade80;">${selesai}</div>
+            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Selesai</div>
           </div>
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
-            <div style="font-size:22px; font-weight:900; color:#fbbf24;">${proses}</div>
-            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">On Process</div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+            <div style="font-size:20px; font-weight:900; color:#fbbf24;">${proses}</div>
+            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">On Process</div>
           </div>
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:10px 16px; text-align:center; min-width:64px;">
-            <div style="font-size:22px; font-weight:900; color:rgba(255,255,255,0.6);">${belumMulai}</div>
-            <div style="font-size:10px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Belum Mulai</div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+            <div style="font-size:20px; font-weight:900; color:rgba(255,255,255,0.6);">${belumMulai}</div>
+            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Belum Mulai</div>
           </div>
+
+          <button class="btn-add-trafo-pt" onclick="openAddTrafoModal('${pt.id}')" title="Tambah trafo baru di bawah ${pt.pt}">
+            <i class="fa-solid fa-plus-circle"></i> Tambah Trafo
+          </button>
         </div>
       </div>
 
@@ -839,11 +852,21 @@ function renderPTProjects() {
         </div>
       </div>
 
+      <!-- Toolbar Add Unit Button -->
+      <div style="background:#f8fafc; padding:8px 16px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:11px; font-weight:700; color:var(--text-muted);">
+          <i class="fa-solid fa-boxes-stacked" style="color:${pt.ptColor};"></i> DAFTAR UNIT TRAFO (${totalUnits} UNIT)
+        </span>
+        <button class="btn-primary" onclick="openAddTrafoModal('${pt.id}')" style="padding:4px 10px; font-size:11px; background:${pt.ptColor};">
+          <i class="fa-solid fa-plus"></i> Tambah Trafo ke ${pt.ptShort}
+        </button>
+      </div>
+
       <!-- Trafo Units Table -->
       <div style="padding:0; overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:12px;">
           <thead>
-            <tr style="background:#f8fafc; border-bottom:2px solid var(--border-color);">
+            <tr style="background:#ffffff; border-bottom:2px solid var(--border-color);">
               <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; width:40px;">No</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">ID Trafo</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Nama</th>
@@ -853,32 +876,327 @@ function renderPTProjects() {
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Progress</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Deadline</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Operator</th>
+              <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Aksi</th>
             </tr>
           </thead>
           <tbody id="ptTbody-${pt.id}" style="font-size:12px;">
-            ${unitRows}
+            ${unitRows || '<tr><td colspan="10" style="text-align:center; padding:20px; color:#94a3b8;">Belum ada trafo dalam proyek ini. Klik <b>+ Tambah Trafo</b> di atas untuk menambahkan.</td></tr>'}
           </tbody>
         </table>
       </div>
     `;
 
-    // Add hover effect & click handler to rows
     container.appendChild(card);
 
     // Striped rows effect & modal trigger on row click
     const rows = card.querySelectorAll('tbody tr');
     rows.forEach((row, i) => {
-      if (i % 2 === 0) row.style.background = '#fafafa';
-      row.style.borderBottom = '1px solid #f1f5f9';
-      row.style.cursor = 'pointer';
-      row.addEventListener('mouseenter', () => row.style.background = pt.ptBg);
-      row.addEventListener('mouseleave', () => row.style.background = i % 2 === 0 ? '#fafafa' : '#fff');
-      row.addEventListener('click', () => {
-        openTrafoDetailModal(pt.units[i], pt);
-      });
+      if (pt.units[i]) {
+        if (i % 2 === 0) row.style.background = '#fafafa';
+        row.style.borderBottom = '1px solid #f1f5f9';
+        row.style.cursor = 'pointer';
+        row.addEventListener('mouseenter', () => row.style.background = pt.ptBg);
+        row.addEventListener('mouseleave', () => row.style.background = i % 2 === 0 ? '#fafafa' : '#fff');
+        row.addEventListener('click', () => {
+          openTrafoDetailModal(pt.units[i], pt);
+        });
+      }
     });
   });
 }
+
+// Helper to populate project dropdown in modals
+function populateProjectDropdowns() {
+  const sel = document.getElementById('inpTrafoTargetProject');
+  if (!sel) return;
+  sel.innerHTML = '';
+
+  // 1. PT Projects
+  ptProjects.forEach(pt => {
+    const opt = document.createElement('option');
+    opt.value = pt.id;
+    opt.innerText = `${pt.pt} — ${pt.project} (${pt.units.length} Unit)`;
+    sel.appendChild(opt);
+  });
+
+  // 2. Multi-Projects
+  const optPrj1 = document.createElement('option');
+  optPrj1.value = 'PRJ-240522-01';
+  optPrj1.innerText = `PRJ-240522-01 — PROYEK TRAFO 10 UNIT (${prj1Units.length} Unit)`;
+  sel.appendChild(optPrj1);
+
+  const optPrj2 = document.createElement('option');
+  optPrj2.value = 'PRJ-240522-02';
+  optPrj2.innerText = `PRJ-240522-02 — PROYEK TRAFO 5 UNIT (${prj2Units.length} Unit)`;
+  sel.appendChild(optPrj2);
+}
+
+// Open Modal Add Trafo
+function openAddTrafoModal(projectId) {
+  populateProjectDropdowns();
+  const sel = document.getElementById('inpTrafoTargetProject');
+  if (projectId && sel) {
+    sel.value = projectId;
+  }
+  onTargetProjectChange();
+
+  // Set default deadline to +30 days from today
+  const dInp = document.getElementById('inpTrafoDeadlinePT');
+  if (dInp && !dInp.value) {
+    const nextMonth = new Date();
+    nextMonth.setDate(nextMonth.getDate() + 30);
+    dInp.value = nextMonth.toISOString().split('T')[0];
+  }
+
+  document.getElementById('addTrafoModal').classList.add('active');
+}
+
+// Triggered on target project dropdown change in Add Trafo Modal
+function onTargetProjectChange() {
+  const targetId = document.getElementById('inpTrafoTargetProject').value;
+  const codeInp = document.getElementById('inpTrafoCode');
+  const nameInp = document.getElementById('inpTrafoNamePT');
+
+  let defaultCode = '';
+  let defaultName = 'Trafo Power';
+
+  const ptObj = ptProjects.find(p => p.id === targetId);
+  if (ptObj) {
+    const count = ptObj.units.length + 1;
+    const numStr = String(count).padStart(3, '0');
+    defaultCode = `TRF-${ptObj.ptShort}-${numStr}`;
+    defaultName = ptObj.project.includes('DISTRIBUSI') ? 'Trafo Distribusi' : 'Trafo Power';
+  } else if (targetId === 'PRJ-240522-01') {
+    const count = prj1Units.length + 1;
+    const numStr = String(count).padStart(3, '0');
+    defaultCode = `TRF-240522-${numStr}`;
+  } else if (targetId === 'PRJ-240522-02') {
+    const count = prj2Units.length + 1;
+    const numStr = String(count).padStart(3, '0');
+    defaultCode = `TRF-240522-A${numStr}`;
+  }
+
+  if (codeInp) codeInp.value = defaultCode;
+  if (nameInp && !nameInp.value) nameInp.value = defaultName;
+}
+
+// Submit handler for adding a Trafo to a project
+function handleAddTrafoSubmit(e) {
+  e.preventDefault();
+  const targetId = document.getElementById('inpTrafoTargetProject').value;
+  const code     = document.getElementById('inpTrafoCode').value.trim();
+  const name     = document.getElementById('inpTrafoNamePT').value.trim();
+  const cap      = document.getElementById('inpTrafoCapPT').value;
+  const volt     = document.getElementById('inpTrafoVoltPT').value;
+  const status   = document.getElementById('inpTrafoStatusPT').value;
+  const progress = parseInt(document.getElementById('inpTrafoProgressPT').value) || 0;
+  const operator = document.getElementById('inpTrafoOperatorPT').value;
+  const deadlineRaw = document.getElementById('inpTrafoDeadlinePT').value;
+  const deadlineFormatted = formatDateDisplay(deadlineRaw);
+
+  const badgeMap = {
+    'SELESAI': 'badge-selesai',
+    'BELUM MULAI': 'badge-belum',
+    'FINISHING': 'badge-finishing',
+    'INTERNAL TEST': 'badge-internal',
+    'CORE MAKING': 'badge-core',
+    'COIL MAKING': 'badge-core',
+    'TANK MAKING': 'badge-tank'
+  };
+  const badge = badgeMap[status] || 'badge-assembly';
+  const stageIdx = getStageIdxFromStatus(status);
+
+  let projectTitle = 'Proyek';
+
+  // Check if target is a PT project
+  const targetPT = ptProjects.find(p => p.id === targetId);
+  if (targetPT) {
+    projectTitle = targetPT.pt;
+    const newUnit = {
+      no: targetPT.units.length + 1,
+      id: code,
+      nama: name,
+      cap: cap,
+      volt: volt,
+      status: status,
+      badge: badge,
+      progress: progress,
+      stage: status,
+      operator: operator,
+      dead: deadlineFormatted,
+      stageIdx: stageIdx
+    };
+    targetPT.units.push(newUnit);
+    renderPTProjects();
+  } else if (targetId === 'PRJ-240522-01') {
+    projectTitle = 'PROYEK TRAFO 10 UNIT';
+    const newUnit = {
+      no: prj1Units.length + 1,
+      id: code,
+      cap: cap,
+      volt: volt,
+      status: status,
+      badge: badge,
+      progress: progress,
+      stageIdx: stageIdx,
+      startCol: 1,
+      endCol: Math.max(1, Math.min(11, Math.ceil((progress || 10) / 10))),
+      operator: operator,
+      dead: deadlineFormatted
+    };
+    prj1Units.push(newUnit);
+    renderProjectView(prj1Units, 'prj1TableBody', 'prj1GanttBody', 'prj1');
+  } else if (targetId === 'PRJ-240522-02') {
+    projectTitle = 'PROYEK TRAFO 5 UNIT';
+    const newUnit = {
+      no: prj2Units.length + 1,
+      id: code,
+      cap: cap,
+      volt: volt,
+      status: status,
+      badge: badge,
+      progress: progress,
+      stageIdx: stageIdx,
+      startCol: 1,
+      endCol: Math.max(1, Math.min(11, Math.ceil((progress || 10) / 10))),
+      operator: operator,
+      dead: deadlineFormatted
+    };
+    prj2Units.push(newUnit);
+    renderProjectView(prj2Units, 'prj2TableBody', 'prj2GanttBody', 'prj2');
+  }
+
+  // Also add to global orders list for Single Flow view
+  const newOrder = {
+    id: code,
+    nama: `${name} (${projectTitle})`,
+    kapasitas: cap,
+    tegangan: volt,
+    status: status === 'BELUM MULAI' ? 'TANK MAKING' : status,
+    currentStageIndex: stageIdx,
+    progress: progress,
+    mulai: new Date().toLocaleDateString('id-ID'),
+    deadline: deadlineFormatted,
+    operator: operator,
+    operatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+    timeline: STAGES.map((s, idx) => ({
+      stage: s.code,
+      status: idx < stageIdx ? 'finished' : (idx === stageIdx ? 'process' : 'waiting'),
+      time: idx <= stageIdx ? 'Tercatat' : '-',
+      operator: operator
+    }))
+  };
+  orders.unshift(newOrder);
+
+  // Sync to Supabase if active
+  if (typeof createOrderInSupabase === 'function' && isSupabaseConfigured()) {
+    createOrderInSupabase({
+      id: newOrder.id,
+      nama: newOrder.nama,
+      kapasitas: newOrder.kapasitas,
+      tegangan: newOrder.tegangan,
+      status: newOrder.status,
+      current_stage_index: newOrder.currentStageIndex,
+      progress: newOrder.progress,
+      deadline: newOrder.deadline,
+      operator: newOrder.operator,
+      operator_avatar: newOrder.operatorAvatar,
+      timeline: newOrder.timeline
+    });
+  }
+
+  // Update main tables & KPI
+  document.getElementById('kpiTotalOrder').innerText = orders.length;
+  renderOrdersTable();
+  if (typeof initProgressChart === 'function') initProgressChart();
+
+  closeModal('addTrafoModal');
+  showToast(`✅ Trafo ${code} berhasil ditambahkan ke ${projectTitle}!`);
+}
+
+// Open Modal Add PT Project
+function openAddPTProjectModal() {
+  document.getElementById('addPTProjectModal').classList.add('active');
+}
+
+// Submit handler for creating a new PT Project
+function handleAddPTProjectSubmit(e) {
+  e.preventDefault();
+  const ptName    = document.getElementById('inpPTName').value.trim();
+  const ptShort   = document.getElementById('inpPTShort').value.trim().toUpperCase();
+  const projTitle = document.getElementById('inpPTProjectTitle').value.trim();
+  const colorVal  = document.getElementById('inpPTColor').value;
+  const contract  = document.getElementById('inpPTContract').value.trim();
+  const location  = document.getElementById('inpPTLocation').value.trim();
+  const startDate = document.getElementById('inpPTStartDate').value;
+  const endDate   = document.getElementById('inpPTEndDate').value;
+
+  const colorParts = colorVal.split('|');
+  const ptColor = colorParts[0] || '#2563eb';
+  const ptBg    = colorParts[1] || '#dbeafe';
+
+  const newPt = {
+    id: `PT-${ptShort}-${String(ptProjects.length + 1).padStart(2, '0')}`,
+    pt: ptName,
+    ptShort: ptShort,
+    ptColor: ptColor,
+    ptBg: ptBg,
+    project: projTitle,
+    contract: contract,
+    location: location,
+    startDate: formatDateDisplay(startDate),
+    endDate: formatDateDisplay(endDate),
+    units: []
+  };
+
+  ptProjects.push(newPt);
+  renderPTProjects();
+
+  closeModal('addPTProjectModal');
+  showToast(`✅ Proyek ${ptName} (${projTitle}) berhasil dibuat!`);
+}
+
+// Delete Trafo Unit from PT Project
+function deleteTrafoUnit(ptId, trafoId) {
+  const pt = ptProjects.find(p => p.id === ptId);
+  if (!pt) return;
+
+  if (confirm(`Apakah Anda yakin ingin menghapus unit trafo ${trafoId} dari ${pt.pt}?`)) {
+    pt.units = pt.units.filter(u => u.id !== trafoId);
+    // Recalculate 'no' indexing
+    pt.units.forEach((u, i) => u.no = i + 1);
+    renderPTProjects();
+    showToast(`🗑️ Unit trafo ${trafoId} telah dihapus dari ${pt.ptShort}.`);
+  }
+}
+
+// Open detail modal by PT ID & Trafo ID
+function openTrafoDetailModalById(ptId, trafoId) {
+  const pt = ptProjects.find(p => p.id === ptId);
+  if (!pt) return;
+  const unit = pt.units.find(u => u.id === trafoId);
+  if (unit) openTrafoDetailModal(unit, pt);
+}
+
+// Helper to format YYYY-MM-DD to DD/MM/YYYY
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '-';
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
+
+// Helper to get stage index from status text
+function getStageIdxFromStatus(statusStr) {
+  if (!statusStr) return 0;
+  const upper = statusStr.toUpperCase();
+  const idx = STAGES.findIndex(s => upper.includes(s.code));
+  return idx !== -1 ? idx : 0;
+}
+
 
 // Live Simulation Engine Toggle
 function toggleSimulation() {
@@ -1137,6 +1455,24 @@ function openTrafoDetailModal(unit, ptObj) {
 
 // Modal Toggle Helpers
 function openNewOrderModal() {
+  const sel = document.getElementById('inpProyek');
+  if (sel) {
+    sel.innerHTML = '';
+    ptProjects.forEach(pt => {
+      const opt = document.createElement('option');
+      opt.value = pt.id;
+      opt.innerText = `${pt.pt} (${pt.project})`;
+      sel.appendChild(opt);
+    });
+    const opt1 = document.createElement('option');
+    opt1.value = 'PRJ-240522-01';
+    opt1.innerText = 'PRJ-240522-01 (PROYEK TRAFO 10 UNIT)';
+    sel.appendChild(opt1);
+    const opt2 = document.createElement('option');
+    opt2.value = 'PRJ-240522-02';
+    opt2.innerText = 'PRJ-240522-02 (PROYEK TRAFO 5 UNIT)';
+    sel.appendChild(opt2);
+  }
   document.getElementById('newOrderModal').classList.add('active');
 }
 

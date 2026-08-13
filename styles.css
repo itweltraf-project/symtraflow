@@ -2364,3 +2364,45 @@ body {
   100% { transform: rotate(360deg) scale(1); }
 }
 
+/* Additional PT Project & Trafo Management Styles */
+.btn-add-trafo-pt {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+.btn-add-trafo-pt:hover {
+  background: rgba(255, 255, 255, 0.38);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn-add-trafo-pt:active {
+  transform: translateY(0);
+}
+.btn-icon-danger {
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.btn-icon-danger:hover {
+  background: #fca5a5;
+  color: #991b1b;
+}
+
