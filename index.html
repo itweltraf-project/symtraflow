@@ -1280,6 +1280,8 @@
         </div>
       </form>
     </div>
+  </div>
+
   <!-- Modal: Tambah Unit Trafo Ke Proyek -->
   <div class="modal-overlay" id="addTrafoModal">
     <div class="modal-box" style="max-width: 580px;">
@@ -1382,7 +1384,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeModal('addTrafoModal')">Batal</button>
-          <button type="submit" class="btn-primary"><i class="fa-solid fa-plus"></i> Tambahkan Unit Trafo</button>
+          <button type="submit" onclick="handleAddTrafoSubmit(event)" class="btn-primary"><i class="fa-solid fa-plus"></i> Tambahkan Unit Trafo</button>
         </div>
       </form>
     </div>
