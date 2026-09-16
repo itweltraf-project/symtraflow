@@ -216,7 +216,7 @@ let ptProjects = [
     ptColor: '#16a34a',
     ptBg: '#dcfce7',
     project: 'TRAFO POWER 20kV',
-    contract: 'SPK/PTM/2024/001',
+    contract: 'SO/PTM/2024/001',
     location: 'Refinery Unit IV Cilacap, Jawa Tengah',
     startDate: '01/05/2024',
     endDate: '30/06/2024',
@@ -235,7 +235,7 @@ let ptProjects = [
     ptColor: '#2563eb',
     ptBg: '#dbeafe',
     project: 'TRAFO DISTRIBUSI 20kV',
-    contract: 'SPK/PLN/2024/007',
+    contract: 'SO/PLN/2024/007',
     location: 'GI Kembangan, Jakarta Barat',
     startDate: '10/05/2024',
     endDate: '25/07/2024',
@@ -254,7 +254,7 @@ let ptProjects = [
     ptColor: '#d97706',
     ptBg: '#fef3c7',
     project: 'TRAFO POWER 30kV',
-    contract: 'SPK/PKT/2024/003',
+    contract: 'SO/PKT/2024/003',
     location: 'Pabrik Bontang, Kalimantan Timur',
     startDate: '15/05/2024',
     endDate: '15/08/2024',
@@ -1084,7 +1084,7 @@ function renderPTProjects() {
           <thead>
             <tr style="background:#ffffff; border-bottom:2px solid var(--border-color);">
               <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; width:40px;">No</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">ID Trafo</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">No. SO</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Nama</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tegangan</th>
@@ -2076,14 +2076,14 @@ function handleSaveTrafoEdit(e) {
   showToast(`✅ Spesifikasi & tahapan ${currentActiveUnit.id} berhasil disimpan!`);
 }
 
-// Print / Export Surat Perintah Kerja (SPK) & QC Document
-function printSPKUnit(unitParam, ptParam) {
+// Print / Export Sales Order (SO) & QC Document
+function printSOUnit(unitParam, ptParam) {
   const unit = unitParam || currentActiveUnit || selectedOrder || (orders && orders[0]) || {};
   const pt   = ptParam || currentActivePT || {
     pt: 'PT PERTAMINA PERSERO',
     ptShort: 'PTM',
     project: 'TRAFO POWER 20kV',
-    contract: 'SPK/PTM/2024/001',
+    contract: 'SO/PTM/2024/001',
     location: 'Refinery Unit IV Cilacap'
   };
 
@@ -2134,7 +2134,7 @@ function printSPKUnit(unitParam, ptParam) {
     <html lang="id">
     <head>
       <meta charset="UTF-8">
-      <title>SPK Produksi Trafo — ${idUnit}</title>
+      <title>SO Produksi Trafo — ${idUnit}</title>
       <style>
         @page { size: A4 portrait; margin: 12mm 15mm; }
         body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; margin: 0; padding: 0; font-size: 12px; line-height: 1.4; }
@@ -2175,14 +2175,14 @@ function printSPKUnit(unitParam, ptParam) {
           <div style="font-size:10px; color:#64748b;">Kawasan Industri Manufaktur Trafo, Gedung Utama Lt. 2 • Telp: (021) 8901-2244</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-weight:900; font-size:14px; color:#1e3a8a;">LEMBAR KERJA SPK</div>
+          <div style="font-weight:900; font-size:14px; color:#1e3a8a;">LEMBAR KERJA SO</div>
           <div style="font-size:10px; color:#64748b;">Tgl Cetak: ${todayStr}</div>
         </div>
       </div>
 
       <div class="doc-title">
-        <h2>SURAT PERINTAH KERJA (SPK) & CHECKSHEET QA TRAFO</h2>
-        <p>NO. DOKUMEN: SPK/${idUnit}/${new Date().getFullYear()}</p>
+        <h2>SALES ORDER (SO) & CHECKSHEET QA TRAFO</h2>
+        <p>NO. DOKUMEN: SO/${idUnit}/${new Date().getFullYear()}</p>
       </div>
 
       <div class="grid-info">
@@ -2190,13 +2190,13 @@ function printSPKUnit(unitParam, ptParam) {
           <div class="info-title">1. INFORMASI PELANGGAN & KONTRAK</div>
           <div class="info-row"><span class="info-label">Perusahaan (PT):</span><span class="info-value">${pt.pt || 'PT Pertamina Persero'}</span></div>
           <div class="info-row"><span class="info-label">Nama Proyek:</span><span class="info-value">${pt.project || 'TRAFO POWER 20kV'}</span></div>
-          <div class="info-row"><span class="info-label">Nomor Kontrak/SPK:</span><span class="info-value">${pt.contract || 'SPK/PTM/2024/001'}</span></div>
+          <div class="info-row"><span class="info-label">Nomor Kontrak / SO:</span><span class="info-value">${pt.contract || 'SO/PTM/2024/001'}</span></div>
           <div class="info-row"><span class="info-label">Lokasi Tujuan:</span><span class="info-value">${pt.location || 'Refinery Unit IV Cilacap'}</span></div>
         </div>
 
         <div class="info-box">
           <div class="info-title">2. SPESIFIKASI TRAFO UNIT</div>
-          <div class="info-row"><span class="info-label">ID Unit Trafo:</span><span class="info-value" style="color:#1e3a8a;">${idUnit}</span></div>
+          <div class="info-row"><span class="info-label">No. SO Unit:</span><span class="info-value" style="color:#1e3a8a;">${idUnit}</span></div>
           <div class="info-row"><span class="info-label">Jenis Trafo:</span><span class="info-value">${namaUnit}</span></div>
           <div class="info-row"><span class="info-label">Kapasitas Nominal:</span><span class="info-value">${capUnit}</span></div>
           <div class="info-row"><span class="info-label">Tegangan (Prim/Sek):</span><span class="info-value">${voltUnit}</span></div>
@@ -2293,10 +2293,10 @@ function printSPKUnit(unitParam, ptParam) {
   `;
 
   // Create an iframe to print cleanly without popup block issues
-  let printIframe = document.getElementById('spkPrintIframe');
+  let printIframe = document.getElementById('soPrintIframe');
   if (!printIframe) {
     printIframe = document.createElement('iframe');
-    printIframe.id = 'spkPrintIframe';
+    printIframe.id = 'soPrintIframe';
     printIframe.style.position = 'fixed';
     printIframe.style.right = '0';
     printIframe.style.bottom = '0';
@@ -2314,7 +2314,7 @@ function printSPKUnit(unitParam, ptParam) {
   doc.close();
 
   if (typeof showToast === 'function') {
-    showToast(`📄 Membuka Cetak Dokumen SPK & QA Trafo ${idUnit}...`);
+    showToast(`📄 Membuka Cetak Dokumen SO & QA Trafo ${idUnit}...`);
   }
 
   setTimeout(() => {
@@ -2326,6 +2326,8 @@ function printSPKUnit(unitParam, ptParam) {
     }
   }, 300);
 }
+
+const printSPKUnit = printSOUnit;
 
 // Modal Toggle Helpers
 function openNewOrderModal() {

@@ -457,7 +457,7 @@
               <table class="custom-table" id="ordersTable">
                 <thead>
                   <tr>
-                    <th>No. Order</th>
+                    <th>No. SO</th>
                     <th>Nama Trafo</th>
                     <th>Kapasitas</th>
                     <th>Tegangan</th>
@@ -479,7 +479,7 @@
           <div class="detail-card">
             <div class="detail-header">
               <div>
-                <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL ORDER</div>
+                <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL SO</div>
                 <span class="detail-order-id" id="detailOrderId">TRF-240522-001</span>
               </div>
               <span class="badge-status badge-assembly" id="detailStatusBadge">ASSEMBLY</span>
@@ -635,7 +635,7 @@
                   <thead>
                     <tr>
                       <th>No</th>
-                      <th>No. Trafo</th>
+                      <th>No. SO</th>
                       <th>Kapasitas</th>
                       <th>Tegangan</th>
                       <th>Status</th>
@@ -677,7 +677,7 @@
             <div class="detail-card">
               <div class="detail-header">
                 <div>
-                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL TRAFO</div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL SO</div>
                   <span class="detail-order-id" id="prj1DetailId">TRF-240522-001</span>
                 </div>
                 <span class="badge-status badge-assembly" id="prj1DetailStatus">ASSEMBLY</span>
@@ -785,7 +785,7 @@
                   <thead>
                     <tr>
                       <th>No</th>
-                      <th>No. Trafo</th>
+                      <th>No. SO</th>
                       <th>Kapasitas</th>
                       <th>Tegangan</th>
                       <th>Status</th>
@@ -826,7 +826,7 @@
             <div class="detail-card">
               <div class="detail-header">
                 <div>
-                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL TRAFO</div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL SO</div>
                   <span class="detail-order-id" id="prj2DetailId">TRF-240522-A02</span>
                 </div>
                 <span class="badge-status badge-internal" id="prj2DetailStatus">INTERNAL TEST</span>
@@ -1164,7 +1164,7 @@
         <div class="modal-body">
           <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label">No. Order / Code</label>
+              <label class="form-label">No. SO / Code</label>
               <input type="text" class="form-input" id="inpOrderCode" placeholder="TRF-240522-006" required>
             </div>
             <div class="form-group">
@@ -1273,7 +1273,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-secondary" onclick="closeModal('fullDetailModal')">Tutup</button>
-        <button type="button" class="btn-primary" onclick="printSPKUnit()"><i class="fa-solid fa-print"></i> Cetak SPK</button>
+        <button type="button" class="btn-primary" onclick="printSOUnit()"><i class="fa-solid fa-print"></i> Cetak SO</button>
       </div>
     </div>
   </div>
@@ -1543,8 +1543,8 @@
             <button type="button" class="btn-secondary" onclick="enterTrafoEditMode()" style="border-color: #2563eb; color: #1d4ed8; background: #eff6ff; font-weight: 700;">
               <i class="fa-solid fa-pen-to-square"></i> Edit Unit & Tahapan
             </button>
-            <button type="button" class="btn-primary" onclick="printSPKUnit()">
-              <i class="fa-solid fa-print"></i> Cetak SPK Unit
+            <button type="button" class="btn-primary" onclick="printSOUnit()">
+              <i class="fa-solid fa-print"></i> Cetak SO Unit
             </button>
           </div>
         </div>
@@ -1642,7 +1642,7 @@
 
           <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label">ID / Kode Trafo</label>
+              <label class="form-label">No. SO / Kode Trafo</label>
               <input type="text" class="form-input" id="inpTrafoCode" placeholder="TRF-PTM-006" required>
             </div>
             <div class="form-group">
@@ -1779,8 +1779,8 @@
 
           <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label">Nomor Kontrak / SPK</label>
-              <input type="text" class="form-input" id="inpPTContract" placeholder="SPK/BDK/2024/001" required>
+              <label class="form-label">Nomor Kontrak / No. SO</label>
+              <input type="text" class="form-input" id="inpPTContract" placeholder="SO/BDK/2024/001" required>
             </div>
             <div class="form-group">
               <label class="form-label">Lokasi Proyek</label>
