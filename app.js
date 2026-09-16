@@ -15,6 +15,41 @@ const STAGES = [
   { id: 11, code: 'DELIVERY', name: 'Delivery', icon: 'fa-truck-fast' }
 ];
 
+// Sales Officers List & Avatars
+const SALES_OFFICERS = [
+  'I WAYAN EVA VERDIANA',
+  'SHEVIRA INDRASWARI',
+  'WILLI SYUKRAN',
+  'CASSA VITA SARI',
+  'KRESNA BUDI PRASETYA',
+  'ELNIRA AINUNNISA',
+  'AHMAD NURSEHA',
+  'YOGI RAHMADANI SAPUTRA',
+  'LUTHFAN ANDI PRADANA',
+  'AURELLIA LAYLA MAHANI',
+  'JHODY AIDO SAUT HUTAGALUNG',
+  'KEYSHA ZARA ALIFA PANJAITAN'
+];
+
+const SALES_AVATARS = {
+  'I WAYAN EVA VERDIANA': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+  'SHEVIRA INDRASWARI': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+  'WILLI SYUKRAN': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
+  'CASSA VITA SARI': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+  'KRESNA BUDI PRASETYA': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+  'ELNIRA AINUNNISA': 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100',
+  'AHMAD NURSEHA': 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100',
+  'YOGI RAHMADANI SAPUTRA': 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100',
+  'LUTHFAN ANDI PRADANA': 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100',
+  'AURELLIA LAYLA MAHANI': 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100',
+  'JHODY AIDO SAUT HUTAGALUNG': 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=100',
+  'KEYSHA ZARA ALIFA PANJAITAN': 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100'
+};
+
+function getSalesAvatar(name) {
+  return SALES_AVATARS[name] || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100';
+}
+
 // Initial Orders Data (Matching Image 1)
 let orders = [
   {
@@ -27,13 +62,13 @@ let orders = [
     progress: 60,
     mulai: '22/05/2024 07:30',
     deadline: '25/05/2024',
-    operator: 'Ahmad Fauzi',
-    operatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+    operator: 'I WAYAN EVA VERDIANA',
+    operatorAvatar: getSalesAvatar('I WAYAN EVA VERDIANA'),
     timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '22/05 08:15', operator: 'Budi Santoso' },
-      { stage: 'CORE MAKING', status: 'finished', time: '22/05 08:45', operator: 'Joko Susilo' },
-      { stage: 'COIL MAKING', status: 'finished', time: '22/05 09:30', operator: 'Rudi Hartono' },
-      { stage: 'ASSEMBLY', status: 'process', time: 'Mulai: 22/05 10:10', operator: 'Ahmad Fauzi' },
+      { stage: 'TANK MAKING', status: 'finished', time: '22/05 08:15', operator: 'CASSA VITA SARI' },
+      { stage: 'CORE MAKING', status: 'finished', time: '22/05 08:45', operator: 'WILLI SYUKRAN' },
+      { stage: 'COIL MAKING', status: 'finished', time: '22/05 09:30', operator: 'SHEVIRA INDRASWARI' },
+      { stage: 'ASSEMBLY', status: 'process', time: 'Mulai: 22/05 10:10', operator: 'I WAYAN EVA VERDIANA' },
       { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
       { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
       { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
@@ -53,13 +88,13 @@ let orders = [
     progress: 55,
     mulai: '22/05/2024 07:45',
     deadline: '26/05/2024',
-    operator: 'Rudi Hartono',
-    operatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
+    operator: 'SHEVIRA INDRASWARI',
+    operatorAvatar: getSalesAvatar('SHEVIRA INDRASWARI'),
     timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '22/05 08:30', operator: 'Budi Santoso' },
-      { stage: 'CORE MAKING', status: 'finished', time: '22/05 09:00', operator: 'Joko Susilo' },
-      { stage: 'COIL MAKING', status: 'finished', time: '22/05 09:45', operator: 'Rudi Hartono' },
-      { stage: 'ASSEMBLY', status: 'process', time: 'Mulai: 22/05 10:20', operator: 'Rudi Hartono' },
+      { stage: 'TANK MAKING', status: 'finished', time: '22/05 08:30', operator: 'CASSA VITA SARI' },
+      { stage: 'CORE MAKING', status: 'finished', time: '22/05 09:00', operator: 'WILLI SYUKRAN' },
+      { stage: 'COIL MAKING', status: 'finished', time: '22/05 09:45', operator: 'SHEVIRA INDRASWARI' },
+      { stage: 'ASSEMBLY', status: 'process', time: 'Mulai: 22/05 10:20', operator: 'SHEVIRA INDRASWARI' },
       { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
       { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
       { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
@@ -79,14 +114,14 @@ let orders = [
     progress: 20,
     mulai: '21/05/2024 08:10',
     deadline: '28/05/2024',
-    operator: 'Joko Susilo',
-    operatorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+    operator: 'WILLI SYUKRAN',
+    operatorAvatar: getSalesAvatar('WILLI SYUKRAN'),
     timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '21/05 09:00', operator: 'Budi Santoso' },
-      { stage: 'CORE MAKING', status: 'finished', time: '21/05 11:30', operator: 'Rudi Hartono' },
-      { stage: 'COIL MAKING', status: 'finished', time: '21/05 14:00', operator: 'Rudi Hartono' },
-      { stage: 'ASSEMBLY', status: 'finished', time: '21/05 16:30', operator: 'Ahmad Fauzi' },
-      { stage: 'CONNECTION', status: 'process', time: 'Mulai: 22/05 08:10', operator: 'Joko Susilo' },
+      { stage: 'TANK MAKING', status: 'finished', time: '21/05 09:00', operator: 'CASSA VITA SARI' },
+      { stage: 'CORE MAKING', status: 'finished', time: '21/05 11:30', operator: 'SHEVIRA INDRASWARI' },
+      { stage: 'COIL MAKING', status: 'finished', time: '21/05 14:00', operator: 'SHEVIRA INDRASWARI' },
+      { stage: 'ASSEMBLY', status: 'finished', time: '21/05 16:30', operator: 'I WAYAN EVA VERDIANA' },
+      { stage: 'CONNECTION', status: 'process', time: 'Mulai: 22/05 08:10', operator: 'WILLI SYUKRAN' },
       { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
       { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
       { stage: 'FINISHING', status: 'waiting', time: '-', operator: '-' },
@@ -105,10 +140,10 @@ let orders = [
     progress: 100,
     mulai: '21/05/2024 07:50',
     deadline: '23/05/2024',
-    operator: 'Budi Santoso',
-    operatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    operator: 'CASSA VITA SARI',
+    operatorAvatar: getSalesAvatar('CASSA VITA SARI'),
     timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '21/05 10:00', operator: 'Budi Santoso' },
+      { stage: 'TANK MAKING', status: 'finished', time: '21/05 10:00', operator: 'CASSA VITA SARI' },
       { stage: 'CORE MAKING', status: 'waiting', time: '-', operator: '-' },
       { stage: 'COIL MAKING', status: 'waiting', time: '-', operator: '-' },
       { stage: 'ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
@@ -131,11 +166,11 @@ let orders = [
     progress: 100,
     mulai: '20/05/2024 07:40',
     deadline: '24/05/2024',
-    operator: 'Rudi Hartono',
-    operatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
+    operator: 'KRESNA BUDI PRASETYA',
+    operatorAvatar: getSalesAvatar('KRESNA BUDI PRASETYA'),
     timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '20/05 09:30', operator: 'Budi Santoso' },
-      { stage: 'CORE MAKING', status: 'finished', time: '20/05 11:45', operator: 'Rudi Hartono' },
+      { stage: 'TANK MAKING', status: 'finished', time: '20/05 09:30', operator: 'CASSA VITA SARI' },
+      { stage: 'CORE MAKING', status: 'finished', time: '20/05 11:45', operator: 'KRESNA BUDI PRASETYA' },
       { stage: 'COIL MAKING', status: 'waiting', time: '-', operator: '-' },
       { stage: 'ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
       { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
@@ -151,25 +186,25 @@ let orders = [
 
 // Project 1 Units Data (10 Units - Matching Image 2)
 let prj1Units = [
-  { no: 1, id: 'TRF-240522-001', cap: '500 kVA', volt: '20 kV / 400 V', status: 'ASSEMBLY', badge: 'badge-assembly', progress: 60, stageIdx: 3, startCol: 1, endCol: 4, operator: 'Ahmad Fauzi', dead: '28/05/2024' },
-  { no: 2, id: 'TRF-240522-002', cap: '750 kVA', volt: '20 kV / 400 V', status: 'CORE MAKING', badge: 'badge-core', progress: 75, stageIdx: 1, startCol: 1, endCol: 2, operator: 'Joko Susilo', dead: '27/05/2024' },
-  { no: 3, id: 'TRF-240522-003', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 40, stageIdx: 7, startCol: 1, endCol: 8, operator: 'Rudi Hartono', dead: '25/05/2024' },
-  { no: 4, id: 'TRF-240522-004', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 20, stageIdx: 6, startCol: 4, endCol: 7, operator: 'Budi Santoso', dead: '29/05/2024' },
-  { no: 5, id: 'TRF-240522-005', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 5, endCol: 11, operator: 'Ahmad Fauzi', dead: '24/05/2024' },
-  { no: 6, id: 'TRF-240522-006', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 11, operator: 'Rudi Hartono', dead: '23/05/2024' },
-  { no: 7, id: 'TRF-240522-007', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'PUNCHLIST', badge: 'badge-assembly', progress: 80, stageIdx: 9, startCol: 6, endCol: 10, operator: 'Joko Susilo', dead: '26/05/2024' },
-  { no: 8, id: 'TRF-240522-008', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 10, operator: 'Budi Santoso', dead: '30/05/2024' },
-  { no: 9, id: 'TRF-240522-009', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'PROSES', badge: 'badge-assembly', progress: 10, stageIdx: 0, startCol: 1, endCol: 1, operator: 'Ahmad Fauzi', dead: '31/05/2024' },
-  { no: 10, id: 'TRF-240522-010', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 1, endCol: 1, operator: 'Rudi Hartono', dead: '01/06/2024' }
+  { no: 1, id: 'TRF-240522-001', cap: '500 kVA', volt: '20 kV / 400 V', status: 'ASSEMBLY', badge: 'badge-assembly', progress: 60, stageIdx: 3, startCol: 1, endCol: 4, operator: 'I WAYAN EVA VERDIANA', dead: '28/05/2024' },
+  { no: 2, id: 'TRF-240522-002', cap: '750 kVA', volt: '20 kV / 400 V', status: 'CORE MAKING', badge: 'badge-core', progress: 75, stageIdx: 1, startCol: 1, endCol: 2, operator: 'SHEVIRA INDRASWARI', dead: '27/05/2024' },
+  { no: 3, id: 'TRF-240522-003', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 40, stageIdx: 7, startCol: 1, endCol: 8, operator: 'WILLI SYUKRAN', dead: '25/05/2024' },
+  { no: 4, id: 'TRF-240522-004', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 20, stageIdx: 6, startCol: 4, endCol: 7, operator: 'CASSA VITA SARI', dead: '29/05/2024' },
+  { no: 5, id: 'TRF-240522-005', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 5, endCol: 11, operator: 'KRESNA BUDI PRASETYA', dead: '24/05/2024' },
+  { no: 6, id: 'TRF-240522-006', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 11, operator: 'ELNIRA AINUNNISA', dead: '23/05/2024' },
+  { no: 7, id: 'TRF-240522-007', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'PUNCHLIST', badge: 'badge-assembly', progress: 80, stageIdx: 9, startCol: 6, endCol: 10, operator: 'AHMAD NURSEHA', dead: '26/05/2024' },
+  { no: 8, id: 'TRF-240522-008', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 10, operator: 'YOGI RAHMADANI SAPUTRA', dead: '30/05/2024' },
+  { no: 9, id: 'TRF-240522-009', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'PROSES', badge: 'badge-assembly', progress: 10, stageIdx: 0, startCol: 1, endCol: 1, operator: 'LUTHFAN ANDI PRADANA', dead: '31/05/2024' },
+  { no: 10, id: 'TRF-240522-010', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 1, endCol: 1, operator: 'AURELLIA LAYLA MAHANI', dead: '01/06/2024' }
 ];
 
 // Project 2 Units Data (5 Units - Matching Image 2)
 let prj2Units = [
-  { no: 1, id: 'TRF-240522-A01', cap: '500 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 60, stageIdx: 7, startCol: 1, endCol: 8, operator: 'Budi Santoso', dead: '26/05/2024' },
-  { no: 2, id: 'TRF-240522-A02', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 30, stageIdx: 6, startCol: 5, endCol: 7, operator: 'Rudi Hartono', dead: '26/05/2024' },
-  { no: 3, id: 'TRF-240522-A03', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 4, operator: 'Joko Susilo', dead: '24/05/2024' },
-  { no: 4, id: 'TRF-240522-A04', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'CORE MAKING', badge: 'badge-core', progress: 70, stageIdx: 1, startCol: 4, endCol: 6, operator: 'Rudi Hartono', dead: '29/05/2024' },
-  { no: 5, id: 'TRF-240522-A05', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 7, operator: 'Ahmad Fauzi', dead: '30/05/2024' }
+  { no: 1, id: 'TRF-240522-A01', cap: '500 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 60, stageIdx: 7, startCol: 1, endCol: 8, operator: 'JHODY AIDO SAUT HUTAGALUNG', dead: '26/05/2024' },
+  { no: 2, id: 'TRF-240522-A02', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 30, stageIdx: 6, startCol: 5, endCol: 7, operator: 'KEYSHA ZARA ALIFA PANJAITAN', dead: '26/05/2024' },
+  { no: 3, id: 'TRF-240522-A03', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 4, operator: 'I WAYAN EVA VERDIANA', dead: '24/05/2024' },
+  { no: 4, id: 'TRF-240522-A04', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'CORE MAKING', badge: 'badge-core', progress: 70, stageIdx: 1, startCol: 4, endCol: 6, operator: 'SHEVIRA INDRASWARI', dead: '29/05/2024' },
+  { no: 5, id: 'TRF-240522-A05', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 7, operator: 'WILLI SYUKRAN', dead: '30/05/2024' }
 ];
 
 // PT Project Data — Hierarchy: PT Company → Project → Trafo Units
@@ -186,11 +221,11 @@ let ptProjects = [
     startDate: '01/05/2024',
     endDate: '30/06/2024',
     units: [
-      { no: 1, id: 'TRF-PTM-001', nama: 'Trafo Power', cap: '500 kVA',  volt: '20 kV / 400 V',   status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 60,  stage: 'ASSEMBLY',      operator: 'Ahmad Fauzi',   dead: '20/06/2024' },
-      { no: 2, id: 'TRF-PTM-002', nama: 'Trafo Power', cap: '1000 kVA', volt: '20 kV / 400 V',   status: 'FINISHING',     badge: 'badge-finishing', progress: 80,  stage: 'FINISHING',     operator: 'Rudi Hartono',  dead: '18/06/2024' },
-      { no: 3, id: 'TRF-PTM-003', nama: 'Trafo Power', cap: '1500 kVA', volt: '20 kV / 6300 V',  status: 'INTERNAL TEST', badge: 'badge-internal',  progress: 40,  stage: 'INTERNAL TEST', operator: 'Joko Susilo',   dead: '22/06/2024' },
-      { no: 4, id: 'TRF-PTM-004', nama: 'Trafo Power', cap: '2000 kVA', volt: '30 kV / 6300 V',  status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Budi Santoso',  dead: '28/06/2024' },
-      { no: 5, id: 'TRF-PTM-005', nama: 'Trafo Power', cap: '2500 kVA', volt: '30 kV / 6300 V',  status: 'SELESAI',      badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'Ahmad Fauzi',   dead: '15/06/2024' }
+      { no: 1, id: 'TRF-PTM-001', nama: 'Trafo Power', cap: '500 kVA',  volt: '20 kV / 400 V',   status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 60,  stage: 'ASSEMBLY',      operator: 'I WAYAN EVA VERDIANA',   dead: '20/06/2024' },
+      { no: 2, id: 'TRF-PTM-002', nama: 'Trafo Power', cap: '1000 kVA', volt: '20 kV / 400 V',   status: 'FINISHING',     badge: 'badge-finishing', progress: 80,  stage: 'FINISHING',     operator: 'SHEVIRA INDRASWARI',     dead: '18/06/2024' },
+      { no: 3, id: 'TRF-PTM-003', nama: 'Trafo Power', cap: '1500 kVA', volt: '20 kV / 6300 V',  status: 'INTERNAL TEST', badge: 'badge-internal',  progress: 40,  stage: 'INTERNAL TEST', operator: 'WILLI SYUKRAN',          dead: '22/06/2024' },
+      { no: 4, id: 'TRF-PTM-004', nama: 'Trafo Power', cap: '2000 kVA', volt: '30 kV / 6300 V',  status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'CASSA VITA SARI',        dead: '28/06/2024' },
+      { no: 5, id: 'TRF-PTM-005', nama: 'Trafo Power', cap: '2500 kVA', volt: '30 kV / 6300 V',  status: 'SELESAI',      badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'KRESNA BUDI PRASETYA',   dead: '15/06/2024' }
     ]
   },
   {
@@ -205,11 +240,11 @@ let ptProjects = [
     startDate: '10/05/2024',
     endDate: '25/07/2024',
     units: [
-      { no: 1, id: 'TRF-PLN-001', nama: 'Trafo Distribusi', cap: '100 kVA',  volt: '20 kV / 400 V',  status: 'SELESAI',       badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'Budi Santoso',  dead: '02/06/2024' },
-      { no: 2, id: 'TRF-PLN-002', nama: 'Trafo Distribusi', cap: '250 kVA',  volt: '20 kV / 400 V',  status: 'FAT',           badge: 'badge-assembly',  progress: 90,  stage: 'FAT',           operator: 'Rudi Hartono',  dead: '10/06/2024' },
-      { no: 3, id: 'TRF-PLN-003', nama: 'Trafo Distribusi', cap: '500 kVA',  volt: '20 kV / 400 V',  status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 55,  stage: 'ASSEMBLY',      operator: 'Joko Susilo',   dead: '18/06/2024' },
-      { no: 4, id: 'TRF-PLN-004', nama: 'Trafo Distribusi', cap: '630 kVA',  volt: '20 kV / 400 V',  status: 'CORE MAKING',   badge: 'badge-core',      progress: 30,  stage: 'CORE MAKING',   operator: 'Ahmad Fauzi',   dead: '25/06/2024' },
-      { no: 5, id: 'TRF-PLN-005', nama: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V',  status: 'BELUM MULAI',   badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Budi Santoso',  dead: '05/07/2024' }
+      { no: 1, id: 'TRF-PLN-001', nama: 'Trafo Distribusi', cap: '100 kVA',  volt: '20 kV / 400 V',  status: 'SELESAI',       badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'ELNIRA AINUNNISA',       dead: '02/06/2024' },
+      { no: 2, id: 'TRF-PLN-002', nama: 'Trafo Distribusi', cap: '250 kVA',  volt: '20 kV / 400 V',  status: 'FAT',           badge: 'badge-assembly',  progress: 90,  stage: 'FAT',           operator: 'AHMAD NURSEHA',          dead: '10/06/2024' },
+      { no: 3, id: 'TRF-PLN-003', nama: 'Trafo Distribusi', cap: '500 kVA',  volt: '20 kV / 400 V',  status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 55,  stage: 'ASSEMBLY',      operator: 'YOGI RAHMADANI SAPUTRA', dead: '18/06/2024' },
+      { no: 4, id: 'TRF-PLN-004', nama: 'Trafo Distribusi', cap: '630 kVA',  volt: '20 kV / 400 V',  status: 'CORE MAKING',   badge: 'badge-core',      progress: 30,  stage: 'CORE MAKING',   operator: 'LUTHFAN ANDI PRADANA',   dead: '25/06/2024' },
+      { no: 5, id: 'TRF-PLN-005', nama: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V',  status: 'BELUM MULAI',   badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'AURELLIA LAYLA MAHANI',  dead: '05/07/2024' }
     ]
   },
   {
@@ -224,11 +259,11 @@ let ptProjects = [
     startDate: '15/05/2024',
     endDate: '15/08/2024',
     units: [
-      { no: 1, id: 'TRF-PKT-001', nama: 'Trafo Power', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'COIL MAKING',   badge: 'badge-core',      progress: 25,  stage: 'COIL MAKING',   operator: 'Rudi Hartono',  dead: '20/07/2024' },
-      { no: 2, id: 'TRF-PKT-002', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'TANK MAKING',   badge: 'badge-tank',      progress: 10,  stage: 'TANK MAKING',   operator: 'Joko Susilo',   dead: '25/07/2024' },
-      { no: 3, id: 'TRF-PKT-003', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Ahmad Fauzi',   dead: '30/07/2024' },
-      { no: 4, id: 'TRF-PKT-004', nama: 'Trafo Power', cap: '7500 kVA', volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Budi Santoso',  dead: '05/08/2024' },
-      { no: 5, id: 'TRF-PKT-005', nama: 'Trafo Power', cap: '10000 kVA',volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'Rudi Hartono',  dead: '10/08/2024' }
+      { no: 1, id: 'TRF-PKT-001', nama: 'Trafo Power', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'COIL MAKING',   badge: 'badge-core',      progress: 25,  stage: 'COIL MAKING',   operator: 'JHODY AIDO SAUT HUTAGALUNG', dead: '20/07/2024' },
+      { no: 2, id: 'TRF-PKT-002', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'TANK MAKING',   badge: 'badge-tank',      progress: 10,  stage: 'TANK MAKING',   operator: 'KEYSHA ZARA ALIFA PANJAITAN', dead: '25/07/2024' },
+      { no: 3, id: 'TRF-PKT-003', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'I WAYAN EVA VERDIANA',       dead: '30/07/2024' },
+      { no: 4, id: 'TRF-PKT-004', nama: 'Trafo Power', cap: '7500 kVA', volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'SHEVIRA INDRASWARI',         dead: '05/08/2024' },
+      { no: 5, id: 'TRF-PKT-005', nama: 'Trafo Power', cap: '10000 kVA',volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'WILLI SYUKRAN',              dead: '10/08/2024' }
     ]
   }
 ];
@@ -238,28 +273,28 @@ let activityLogs = [
   {
     icon: 'amber',
     iconClass: 'fa-solid fa-gears',
-    boldText: 'Ahmad Fauzi memulai proses ASSEMBLY',
+    boldText: 'I WAYAN EVA VERDIANA memulai proses ASSEMBLY',
     subText: 'TRF-240522-001 • 10:10:24',
     time: '2 menit yang lalu'
   },
   {
     icon: 'green',
     iconClass: 'fa-solid fa-circle-check',
-    boldText: 'Rudi Hartono menyelesaikan proses COIL MAKING',
+    boldText: 'SHEVIRA INDRASWARI menyelesaikan proses COIL MAKING',
     subText: 'TRF-240522-002 • 09:30:45',
     time: '52 menit yang lalu'
   },
   {
     icon: 'green',
     iconClass: 'fa-solid fa-circle-check',
-    boldText: 'Budi Santoso menyelesaikan proses CORE MAKING',
+    boldText: 'WILLI SYUKRAN menyelesaikan proses CORE MAKING',
     subText: 'TRF-240520-005 • 07:40:12',
     time: '2 jam yang lalu'
   },
   {
     icon: 'blue',
     iconClass: 'fa-solid fa-play',
-    boldText: 'Joko Susilo memulai proses CONNECTION',
+    boldText: 'WILLI SYUKRAN memulai proses CONNECTION',
     subText: 'TRF-240521-003 • 08:10:33',
     time: '2 jam yang lalu'
   }
@@ -543,7 +578,7 @@ function renderStepper(order, animate = false) {
       const stageLog = order.timeline && order.timeline[idx];
       metaHTML = `
         <span>${stageLog ? stageLog.time : '22/05'}</span>
-        <span class="step-operator">Operator: ${stageLog ? stageLog.operator.split(' ')[0] : 'Operator'}</span>
+        <span class="step-operator">Sales: ${stageLog ? stageLog.operator.split(' ')[0] : 'Sales'}</span>
       `;
     } else if (idx === order.currentStageIndex) {
       cardStatusClass = 'active-process';
@@ -551,7 +586,7 @@ function renderStepper(order, animate = false) {
       const stageLog = order.timeline && order.timeline[idx];
       metaHTML = `
         <span>${stageLog ? stageLog.time : 'Mulai: 10:10'}</span>
-        <span class="step-operator" style="color: var(--color-process-text);">Operator: ${order.operator}</span>
+        <span class="step-operator" style="color: var(--color-process-text);">Sales: ${order.operator}</span>
       `;
     } else {
       cardStatusClass = 'waiting';
@@ -574,7 +609,7 @@ function renderStepper(order, animate = false) {
     `;
 
     stepCard.addEventListener('click', () => {
-      showToast(`[${order.id}] Tahapan ${stage.code}: Operator ${order.operator} (${order.progress}%)`);
+      showToast(`[${order.id}] Tahapan ${stage.code}: Sales Officer ${order.operator} (${order.progress}%)`);
     });
 
     container.appendChild(stepCard);
@@ -820,7 +855,7 @@ function renderProjectView(units, tableBodyId, ganttBodyId, prefix) {
       document.getElementById(`${prefix}DetailProg`).innerText = `: ${unit.progress}%`;
       document.getElementById(`${prefix}DetailStage`).innerText = `: ${unit.stageIdx + 1}. ${unit.status}`;
       document.getElementById(`${prefix}DetailOp`).innerHTML = `
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" class="operator-avatar"> ${unit.operator}
+        <img src="${getSalesAvatar(unit.operator)}" class="operator-avatar"> ${unit.operator}
       `;
       showToast(`Selected Unit ${unit.id}`);
     });
@@ -1056,7 +1091,7 @@ function renderPTProjects() {
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Status / Stage</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Progress</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Deadline</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Operator</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Sales Officer</th>
               <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Aksi</th>
             </tr>
           </thead>
@@ -1259,7 +1294,7 @@ function handleAddTrafoSubmit(e) {
     mulai: new Date().toLocaleDateString('id-ID'),
     deadline: deadlineFormatted,
     operator: operator,
-    operatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+    operatorAvatar: getSalesAvatar(operator),
     timeline: STAGES.map((s, idx) => ({
       stage: s.code,
       status: idx < stageIdx ? 'finished' : (idx === stageIdx ? 'process' : 'waiting'),
@@ -1499,7 +1534,7 @@ function handleCreateOrder(e) {
     mulai: '22/05/2024 10:30',
     deadline: deadline,
     operator: op,
-    operatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    operatorAvatar: getSalesAvatar(op),
     timeline: STAGES.map((s, idx) => ({
       stage: s.code,
       status: idx === 0 ? 'process' : 'waiting',
@@ -1763,7 +1798,7 @@ function openTrafoDetailModal(unit, ptObj) {
   // Specs
   document.getElementById('mTrafoCap').innerText = unit.cap || unit.kapasitas || '-';
   document.getElementById('mTrafoVolt').innerText = unit.volt || unit.tegangan || '-';
-  document.getElementById('mTrafoOperator').innerText = unit.operator || 'Ahmad Fauzi';
+  document.getElementById('mTrafoOperator').innerText = unit.operator || 'I WAYAN EVA VERDIANA';
   document.getElementById('mTrafoDeadline').innerText = unit.dead || unit.deadline || '-';
   document.getElementById('mTrafoProject').innerText = ptObj ? `${ptObj.project}` : (unit.proyek || 'Proyek Regular');
   document.getElementById('mTrafoLocation').innerText = ptObj ? ptObj.location : 'Pabrik Utama SYMTRAFLOW';
@@ -1879,7 +1914,7 @@ function enterTrafoEditMode() {
   document.getElementById('inpEditNama').value = currentActiveUnit.nama || 'Trafo Power';
   document.getElementById('inpEditCap').value = currentActiveUnit.cap || currentActiveUnit.kapasitas || '500 kVA';
   document.getElementById('inpEditVolt').value = currentActiveUnit.volt || currentActiveUnit.tegangan || '20 kV / 400 V';
-  document.getElementById('inpEditOperator').value = currentActiveUnit.operator || 'Ahmad Fauzi';
+  document.getElementById('inpEditOperator').value = currentActiveUnit.operator || 'I WAYAN EVA VERDIANA';
   document.getElementById('inpEditDeadline').value = currentActiveUnit.dead || currentActiveUnit.deadline || '20/06/2024';
   
   const locVal = currentActivePT ? currentActivePT.location : (currentActiveUnit.location || 'Refinery Unit IV Cilacap, Jawa Tengah');
@@ -2058,7 +2093,7 @@ function printSPKUnit(unitParam, ptParam) {
   const voltUnit = unit.volt || unit.tegangan || '20 kV / 400 V';
   const statusUnit = unit.status || 'ASSEMBLY';
   const progressUnit = unit.progress !== undefined ? unit.progress : 60;
-  const operatorUnit = unit.operator || 'Ahmad Fauzi';
+  const operatorUnit = unit.operator || 'I WAYAN EVA VERDIANA';
   const deadlineUnit = unit.dead || unit.deadline || '30/06/2024';
   const todayStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -2165,7 +2200,7 @@ function printSPKUnit(unitParam, ptParam) {
           <div class="info-row"><span class="info-label">Jenis Trafo:</span><span class="info-value">${namaUnit}</span></div>
           <div class="info-row"><span class="info-label">Kapasitas Nominal:</span><span class="info-value">${capUnit}</span></div>
           <div class="info-row"><span class="info-label">Tegangan (Prim/Sek):</span><span class="info-value">${voltUnit}</span></div>
-          <div class="info-row"><span class="info-label">Operator Tugasan:</span><span class="info-value">${operatorUnit}</span></div>
+          <div class="info-row"><span class="info-label">Sales Officer:</span><span class="info-value">${operatorUnit}</span></div>
           <div class="info-row"><span class="info-label">Target Deadline:</span><span class="info-value" style="color:#dc2626;">${deadlineUnit}</span></div>
         </div>
       </div>
@@ -2178,7 +2213,7 @@ function printSPKUnit(unitParam, ptParam) {
             <th>Tahapan Stage Produksi</th>
             <th style="text-align:center;">Status Progress</th>
             <th style="text-align:center;">Waktu / Catatan</th>
-            <th style="text-align:center;">Operator</th>
+            <th style="text-align:center;">Sales Officer</th>
             <th style="text-align:center;">Verifikasi QC</th>
           </tr>
         </thead>
@@ -2232,10 +2267,10 @@ function printSPKUnit(unitParam, ptParam) {
 
       <div class="signatures">
         <div class="sig-box">
-          <div class="sig-title">Disiapkan Oleh (Operator)</div>
+          <div class="sig-title">Sales Officer Penanggung Jawab</div>
           <div class="sig-space"></div>
           <div class="sig-name">${operatorUnit}</div>
-          <div class="stamp">Operator Manufaktur</div>
+          <div class="stamp">Sales & Marketing Dept.</div>
         </div>
 
         <div class="sig-box">
