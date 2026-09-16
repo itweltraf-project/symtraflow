@@ -290,11 +290,13 @@ function closeMobileSidebar() {
 // Initialize Application on Page Load
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
+  populateStepperOrderSelector();
   renderStepper(selectedOrder);
   renderOrdersTable();
   updateDetailPanel(selectedOrder);
   initProgressChart();
   renderActivityLogs();
+  startStepperSlideshow();
   
   // Render Multi-Project View components
   renderProjectView(prj1Units, 'prj1TableBody', 'prj1GanttBody', 'prj1');
@@ -346,12 +348,189 @@ function initClock() {
   setInterval(updateTime, 1000);
 }
 
+// Populate Stepper Order Selector Dropdown
+function populateStepperOrderSelector() {
+  const select = document.getElementById('stepperOrderSelector');
+  if (!select) return;
+  const currentVal = selectedOrder ? selectedOrder.id : (select.value || '');
+  select.innerHTML = '';
+  orders.forEach((ord) => {
+    const opt = document.createElement('option');
+    opt.value = ord.id;
+    opt.innerText = `[${ord.id}] ${ord.nama} - ${ord.kapasitas} (${ord.progress}%)`;
+    if (ord.id === currentVal) {
+      opt.selected = true;
+    }
+    select.appendChild(opt);
+  });
+}
+
+// User selects an order from the dropdown
+function onSelectStepperOrder(orderId) {
+  const found = orders.find(o => o.id === orderId);
+  if (found) {
+    selectedOrder = found;
+    renderStepper(selectedOrder, true);
+    renderOrdersTable();
+    updateDetailPanel(selectedOrder);
+    resetStepperTimer();
+    showToast(`🔍 Menampilkan flow: ${found.id} - ${found.nama}`);
+  }
+}
+
+// Next & Previous Slide Handlers
+function nextStepperSlide() {
+  if (!orders || orders.length === 0) return;
+  const currIdx = orders.findIndex(o => o.id === selectedOrder.id);
+  const nextIdx = (currIdx + 1) % orders.length;
+  selectedOrder = orders[nextIdx];
+  renderStepper(selectedOrder, true);
+  renderOrdersTable();
+  updateDetailPanel(selectedOrder);
+  resetStepperTimer();
+}
+
+function prevStepperSlide() {
+  if (!orders || orders.length === 0) return;
+  const currIdx = orders.findIndex(o => o.id === selectedOrder.id);
+  const prevIdx = (currIdx - 1 + orders.length) % orders.length;
+  selectedOrder = orders[prevIdx];
+  renderStepper(selectedOrder, true);
+  renderOrdersTable();
+  updateDetailPanel(selectedOrder);
+  resetStepperTimer();
+}
+
+// Slideshow Engine (5-Second Interval)
+let isStepperSlideshowActive = true;
+let stepperTimerTick = null;
+let stepperTimerElapsedMs = 0;
+const STEPPER_SLIDE_DURATION_MS = 5000;
+const STEPPER_TICK_INTERVAL_MS = 100;
+
+function startStepperSlideshow() {
+  stopStepperSlideshow();
+  isStepperSlideshowActive = true;
+  updateSlideshowBtnUI();
+
+  stepperTimerTick = setInterval(() => {
+    if (!isStepperSlideshowActive) return;
+    stepperTimerElapsedMs += STEPPER_TICK_INTERVAL_MS;
+    const pct = Math.min(100, (stepperTimerElapsedMs / STEPPER_SLIDE_DURATION_MS) * 100);
+    const bar = document.getElementById('slideshowTimerProgress');
+    if (bar) bar.style.width = `${pct}%`;
+
+    if (stepperTimerElapsedMs >= STEPPER_SLIDE_DURATION_MS) {
+      stepperTimerElapsedMs = 0;
+      nextStepperSlide();
+    }
+  }, STEPPER_TICK_INTERVAL_MS);
+}
+
+function stopStepperSlideshow() {
+  if (stepperTimerTick) {
+    clearInterval(stepperTimerTick);
+    stepperTimerTick = null;
+  }
+}
+
+function resetStepperTimer() {
+  stepperTimerElapsedMs = 0;
+  const bar = document.getElementById('slideshowTimerProgress');
+  if (bar) bar.style.width = '0%';
+}
+
+function toggleStepperSlideshow() {
+  isStepperSlideshowActive = !isStepperSlideshowActive;
+  updateSlideshowBtnUI();
+  if (isStepperSlideshowActive) {
+    showToast('▶️ Slideshow Flow Trafo (5 detik) Aktif');
+  } else {
+    showToast('⏸️ Slideshow Flow Trafo Dijeda');
+    const bar = document.getElementById('slideshowTimerProgress');
+    if (bar) bar.style.width = '0%';
+  }
+}
+
+function updateSlideshowBtnUI() {
+  const btn = document.getElementById('btnToggleSlideshow');
+  const icon = document.getElementById('slideshowIcon');
+  const txt = document.getElementById('slideshowText');
+  if (!btn) return;
+
+  if (isStepperSlideshowActive) {
+    btn.style.background = '#e0e7ff';
+    btn.style.color = '#3730a3';
+    if (icon) icon.className = 'fa-solid fa-pause';
+    if (txt) txt.innerText = 'Slide (5s)';
+    btn.title = 'Klik untuk Menjeda Slideshow Otomatis';
+  } else {
+    btn.style.background = '#f1f5f9';
+    btn.style.color = '#64748b';
+    if (icon) icon.className = 'fa-solid fa-play';
+    if (txt) txt.innerText = 'Slide: Jeda';
+    btn.title = 'Klik untuk Memutar Slideshow Otomatis (5s)';
+  }
+}
+
 // Render Horizontal 11-Stepper Pipeline (Image 1 top section)
-function renderStepper(order) {
+function renderStepper(order, animate = false) {
+  if (!order) return;
   const container = document.getElementById('flowStepperGrid');
   if (!container) return;
   
   container.innerHTML = '';
+
+  // Trigger smooth slide animation
+  if (animate) {
+    container.classList.remove('slide-anim');
+    void container.offsetWidth; // trigger reflow
+    container.classList.add('slide-anim');
+  }
+
+  // Update Stepper Header Badges & Info Strip
+  const activeBadge = document.getElementById('stepperActiveBadge');
+  if (activeBadge) {
+    activeBadge.innerText = order.id;
+    let badgeClass = 'badge-assembly';
+    if (order.status === 'SELESAI') badgeClass = 'badge-selesai';
+    else if (order.status === 'CONNECTION') badgeClass = 'badge-connection';
+    else if (order.status === 'TANK MAKING') badgeClass = 'badge-tank';
+    else if (order.status === 'CORE MAKING') badgeClass = 'badge-core';
+    activeBadge.className = `badge-status ${badgeClass}`;
+  }
+
+  const stripName = document.getElementById('stripTrafoName');
+  const stripCap = document.getElementById('stripKapasitas');
+  const stripVolt = document.getElementById('stripTegangan');
+  const stripOp = document.getElementById('stripOperator');
+  const stripDead = document.getElementById('stripDeadline');
+  const stripPct = document.getElementById('stripProgressPct');
+  const stripBar = document.getElementById('stripProgressBar');
+
+  if (stripName) stripName.innerText = `${order.nama} (${order.status})`;
+  if (stripCap) stripCap.innerText = order.kapasitas;
+  if (stripVolt) stripVolt.innerText = order.tegangan;
+  if (stripOp) stripOp.innerText = order.operator;
+  if (stripDead) stripDead.innerText = order.deadline;
+  if (stripPct) stripPct.innerText = `${order.progress}%`;
+  if (stripBar) {
+    stripBar.style.width = `${order.progress}%`;
+    stripBar.style.backgroundColor = order.progress === 100 ? '#10b981' : 'var(--color-primary)';
+  }
+
+  // Sync Dropdown selector
+  const selector = document.getElementById('stepperOrderSelector');
+  if (selector && selector.value !== order.id) {
+    selector.value = order.id;
+  }
+
+  // Sync Slideshow Counter
+  const counter = document.getElementById('slideshowCounter');
+  if (counter && orders.length > 0) {
+    const curIdx = orders.findIndex(o => o.id === order.id);
+    counter.innerText = `${curIdx !== -1 ? curIdx + 1 : 1}/${orders.length}`;
+  }
 
   STAGES.forEach((stage, idx) => {
     let cardStatusClass = 'waiting';
@@ -361,7 +540,7 @@ function renderStepper(order) {
     if (idx < order.currentStageIndex) {
       cardStatusClass = 'finished';
       statusPillText = '<i class="fa-solid fa-circle-check"></i> Selesai';
-      const stageLog = order.timeline[idx];
+      const stageLog = order.timeline && order.timeline[idx];
       metaHTML = `
         <span>${stageLog ? stageLog.time : '22/05'}</span>
         <span class="step-operator">Operator: ${stageLog ? stageLog.operator.split(' ')[0] : 'Operator'}</span>
@@ -369,7 +548,7 @@ function renderStepper(order) {
     } else if (idx === order.currentStageIndex) {
       cardStatusClass = 'active-process';
       statusPillText = '<i class="fa-solid fa-spinner fa-spin"></i> Proses';
-      const stageLog = order.timeline[idx];
+      const stageLog = order.timeline && order.timeline[idx];
       metaHTML = `
         <span>${stageLog ? stageLog.time : 'Mulai: 10:10'}</span>
         <span class="step-operator" style="color: var(--color-process-text);">Operator: ${order.operator}</span>
@@ -395,7 +574,7 @@ function renderStepper(order) {
     `;
 
     stepCard.addEventListener('click', () => {
-      showToast(`Tahapan ${stage.code}: Operator ${order.operator}`);
+      showToast(`[${order.id}] Tahapan ${stage.code}: Operator ${order.operator} (${order.progress}%)`);
     });
 
     container.appendChild(stepCard);
@@ -447,8 +626,9 @@ function renderOrdersTable() {
     tr.addEventListener('click', () => {
       selectedOrder = ord;
       renderOrdersTable();
-      renderStepper(selectedOrder);
+      renderStepper(selectedOrder, true);
       updateDetailPanel(selectedOrder);
+      resetStepperTimer();
     });
 
     tbody.appendChild(tr);
@@ -1351,9 +1531,11 @@ function handleCreateOrder(e) {
   // Update KPI counts
   document.getElementById('kpiTotalOrder').innerText = orders.length;
 
+  populateStepperOrderSelector();
   renderOrdersTable();
-  renderStepper(selectedOrder);
+  renderStepper(selectedOrder, true);
   updateDetailPanel(selectedOrder);
+  resetStepperTimer();
 
   closeModal('newOrderModal');
   showToast(`✅ Order ${code} berhasil dibuat!`);
