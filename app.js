@@ -726,6 +726,7 @@ function switchView(viewName) {
   } else if (viewName === 'pengaturan') {
     if (viewPengaturan) viewPengaturan.classList.add('active');
     loadUserAccountsUI();
+    if (typeof updateSupabaseStatusDisplay === 'function') updateSupabaseStatusDisplay();
   } else if (viewName === 'project-pt') {
     if (viewProjectPT) viewProjectPT.classList.add('active');
     if (tabProjectPT) tabProjectPT.classList.add('active');
@@ -1203,14 +1204,36 @@ function toggleSimulation() {
   isSimulating = !isSimulating;
   const simBtn = document.getElementById('btnSimulate');
   const btnText = document.getElementById('simBtnText');
+  const simIcon = document.getElementById('simBtnIcon');
+  const simBadge = document.getElementById('simStatusBadge');
+  const simEngineLabel = document.getElementById('simEngineStatusLabel');
+  const simIconBox = document.getElementById('simIconBox');
 
   if (isSimulating) {
-    simBtn.style.backgroundColor = '#10b981';
-    simBtn.style.color = '#ffffff';
-    btnText.innerText = 'Simulation Active';
-    showToast('⚡ Live Simulation Started! Real-time progress ticking...');
+    if (simBtn) {
+      simBtn.style.backgroundColor = '#10b981';
+      simBtn.style.color = '#ffffff';
+      simBtn.style.borderColor = '#10b981';
+    }
+    if (btnText) btnText.innerText = 'Hentikan Live Simulation';
+    if (simIcon) simIcon.className = 'fa-solid fa-pause';
+    if (simBadge) {
+      simBadge.style.background = '#d1fae5';
+      simBadge.style.color = '#065f46';
+      simBadge.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 7px; color: #10b981; margin-right: 4px;"></i> Berjalan Aktif';
+    }
+    if (simEngineLabel) {
+      simEngineLabel.innerHTML = '<span style="color: #10b981; font-weight: 700;">⚡ Berjalan (Ticking...)</span>';
+    }
+    if (simIconBox) {
+      simIconBox.style.background = '#ecfdf5';
+      simIconBox.style.color = '#10b981';
+      simIconBox.style.borderColor = '#a7f3d0';
+    }
+    showToast('⚡ Live Simulation Dimulai! Progres bergerak real-time...');
 
     simulationTimer = setInterval(() => {
+      if (!orders || orders.length === 0) return;
       // Pick random order & increment progress
       const randomIdx = Math.floor(Math.random() * orders.length);
       const targetOrd = orders[randomIdx];
@@ -1235,7 +1258,7 @@ function toggleSimulation() {
 
       // Refresh current views
       renderOrdersTable();
-      if (selectedOrder.id === targetOrd.id) {
+      if (selectedOrder && selectedOrder.id === targetOrd.id) {
         renderStepper(selectedOrder);
         updateDetailPanel(selectedOrder);
       }
@@ -1251,10 +1274,27 @@ function toggleSimulation() {
     }, 3000);
   } else {
     clearInterval(simulationTimer);
-    simBtn.style.backgroundColor = '#ffffff';
-    simBtn.style.color = 'var(--text-secondary)';
-    btnText.innerText = 'Live Simulation';
-    showToast('Simulation Paused.');
+    if (simBtn) {
+      simBtn.style.backgroundColor = '#ffffff';
+      simBtn.style.color = 'var(--text-secondary)';
+      simBtn.style.borderColor = 'var(--border-color)';
+    }
+    if (btnText) btnText.innerText = 'Live Simulation';
+    if (simIcon) simIcon.className = 'fa-solid fa-play';
+    if (simBadge) {
+      simBadge.style.background = '#f1f5f9';
+      simBadge.style.color = '#64748b';
+      simBadge.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 7px; color: #94a3b8; margin-right: 4px;"></i> Nonaktif';
+    }
+    if (simEngineLabel) {
+      simEngineLabel.innerHTML = '<span style="color: var(--text-secondary);">Standby / Idle</span>';
+    }
+    if (simIconBox) {
+      simIconBox.style.background = '#eff6ff';
+      simIconBox.style.color = '#2563eb';
+      simIconBox.style.borderColor = '#bfdbfe';
+    }
+    showToast('Simulation Dihentikan.');
   }
 }
 
@@ -1319,17 +1359,81 @@ function handleCreateOrder(e) {
   showToast(`✅ Order ${code} berhasil dibuat!`);
 }
 
-// Supabase Connection Modal Handlers
+// Supabase Connection Modal & Status Handlers
 function openSupabaseModal() {
   const urlInp = document.getElementById('inpSupabaseUrl');
   const keyInp = document.getElementById('inpSupabaseKey');
   
-  if (window.SUPABASE_CONFIG) {
-    if (urlInp) urlInp.value = window.SUPABASE_CONFIG.url || '';
-    if (keyInp) keyInp.value = window.SUPABASE_CONFIG.anonKey || '';
-  }
+  const savedUrl = localStorage.getItem('SYMTRAFLOW_SUPABASE_URL') || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || '';
+  const savedKey = localStorage.getItem('SYMTRAFLOW_SUPABASE_KEY') || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || '';
+
+  if (urlInp) urlInp.value = savedUrl;
+  if (keyInp) keyInp.value = savedKey;
   
   document.getElementById('supabaseModal').classList.add('active');
+}
+
+function updateSupabaseStatusDisplay() {
+  const url = localStorage.getItem('SYMTRAFLOW_SUPABASE_URL') || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || '';
+  const key = localStorage.getItem('SYMTRAFLOW_SUPABASE_KEY') || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || '';
+  const isConnected = typeof isSupabaseConfigured === 'function' ? isSupabaseConfigured() : (typeof getSupabaseClient === 'function' && !!getSupabaseClient());
+
+  const btnText = document.getElementById('supabaseStatusText');
+  const btn = document.getElementById('btnConnectSupabase');
+  const badge = document.getElementById('supabaseStatusBadge');
+  const urlPreview = document.getElementById('supabaseUrlPreview');
+  const keyPreview = document.getElementById('supabaseKeyPreview');
+
+  if (urlPreview) {
+    urlPreview.innerText = url ? url.replace(/^https?:\/\//, '') : 'Belum diatur';
+    urlPreview.title = url || '';
+  }
+  if (keyPreview) {
+    keyPreview.innerText = key ? (key.substring(0, 8) + '••••••••' + key.slice(-4)) : 'Belum ada key';
+  }
+
+  if (isConnected) {
+    if (btnText) btnText.innerText = 'Supabase Connected';
+    if (btn) {
+      btn.style.borderColor = '#10b981';
+      btn.style.backgroundColor = '#ecfdf5';
+      btn.style.color = '#047857';
+    }
+    if (badge) {
+      badge.style.background = '#d1fae5';
+      badge.style.color = '#065f46';
+      badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 7px; color: #10b981; margin-right: 4px;"></i> Terhubung';
+    }
+  } else {
+    if (btnText) btnText.innerText = 'Supabase Config';
+    if (btn) {
+      btn.style.borderColor = 'var(--border-color)';
+      btn.style.backgroundColor = '#ffffff';
+      btn.style.color = 'var(--text-secondary)';
+    }
+    if (badge) {
+      badge.style.background = '#f1f5f9';
+      badge.style.color = '#64748b';
+      badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 7px; color: #94a3b8; margin-right: 4px;"></i> Disconnected';
+    }
+  }
+}
+
+function disconnectSupabase() {
+  localStorage.removeItem('SYMTRAFLOW_SUPABASE_URL');
+  localStorage.removeItem('SYMTRAFLOW_SUPABASE_KEY');
+  window.SUPABASE_CONFIG = { url: '', anonKey: '' };
+  if (typeof supabaseClient !== 'undefined') {
+    supabaseClient = null;
+  }
+  const urlInp = document.getElementById('inpSupabaseUrl');
+  const keyInp = document.getElementById('inpSupabaseKey');
+  if (urlInp) urlInp.value = '';
+  if (keyInp) keyInp.value = '';
+
+  closeModal('supabaseModal');
+  updateSupabaseStatusDisplay();
+  showToast('🔌 Koneksi Supabase telah diputus.');
 }
 
 function saveSupabaseConfig(e) {
@@ -1343,10 +1447,12 @@ function saveSupabaseConfig(e) {
 
   closeModal('supabaseModal');
 
+  if (typeof supabaseClient !== 'undefined') {
+    supabaseClient = null;
+  }
+
   if (typeof getSupabaseClient === 'function' && getSupabaseClient()) {
-    document.getElementById('supabaseStatusText').innerText = 'Supabase Connected';
-    document.getElementById('btnConnectSupabase').style.borderColor = '#10b981';
-    document.getElementById('btnConnectSupabase').style.backgroundColor = '#ecfdf5';
+    updateSupabaseStatusDisplay();
     showToast('⚡ Terhubung ke Supabase Realtime Database!');
 
     // Subscribe to realtime updates
@@ -1361,6 +1467,7 @@ function saveSupabaseConfig(e) {
       );
     }
   } else {
+    updateSupabaseStatusDisplay();
     showToast('⚠️ Gagal terhubung ke Supabase. Periksa URL & Anon Key.');
   }
 }
@@ -1371,11 +1478,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedKey = localStorage.getItem('SYMTRAFLOW_SUPABASE_KEY');
   if (savedUrl && savedKey) {
     window.SUPABASE_CONFIG = { url: savedUrl, anonKey: savedKey };
-    if (typeof getSupabaseClient === 'function' && getSupabaseClient()) {
-      const btnText = document.getElementById('supabaseStatusText');
-      if (btnText) btnText.innerText = 'Supabase Connected';
-    }
   }
+  updateSupabaseStatusDisplay();
 });
 
 // Helper to derive 0-indexed stage number from status text

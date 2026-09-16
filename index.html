@@ -251,12 +251,6 @@
     <!-- Action Bar -->
     <div class="view-mode-bar">
       <div class="action-bar-right" style="margin-left: auto;">
-        <button class="btn-secondary" id="btnConnectSupabase" onclick="openSupabaseModal()" style="border-color: #10b981; color: #047857;">
-          <i class="fa-solid fa-database" style="color: #10b981;"></i> <span id="supabaseStatusText">Supabase Config</span>
-        </button>
-        <button class="btn-secondary" id="btnSimulate" onclick="toggleSimulation()">
-          <i class="fa-solid fa-play"></i> <span id="simBtnText">Live Simulation</span>
-        </button>
         <button class="btn-secondary" onclick="openExportModal()">
           <i class="fa-solid fa-download"></i> Export Laporan
         </button>
@@ -988,6 +982,104 @@
 
           </div>
         </div>
+
+        <!-- Section Card 2: INTEGRASI SISTEM & SIMULASI -->
+        <div class="section-card" style="margin-top: 24px;">
+          <div class="section-header">
+            <span class="section-title">
+              <i class="fa-solid fa-server" style="color: var(--color-primary);"></i> KONEKSI SUPABASE & LIVE SIMULATION
+            </span>
+            <span style="font-size: 11px; color: var(--text-muted);">Kelola integrasi database cloud real-time dan kontrol engine simulasi proses</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 10px;">
+            
+            <!-- Supabase Cloud Card -->
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; background: #ffffff; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1.5px solid #a7f3d0;">
+                      <i class="fa-solid fa-database"></i>
+                    </div>
+                    <div>
+                      <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">Supabase Cloud Realtime</div>
+                      <div style="font-size: 10px; color: #10b981; font-weight: 700; text-transform: uppercase;">Cloud Database & WebSocket Sync</div>
+                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Sinkronisasi order real-time</div>
+                    </div>
+                  </div>
+                  <span id="supabaseStatusBadge" class="badge-status" style="background: #f1f5f9; color: #64748b;">
+                    <i class="fa-solid fa-circle" style="font-size: 7px; margin-right: 4px;"></i> Disconnected
+                  </span>
+                </div>
+
+                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+                  Menyimpan & menyinkronkan data order trafo, tahapan, dan log aktivitas secara real-time ke server PostgreSQL Supabase secara otomatis.
+                </p>
+
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px;">
+                    <span style="color: var(--text-muted);"><i class="fa-solid fa-link" style="margin-right: 4px;"></i> URL Project:</span>
+                    <span id="supabaseUrlPreview" style="font-weight: 600; color: var(--text-primary); max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Belum diatur</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                    <span style="color: var(--text-muted);"><i class="fa-solid fa-key" style="margin-right: 4px;"></i> Anon Key:</span>
+                    <span id="supabaseKeyPreview" style="font-weight: 600; color: var(--text-primary);">Belum ada key</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-secondary" id="btnConnectSupabase" onclick="openSupabaseModal()" style="flex: 1; justify-content: center; border-color: #10b981; color: #047857; background: #ecfdf5; font-weight: 600;">
+                  <i class="fa-solid fa-database" style="color: #10b981;"></i> <span id="supabaseStatusText">Supabase Config</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Simulation Card -->
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; background: #ffffff; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="simIconBox" style="width: 48px; height: 48px; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1.5px solid #bfdbfe;">
+                      <i class="fa-solid fa-play" id="simCardIcon"></i>
+                    </div>
+                    <div>
+                      <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">Live Simulation Engine</div>
+                      <div style="font-size: 10px; color: #2563eb; font-weight: 700; text-transform: uppercase;">Real-Time Progress Simulator</div>
+                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Simulasi pergerakan proses pabrik</div>
+                    </div>
+                  </div>
+                  <span id="simStatusBadge" class="badge-status" style="background: #f1f5f9; color: #64748b;">
+                    <i class="fa-solid fa-circle" style="font-size: 7px; margin-right: 4px;"></i> Nonaktif
+                  </span>
+                </div>
+
+                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+                  Menggerakkan progres produksi unit trafo secara otomatis setiap interval waktu, memperbarui status QC, analitik chart, dan riwayat aktivitas secara langsung.
+                </p>
+
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px;">
+                    <span style="color: var(--text-muted);"><i class="fa-solid fa-stopwatch" style="margin-right: 4px;"></i> Interval Tick:</span>
+                    <span style="font-weight: 600; color: var(--text-primary);">3000 ms (3 detik)</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                    <span style="color: var(--text-muted);"><i class="fa-solid fa-microchip" style="margin-right: 4px;"></i> Status Engine:</span>
+                    <span id="simEngineStatusLabel" style="font-weight: 600; color: var(--text-secondary);">Standby / Idle</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <button type="button" class="btn-secondary" id="btnSimulate" onclick="toggleSimulation()" style="width: 100%; justify-content: center; font-weight: 600;">
+                  <i class="fa-solid fa-play" id="simBtnIcon"></i> <span id="simBtnText">Live Simulation</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
 
     </div>
@@ -1274,9 +1366,14 @@
             <input type="password" class="form-input" id="inpSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeModal('supabaseModal')">Batal</button>
-          <button type="submit" class="btn-primary" style="background-color: #10b981;"><i class="fa-solid fa-plug"></i> Hubungkan Supabase</button>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="btn-secondary" onclick="disconnectSupabase()" style="color: #ef4444; border-color: #fca5a5; background: #fff;">
+            <i class="fa-solid fa-unlink"></i> Putuskan
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary" onclick="closeModal('supabaseModal')">Batal</button>
+            <button type="submit" class="btn-primary" style="background-color: #10b981;"><i class="fa-solid fa-plug"></i> Hubungkan Supabase</button>
+          </div>
         </div>
       </form>
     </div>
