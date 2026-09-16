@@ -1675,6 +1675,62 @@ function getStageIdxFromStatus(statusStr) {
 let currentActiveUnit = null;
 let currentActivePT = null;
 
+const STAGE_PROGRESS_MAP = {
+  'BELUM MULAI': 0,
+  'TANK MAKING': 10,
+  'CORE MAKING': 20,
+  'COIL MAKING': 30,
+  'ASSEMBLY': 45,
+  'CONNECTION': 55,
+  'FINAL ASSEMBLY': 65,
+  'INTERNAL TEST': 75,
+  'FINISHING': 85,
+  'FAT': 90,
+  'PUNCHLIST': 95,
+  'DELIVERY': 100,
+  'SELESAI': 100
+};
+
+function getBadgeClassForStatus(status) {
+  if (!status) return 'badge-assembly';
+  const s = status.toUpperCase();
+  if (s === 'SELESAI') return 'badge-selesai';
+  if (s === 'CONNECTION') return 'badge-connection';
+  if (s === 'TANK MAKING') return 'badge-tank';
+  if (s === 'CORE MAKING') return 'badge-core';
+  if (s === 'FINISHING') return 'badge-finishing';
+  if (s === 'INTERNAL TEST') return 'badge-internal';
+  if (s === 'BELUM MULAI') return 'badge-belum';
+  return 'badge-assembly';
+}
+
+function updateQcRowDisplay(rowId, valId, status, label) {
+  const row = document.getElementById(rowId);
+  const val = document.getElementById(valId);
+  if (!row || !val) return;
+
+  val.innerText = status;
+  if (status === 'PASS') {
+    row.style.background = '#ecfdf5';
+    row.style.color = '#065f46';
+    const firstSpan = row.querySelector('span:first-child');
+    if (firstSpan) firstSpan.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:4px;"></i> ${label}`;
+    val.style.color = '#047857';
+  } else if (status === 'IN PROGRESS') {
+    row.style.background = '#fffbe6';
+    row.style.color = '#92400e';
+    const firstSpan = row.querySelector('span:first-child');
+    if (firstSpan) firstSpan.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:#f59e0b; margin-right:4px;"></i> ${label}`;
+    val.style.color = '#b45309';
+  } else {
+    row.style.background = '#fef2f2';
+    row.style.color = '#991b1b';
+    const firstSpan = row.querySelector('span:first-child');
+    if (firstSpan) firstSpan.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color:#ef4444; margin-right:4px;"></i> ${label}`;
+    val.style.color = '#b91c1c';
+  }
+}
+
 // Open Detailed Progress & Specs Modal for any Trafo Unit
 function openTrafoDetailModal(unit, ptObj) {
   currentActiveUnit = unit;
@@ -1682,6 +1738,9 @@ function openTrafoDetailModal(unit, ptObj) {
 
   const modal = document.getElementById('trafoDetailModal');
   if (!modal) return;
+
+  // Always reset to View mode when opening
+  exitTrafoEditMode(true);
 
   const stageIdx = unit.currentStageIndex !== undefined 
     ? unit.currentStageIndex 
@@ -1693,7 +1752,7 @@ function openTrafoDetailModal(unit, ptObj) {
   document.getElementById('mTrafoPT').innerText = ptObj ? ptObj.pt : 'Internal SYMTRAFLOW';
   
   const badgeEl = document.getElementById('mTrafoBadge');
-  badgeEl.className = `badge-status ${unit.badge || 'badge-assembly'}`;
+  badgeEl.className = `badge-status ${unit.badge || getBadgeClassForStatus(unit.status)}`;
   badgeEl.innerText = unit.status;
   
   // Progress pct
@@ -1709,7 +1768,13 @@ function openTrafoDetailModal(unit, ptObj) {
   document.getElementById('mTrafoProject').innerText = ptObj ? `${ptObj.project}` : (unit.proyek || 'Proyek Regular');
   document.getElementById('mTrafoLocation').innerText = ptObj ? ptObj.location : 'Pabrik Utama SYMTRAFLOW';
 
-  // Render 11 Stepper Grid inside Modal
+  // QC Display
+  const qc = unit.qc || { tank: 'PASS', core: 'PASS', winding: 'IN PROGRESS' };
+  updateQcRowDisplay('mQcTankRow', 'mQcTankVal', qc.tank || 'PASS', 'Tank Pressure & Leakage');
+  updateQcRowDisplay('mQcCoreRow', 'mQcCoreVal', qc.core || 'PASS', 'Core Insulation & Ratio Test');
+  updateQcRowDisplay('mQcWindingRow', 'mQcWindingVal', qc.winding || 'IN PROGRESS', 'Winding & Dielectric Insulation');
+
+  // Render 11 Stepper Grid inside Modal (Clickable to switch stages quickly!)
   const stepperGrid = document.getElementById('mTrafoStepperGrid');
   if (stepperGrid) {
     stepperGrid.innerHTML = '';
@@ -1726,11 +1791,14 @@ function openTrafoDetailModal(unit, ptObj) {
       }
 
       const item = document.createElement('div');
+      item.className = 'modal-stepper-item';
       item.style.cssText = `
         display:flex; flex-direction:column; align-items:center; text-align:center; padding:8px 4px;
         border-radius:6px; background:${statusClass === 'finished' ? '#ecfdf5' : statusClass === 'process' ? '#fffbe6' : '#f8fafc'};
-        border:1px solid ${statusClass === 'finished' ? '#a7f3d0' : statusClass === 'process' ? '#fde68a' : '#e2e8f0'};
+        border:1.5px solid ${statusClass === 'finished' ? '#a7f3d0' : statusClass === 'process' ? '#fde68a' : '#e2e8f0'};
+        cursor: pointer; transition: all 0.2s ease;
       `;
+      item.title = `Klik untuk langsung ubah tahapan ke: ${idx + 1}. ${stg.code}`;
       item.innerHTML = `
         <div style="font-size:9px; font-weight:800; color:${statusClass === 'finished' ? '#047857' : statusClass === 'process' ? '#b45309' : '#64748b'}; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${idx+1}. ${stg.code}</div>
         <i class="fa-solid ${icon}" style="font-size:13px; margin:4px 0; color:${statusClass === 'finished' ? '#10b981' : statusClass === 'process' ? '#f59e0b' : '#cbd5e1'};"></i>
@@ -1738,11 +1806,239 @@ function openTrafoDetailModal(unit, ptObj) {
           ${statusClass === 'finished' ? 'Selesai' : statusClass === 'process' ? 'Proses' : 'Menunggu'}
         </div>
       `;
+
+      item.onclick = () => quickSetUnitStage(idx, stg.code);
       stepperGrid.appendChild(item);
     });
   }
 
   modal.classList.add('active');
+}
+
+// Quick 1-click stage setter from modal stepper cards
+function quickSetUnitStage(idx, stageCode) {
+  if (!currentActiveUnit) return;
+  const targetCode = stageCode || (STAGES[idx] ? STAGES[idx].code : 'ASSEMBLY');
+  const newProgress = STAGE_PROGRESS_MAP[targetCode] !== undefined 
+    ? STAGE_PROGRESS_MAP[targetCode] 
+    : Math.round(((idx + 1) / 11) * 100);
+
+  currentActiveUnit.status = targetCode;
+  currentActiveUnit.currentStageIndex = idx;
+  currentActiveUnit.stageIdx = idx;
+  currentActiveUnit.stage = targetCode;
+  currentActiveUnit.progress = newProgress;
+  currentActiveUnit.badge = getBadgeClassForStatus(targetCode);
+
+  // Sync with ptProjects
+  ptProjects.forEach(pt => {
+    const u = pt.units.find(item => item.id === currentActiveUnit.id);
+    if (u) Object.assign(u, currentActiveUnit);
+  });
+  renderPTProjects();
+
+  // Sync with orders
+  const ord = orders.find(o => o.id === currentActiveUnit.id);
+  if (ord) {
+    ord.status = targetCode;
+    ord.currentStageIndex = idx;
+    ord.progress = newProgress;
+  }
+  if (selectedOrder && selectedOrder.id === currentActiveUnit.id) {
+    selectedOrder.status = targetCode;
+    selectedOrder.currentStageIndex = idx;
+    selectedOrder.progress = newProgress;
+    renderStepper(selectedOrder, true);
+    updateDetailPanel(selectedOrder);
+  }
+  renderOrdersTable();
+  populateStepperOrderSelector();
+
+  // Re-render modal to reflect changes
+  openTrafoDetailModal(currentActiveUnit, currentActivePT);
+  showToast(`⚡ Tahapan ${currentActiveUnit.id} beralih ke ${targetCode} (${newProgress}%)`);
+}
+
+// Enter Edit Mode in Trafo Detail Modal
+function enterTrafoEditMode() {
+  if (!currentActiveUnit) return;
+  
+  const viewMode = document.getElementById('trafoDetailViewMode');
+  const editMode = document.getElementById('trafoDetailEditMode');
+  const viewFooter = document.getElementById('trafoDetailViewFooter');
+  const editFooter = document.getElementById('trafoDetailEditFooter');
+  const modalTitle = document.getElementById('mModalTitle');
+
+  if (viewMode) viewMode.style.display = 'none';
+  if (editMode) editMode.style.display = 'flex';
+  if (viewFooter) viewFooter.style.display = 'none';
+  if (editFooter) editFooter.style.display = 'flex';
+  if (modalTitle) modalTitle.innerText = `Edit Progres & Spesifikasi Unit: ${currentActiveUnit.id}`;
+
+  // Populate form with current unit data
+  document.getElementById('inpEditNama').value = currentActiveUnit.nama || 'Trafo Power';
+  document.getElementById('inpEditCap').value = currentActiveUnit.cap || currentActiveUnit.kapasitas || '500 kVA';
+  document.getElementById('inpEditVolt').value = currentActiveUnit.volt || currentActiveUnit.tegangan || '20 kV / 400 V';
+  document.getElementById('inpEditOperator').value = currentActiveUnit.operator || 'Ahmad Fauzi';
+  document.getElementById('inpEditDeadline').value = currentActiveUnit.dead || currentActiveUnit.deadline || '20/06/2024';
+  
+  const locVal = currentActivePT ? currentActivePT.location : (currentActiveUnit.location || 'Refinery Unit IV Cilacap, Jawa Tengah');
+  document.getElementById('inpEditLocation').value = locVal;
+
+  const prjVal = currentActivePT ? currentActivePT.project : (currentActiveUnit.project || 'TRAFO POWER 20kV');
+  document.getElementById('inpEditProject').value = prjVal;
+
+  // Set Stage dropdown
+  const stgSel = document.getElementById('inpEditStage');
+  if (stgSel) {
+    stgSel.value = currentActiveUnit.status || 'ASSEMBLY';
+  }
+
+  // Set Progress
+  const prgVal = currentActiveUnit.progress !== undefined ? currentActiveUnit.progress : 60;
+  document.getElementById('inpEditProgressRange').value = prgVal;
+  document.getElementById('inpEditProgressNum').value = prgVal;
+  document.getElementById('editProgressDisplay').innerText = `${prgVal}%`;
+
+  // Set QC
+  const qc = currentActiveUnit.qc || { tank: 'PASS', core: 'PASS', winding: 'IN PROGRESS' };
+  document.getElementById('inpEditQcTank').value = qc.tank || 'PASS';
+  document.getElementById('inpEditQcCore').value = qc.core || 'PASS';
+  document.getElementById('inpEditQcWinding').value = qc.winding || 'IN PROGRESS';
+}
+
+// Exit Edit Mode back to View Mode
+function exitTrafoEditMode(silent = false) {
+  const viewMode = document.getElementById('trafoDetailViewMode');
+  const editMode = document.getElementById('trafoDetailEditMode');
+  const viewFooter = document.getElementById('trafoDetailViewFooter');
+  const editFooter = document.getElementById('trafoDetailEditFooter');
+  const modalTitle = document.getElementById('mModalTitle');
+
+  if (viewMode) viewMode.style.display = 'flex';
+  if (editMode) editMode.style.display = 'none';
+  if (viewFooter) viewFooter.style.display = 'flex';
+  if (editFooter) editFooter.style.display = 'none';
+  if (modalTitle) modalTitle.innerText = 'Detail Progres & Spesifikasi Trafo Unit';
+}
+
+// Stage change listener in edit form
+function onEditStageSelect(stageCode) {
+  const recommendedProgress = STAGE_PROGRESS_MAP[stageCode] !== undefined ? STAGE_PROGRESS_MAP[stageCode] : 50;
+  document.getElementById('inpEditProgressRange').value = recommendedProgress;
+  document.getElementById('inpEditProgressNum').value = recommendedProgress;
+  document.getElementById('editProgressDisplay').innerText = `${recommendedProgress}%`;
+}
+
+// Progress slider/input sync
+function onEditProgressInput(val) {
+  const num = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+  document.getElementById('inpEditProgressRange').value = num;
+  document.getElementById('inpEditProgressNum').value = num;
+  document.getElementById('editProgressDisplay').innerText = `${num}%`;
+}
+
+// Save Changes from Edit Form
+function handleSaveTrafoEdit(e) {
+  e.preventDefault();
+  if (!currentActiveUnit) return;
+
+  const nama = document.getElementById('inpEditNama').value.trim();
+  const cap = document.getElementById('inpEditCap').value.trim();
+  const volt = document.getElementById('inpEditVolt').value.trim();
+  const op = document.getElementById('inpEditOperator').value;
+  const deadline = document.getElementById('inpEditDeadline').value.trim();
+  const loc = document.getElementById('inpEditLocation').value.trim();
+  const prj = document.getElementById('inpEditProject').value.trim();
+  const stage = document.getElementById('inpEditStage').value;
+  const progress = parseInt(document.getElementById('inpEditProgressNum').value, 10) || 0;
+  const qcTank = document.getElementById('inpEditQcTank').value;
+  const qcCore = document.getElementById('inpEditQcCore').value;
+  const qcWinding = document.getElementById('inpEditQcWinding').value;
+
+  const stageIdx = getStageIdxFromStatus(stage);
+  const badgeClass = getBadgeClassForStatus(stage);
+
+  // Update active unit in-memory
+  currentActiveUnit.nama = nama;
+  currentActiveUnit.cap = cap;
+  currentActiveUnit.kapasitas = cap;
+  currentActiveUnit.volt = volt;
+  currentActiveUnit.tegangan = volt;
+  currentActiveUnit.operator = op;
+  currentActiveUnit.dead = deadline;
+  currentActiveUnit.deadline = deadline;
+  currentActiveUnit.status = stage;
+  currentActiveUnit.progress = progress;
+  currentActiveUnit.stage = stage;
+  currentActiveUnit.stageIdx = stageIdx;
+  currentActiveUnit.currentStageIndex = stageIdx;
+  currentActiveUnit.badge = badgeClass;
+  currentActiveUnit.qc = { tank: qcTank, core: qcCore, winding: qcWinding };
+
+  if (currentActivePT) {
+    currentActivePT.location = loc;
+    currentActivePT.project = prj;
+  }
+
+  // 1. Sync across ptProjects
+  ptProjects.forEach(pt => {
+    const u = pt.units.find(item => item.id === currentActiveUnit.id);
+    if (u) Object.assign(u, currentActiveUnit);
+  });
+  renderPTProjects();
+
+  // 2. Sync across orders array
+  const ord = orders.find(o => o.id === currentActiveUnit.id);
+  if (ord) {
+    ord.nama = nama;
+    ord.kapasitas = cap;
+    ord.tegangan = volt;
+    ord.operator = op;
+    ord.deadline = deadline;
+    ord.status = stage;
+    ord.progress = progress;
+    ord.currentStageIndex = stageIdx;
+  }
+  if (selectedOrder && selectedOrder.id === currentActiveUnit.id) {
+    Object.assign(selectedOrder, currentActiveUnit);
+    renderStepper(selectedOrder, true);
+    updateDetailPanel(selectedOrder);
+  }
+  renderOrdersTable();
+  populateStepperOrderSelector();
+
+  // 3. Sync across prj1Units / prj2Units
+  [prj1Units, prj2Units].forEach(list => {
+    const u = list.find(item => item.id === currentActiveUnit.id);
+    if (u) {
+      u.cap = cap;
+      u.volt = volt;
+      u.status = stage;
+      u.progress = progress;
+      u.stageIdx = stageIdx;
+      u.operator = op;
+      u.dead = deadline;
+      u.badge = badgeClass;
+    }
+  });
+  renderProjectView(prj1Units, 'prj1TableBody', 'prj1GanttBody', 'prj1');
+  renderProjectView(prj2Units, 'prj2TableBody', 'prj2GanttBody', 'prj2');
+
+  // Add activity log
+  activityLogs.unshift({
+    icon: 'blue',
+    iconClass: 'fa-solid fa-pen-to-square',
+    boldText: `Data spesifikasi & tahapan ${currentActiveUnit.id} diperbarui`,
+    subText: `${currentActiveUnit.id} • ${stage} (${progress}%)`,
+    time: 'Baru saja'
+  });
+  renderActivityLogs();
+
+  // Exit edit mode and refresh view modal
+  exitTrafoEditMode(true);
+  openTrafoDetailModal(currentActiveUnit, currentActivePT);
+  showToast(`✅ Spesifikasi & tahapan ${currentActiveUnit.id} berhasil disimpan!`);
 }
 
 // Print / Export Surat Perintah Kerja (SPK) & QC Document
