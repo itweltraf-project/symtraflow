@@ -221,11 +221,11 @@ const defaultPTProjects = [
     startDate: '01/05/2024',
     endDate: '30/06/2024',
     units: [
-      { no: 1, id: 'TRF-PTM-001', nama: 'Trafo Power', cap: '500 kVA',  volt: '20 kV / 400 V',   status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 60,  stage: 'ASSEMBLY',      operator: 'I WAYAN EVA VERDIANA',   dead: '20/06/2024' },
-      { no: 2, id: 'TRF-PTM-002', nama: 'Trafo Power', cap: '1000 kVA', volt: '20 kV / 400 V',   status: 'FINISHING',     badge: 'badge-finishing', progress: 80,  stage: 'FINISHING',     operator: 'SHEVIRA INDRASWARI',     dead: '18/06/2024' },
-      { no: 3, id: 'TRF-PTM-003', nama: 'Trafo Power', cap: '1500 kVA', volt: '20 kV / 6300 V',  status: 'INTERNAL TEST', badge: 'badge-internal',  progress: 40,  stage: 'INTERNAL TEST', operator: 'WILLI SYUKRAN',          dead: '22/06/2024' },
-      { no: 4, id: 'TRF-PTM-004', nama: 'Trafo Power', cap: '2000 kVA', volt: '30 kV / 6300 V',  status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'CASSA VITA SARI',        dead: '28/06/2024' },
-      { no: 5, id: 'TRF-PTM-005', nama: 'Trafo Power', cap: '2500 kVA', volt: '30 kV / 6300 V',  status: 'SELESAI',      badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'KRESNA BUDI PRASETYA',   dead: '15/06/2024' }
+      { no: 1, id: 'TRF-PTM-001', nama: 'Trafo Power', cap: '500 kVA',  volt: '20 kV / 400 V',   status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 60,  stage: 'ASSEMBLY',      operator: 'I WAYAN EVA VERDIANA',   dead: '20/06/2024', orderDate: '01/05/2024' },
+      { no: 2, id: 'TRF-PTM-002', nama: 'Trafo Power', cap: '1000 kVA', volt: '20 kV / 400 V',   status: 'FINISHING',     badge: 'badge-finishing', progress: 80,  stage: 'FINISHING',     operator: 'SHEVIRA INDRASWARI',     dead: '18/06/2024', orderDate: '03/05/2024' },
+      { no: 3, id: 'TRF-PTM-003', nama: 'Trafo Power', cap: '1500 kVA', volt: '20 kV / 6300 V',  status: 'INTERNAL TEST', badge: 'badge-internal',  progress: 40,  stage: 'INTERNAL TEST', operator: 'WILLI SYUKRAN',          dead: '22/06/2024', orderDate: '05/05/2024' },
+      { no: 4, id: 'TRF-PTM-004', nama: 'Trafo Power', cap: '2000 kVA', volt: '30 kV / 6300 V',  status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'CASSA VITA SARI',        dead: '28/06/2024', orderDate: '08/05/2024' },
+      { no: 5, id: 'TRF-PTM-005', nama: 'Trafo Power', cap: '2500 kVA', volt: '30 kV / 6300 V',  status: 'SELESAI',      badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'KRESNA BUDI PRASETYA',   dead: '15/06/2024', orderDate: '10/05/2024' }
     ]
   },
   {
@@ -240,11 +240,11 @@ const defaultPTProjects = [
     startDate: '10/05/2024',
     endDate: '25/07/2024',
     units: [
-      { no: 1, id: 'TRF-PLN-001', nama: 'Trafo Distribusi', cap: '100 kVA',  volt: '20 kV / 400 V',  status: 'SELESAI',       badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'ELNIRA AINUNNISA',       dead: '02/06/2024' },
-      { no: 2, id: 'TRF-PLN-002', nama: 'Trafo Distribusi', cap: '250 kVA',  volt: '20 kV / 400 V',  status: 'FAT',           badge: 'badge-assembly',  progress: 90,  stage: 'FAT',           operator: 'AHMAD NURSEHA',          dead: '10/06/2024' },
-      { no: 3, id: 'TRF-PLN-003', nama: 'Trafo Distribusi', cap: '500 kVA',  volt: '20 kV / 400 V',  status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 55,  stage: 'ASSEMBLY',      operator: 'YOGI RAHMADANI SAPUTRA', dead: '18/06/2024' },
-      { no: 4, id: 'TRF-PLN-004', nama: 'Trafo Distribusi', cap: '630 kVA',  volt: '20 kV / 400 V',  status: 'CORE MAKING',   badge: 'badge-core',      progress: 30,  stage: 'CORE MAKING',   operator: 'LUTHFAN ANDI PRADANA',   dead: '25/06/2024' },
-      { no: 5, id: 'TRF-PLN-005', nama: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V',  status: 'BELUM MULAI',   badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'AURELLIA LAYLA MAHANI',  dead: '05/07/2024' }
+      { no: 1, id: 'TRF-PLN-001', nama: 'Trafo Distribusi', cap: '100 kVA',  volt: '20 kV / 400 V',  status: 'SELESAI',       badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'ELNIRA AINUNNISA',       dead: '02/06/2024', orderDate: '10/05/2024' },
+      { no: 2, id: 'TRF-PLN-002', nama: 'Trafo Distribusi', cap: '250 kVA',  volt: '20 kV / 400 V',  status: 'FAT',           badge: 'badge-assembly',  progress: 90,  stage: 'FAT',           operator: 'AHMAD NURSEHA',          dead: '10/06/2024', orderDate: '12/05/2024' },
+      { no: 3, id: 'TRF-PLN-003', nama: 'Trafo Distribusi', cap: '500 kVA',  volt: '20 kV / 400 V',  status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 55,  stage: 'ASSEMBLY',      operator: 'YOGI RAHMADANI SAPUTRA', dead: '18/06/2024', orderDate: '15/05/2024' },
+      { no: 4, id: 'TRF-PLN-004', nama: 'Trafo Distribusi', cap: '630 kVA',  volt: '20 kV / 400 V',  status: 'CORE MAKING',   badge: 'badge-core',      progress: 30,  stage: 'CORE MAKING',   operator: 'LUTHFAN ANDI PRADANA',   dead: '25/06/2024', orderDate: '18/05/2024' },
+      { no: 5, id: 'TRF-PLN-005', nama: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V',  status: 'BELUM MULAI',   badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'AURELLIA LAYLA MAHANI',  dead: '05/07/2024', orderDate: '20/05/2024' }
     ]
   },
   {
@@ -259,11 +259,11 @@ const defaultPTProjects = [
     startDate: '15/05/2024',
     endDate: '15/08/2024',
     units: [
-      { no: 1, id: 'TRF-PKT-001', nama: 'Trafo Power', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'COIL MAKING',   badge: 'badge-core',      progress: 25,  stage: 'COIL MAKING',   operator: 'JHODY AIDO SAUT HUTAGALUNG', dead: '20/07/2024' },
-      { no: 2, id: 'TRF-PKT-002', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'TANK MAKING',   badge: 'badge-tank',      progress: 10,  stage: 'TANK MAKING',   operator: 'KEYSHA ZARA ALIFA PANJAITAN', dead: '25/07/2024' },
-      { no: 3, id: 'TRF-PKT-003', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'I WAYAN EVA VERDIANA',       dead: '30/07/2024' },
-      { no: 4, id: 'TRF-PKT-004', nama: 'Trafo Power', cap: '7500 kVA', volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'SHEVIRA INDRASWARI',         dead: '05/08/2024' },
-      { no: 5, id: 'TRF-PKT-005', nama: 'Trafo Power', cap: '10000 kVA',volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'WILLI SYUKRAN',              dead: '10/08/2024' }
+      { no: 1, id: 'TRF-PKT-001', nama: 'Trafo Power', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'COIL MAKING',   badge: 'badge-core',      progress: 25,  stage: 'COIL MAKING',   operator: 'JHODY AIDO SAUT HUTAGALUNG', dead: '20/07/2024', orderDate: '15/05/2024' },
+      { no: 2, id: 'TRF-PKT-002', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'TANK MAKING',   badge: 'badge-tank',      progress: 10,  stage: 'TANK MAKING',   operator: 'KEYSHA ZARA ALIFA PANJAITAN', dead: '25/07/2024', orderDate: '18/05/2024' },
+      { no: 3, id: 'TRF-PKT-003', nama: 'Trafo Power', cap: '5000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'I WAYAN EVA VERDIANA',       dead: '30/07/2024', orderDate: '20/05/2024' },
+      { no: 4, id: 'TRF-PKT-004', nama: 'Trafo Power', cap: '7500 kVA', volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'SHEVIRA INDRASWARI',         dead: '05/08/2024', orderDate: '22/05/2024' },
+      { no: 5, id: 'TRF-PKT-005', nama: 'Trafo Power', cap: '10000 kVA',volt: '70 kV / 6300 V', status: 'BELUM MULAI',  badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'WILLI SYUKRAN',              dead: '10/08/2024', orderDate: '25/05/2024' }
     ]
   }
 ];
@@ -272,6 +272,15 @@ let ptProjects;
 try {
   const savedPT = localStorage.getItem('SYMTRAFLOW_PT_PROJECTS');
   ptProjects = savedPT !== null ? JSON.parse(savedPT) : defaultPTProjects;
+  if (Array.isArray(ptProjects)) {
+    ptProjects.forEach(pt => {
+      if (Array.isArray(pt.units)) {
+        pt.units.forEach(u => {
+          if (!u.orderDate) u.orderDate = u.tglPesan || pt.startDate || '01/05/2024';
+        });
+      }
+    });
+  }
 } catch (e) {
   ptProjects = defaultPTProjects;
 }
@@ -1006,6 +1015,7 @@ function renderPTProjects() {
     // Rows for each trafo unit
     const unitRows = pt.units.map(u => {
       const pctColor = u.progress === 100 ? '#10b981' : u.progress >= 50 ? '#f59e0b' : '#3b82f6';
+      const orderDateVal = u.orderDate || u.tglPesan || pt.startDate || '-';
       return `
         <tr>
           <td style="font-weight:700; color:#64748b; text-align:center;">${u.no}</td>
@@ -1014,10 +1024,12 @@ function renderPTProjects() {
               <i class="fa-solid fa-up-right-from-square" style="font-size:9px;"></i> ${u.id}
             </span>
           </td>
-          <td style="font-weight:600;">${u.nama}</td>
           <td><span style="font-size:12px; font-weight:700; color:#0f172a;">${u.cap}</span></td>
-          <td style="font-size:11px; color:#64748b;">${u.volt}</td>
-          <td><span class="badge-status ${u.badge}" style="font-size:10px;">${u.status}</span></td>
+          <td style="font-size:11px; color:#475569; white-space:nowrap;">
+            <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-weight:600; color:#334155; display:inline-flex; align-items:center; gap:5px;">
+              <i class="fa-regular fa-calendar-check" style="color:${pt.ptColor}; font-size:11px;"></i> ${orderDateVal}
+            </span>
+          </td>
           <td>
             <div style="display:flex; align-items:center; gap:6px; min-width:110px;">
               <div style="flex:1; background:#f1f5f9; border-radius:999px; height:6px; overflow:hidden;">
@@ -1111,10 +1123,8 @@ function renderPTProjects() {
             <tr style="background:#ffffff; border-bottom:2px solid var(--border-color);">
               <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; width:40px;">No</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">No. SO</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Nama</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tegangan</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Status / Stage</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Variant</th>
+              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tanggal Pesan</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Progress</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Deadline</th>
               <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Sales Officer</th>
@@ -1122,7 +1132,7 @@ function renderPTProjects() {
             </tr>
           </thead>
           <tbody id="ptTbody-${pt.id}" style="font-size:12px;">
-            ${unitRows || '<tr><td colspan="10" style="text-align:center; padding:20px; color:#94a3b8;">Belum ada trafo dalam proyek ini. Klik <b>+ Tambah Trafo</b> di atas untuk menambahkan.</td></tr>'}
+            ${unitRows || '<tr><td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">Belum ada trafo dalam proyek ini. Klik <b>+ Tambah Trafo</b> di atas untuk menambahkan.</td></tr>'}
           </tbody>
         </table>
       </div>
@@ -1190,6 +1200,12 @@ function openAddTrafoModal(projectId) {
     dInp.value = nextMonth.toISOString().split('T')[0];
   }
 
+  // Set default order date to today
+  const oInp = document.getElementById('inpTrafoOrderDatePT');
+  if (oInp && !oInp.value) {
+    oInp.value = new Date().toISOString().split('T')[0];
+  }
+
   document.getElementById('addTrafoModal').classList.add('active');
 }
 
@@ -1207,7 +1223,7 @@ function onTargetProjectChange() {
     const count = ptObj.units.length + 1;
     const numStr = String(count).padStart(3, '0');
     defaultCode = `TRF-${ptObj.ptShort}-${numStr}`;
-    defaultName = ptObj.project.includes('DISTRIBUSI') ? 'Trafo Distribusi' : 'Trafo Power';
+    defaultName = ptObj.project && ptObj.project.includes('DISTRIBUSI') ? 'Trafo Distribusi' : 'Trafo Power';
   } else if (targetId === 'PRJ-240522-01') {
     const count = prj1Units.length + 1;
     const numStr = String(count).padStart(3, '0');
@@ -1227,14 +1243,16 @@ function handleAddTrafoSubmit(e) {
   e.preventDefault();
   const targetId = document.getElementById('inpTrafoTargetProject').value;
   const code     = document.getElementById('inpTrafoCode').value.trim();
-  const name     = document.getElementById('inpTrafoNamePT').value.trim();
+  const name     = document.getElementById('inpTrafoNamePT') ? document.getElementById('inpTrafoNamePT').value.trim() : 'Trafo Power';
   const cap      = document.getElementById('inpTrafoCapPT').value;
-  const volt     = document.getElementById('inpTrafoVoltPT').value;
+  const volt     = document.getElementById('inpTrafoVoltPT') ? document.getElementById('inpTrafoVoltPT').value : '20 kV / 400 V';
   const status   = document.getElementById('inpTrafoStatusPT').value;
   const progress = parseInt(document.getElementById('inpTrafoProgressPT').value) || 0;
   const operator = document.getElementById('inpTrafoOperatorPT').value;
   const deadlineRaw = document.getElementById('inpTrafoDeadlinePT').value;
   const deadlineFormatted = formatDateDisplay(deadlineRaw);
+  const orderDateRaw = document.getElementById('inpTrafoOrderDatePT') ? document.getElementById('inpTrafoOrderDatePT').value : '';
+  const orderDateFormatted = formatDateDisplay(orderDateRaw) || formatDateDisplay(new Date().toISOString().split('T')[0]);
 
   const badgeMap = {
     'SELESAI': 'badge-selesai',
@@ -1257,10 +1275,11 @@ function handleAddTrafoSubmit(e) {
     const newUnit = {
       no: targetPT.units.length + 1,
       id: code,
-      nama: name,
+      nama: name || 'Trafo Power',
       cap: cap,
-      volt: volt,
+      volt: volt || '20 kV / 400 V',
       status: status,
+      orderDate: orderDateFormatted,
       badge: badge,
       progress: progress,
       stage: status,

@@ -1646,14 +1646,7 @@
               <input type="text" class="form-input" id="inpTrafoCode" placeholder="TRF-PTM-006" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Nama / Jenis Trafo</label>
-              <input type="text" class="form-input" id="inpTrafoNamePT" placeholder="Trafo Power 1000 kVA" required>
-            </div>
-          </div>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label class="form-label">Kapasitas</label>
+              <label class="form-label">Variant</label>
               <select class="form-select" id="inpTrafoCapPT">
                 <option value="100 kVA">100 kVA</option>
                 <option value="250 kVA">250 kVA</option>
@@ -1669,15 +1662,16 @@
                 <option value="10000 kVA">10000 kVA</option>
               </select>
             </div>
+          </div>
+
+          <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label">Tegangan Nominal</label>
-              <select class="form-select" id="inpTrafoVoltPT">
-                <option value="20 kV / 400 V" selected>20 kV / 400 V</option>
-                <option value="20 kV / 6300 V">20 kV / 6300 V</option>
-                <option value="30 kV / 400 V">30 kV / 400 V</option>
-                <option value="30 kV / 6300 V">30 kV / 6300 V</option>
-                <option value="70 kV / 6300 V">70 kV / 6300 V</option>
-              </select>
+              <label class="form-label">Tanggal Pesan</label>
+              <input type="date" class="form-input" id="inpTrafoOrderDatePT" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Deadline</label>
+              <input type="date" class="form-input" id="inpTrafoDeadlinePT" required>
             </div>
           </div>
 
@@ -1706,29 +1700,26 @@
             </div>
           </div>
 
-          <div class="form-row-2">
-            <div class="form-group">
-              <label class="form-label">Sales Officer Penanggung Jawab</label>
-              <select class="form-select" id="inpTrafoOperatorPT">
-                <option value="I WAYAN EVA VERDIANA">I WAYAN EVA VERDIANA</option>
-                <option value="SHEVIRA INDRASWARI">SHEVIRA INDRASWARI</option>
-                <option value="WILLI SYUKRAN">WILLI SYUKRAN</option>
-                <option value="CASSA VITA SARI">CASSA VITA SARI</option>
-                <option value="KRESNA BUDI PRASETYA">KRESNA BUDI PRASETYA</option>
-                <option value="ELNIRA AINUNNISA">ELNIRA AINUNNISA</option>
-                <option value="AHMAD NURSEHA">AHMAD NURSEHA</option>
-                <option value="YOGI RAHMADANI SAPUTRA">YOGI RAHMADANI SAPUTRA</option>
-                <option value="LUTHFAN ANDI PRADANA">LUTHFAN ANDI PRADANA</option>
-                <option value="AURELLIA LAYLA MAHANI">AURELLIA LAYLA MAHANI</option>
-                <option value="JHODY AIDO SAUT HUTAGALUNG">JHODY AIDO SAUT HUTAGALUNG</option>
-                <option value="KEYSHA ZARA ALIFA PANJAITAN">KEYSHA ZARA ALIFA PANJAITAN</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Target Deadline</label>
-              <input type="date" class="form-input" id="inpTrafoDeadlinePT" required>
-            </div>
+          <div class="form-group">
+            <label class="form-label">Sales Officer Penanggung Jawab</label>
+            <select class="form-select" id="inpTrafoOperatorPT">
+              <option value="I WAYAN EVA VERDIANA">I WAYAN EVA VERDIANA</option>
+              <option value="SHEVIRA INDRASWARI">SHEVIRA INDRASWARI</option>
+              <option value="WILLI SYUKRAN">WILLI SYUKRAN</option>
+              <option value="CASSA VITA SARI">CASSA VITA SARI</option>
+              <option value="KRESNA BUDI PRASETYA">KRESNA BUDI PRASETYA</option>
+              <option value="ELNIRA AINUNNISA">ELNIRA AINUNNISA</option>
+              <option value="AHMAD NURSEHA">AHMAD NURSEHA</option>
+              <option value="YOGI RAHMADANI SAPUTRA">YOGI RAHMADANI SAPUTRA</option>
+              <option value="LUTHFAN ANDI PRADANA">LUTHFAN ANDI PRADANA</option>
+              <option value="AURELLIA LAYLA MAHANI">AURELLIA LAYLA MAHANI</option>
+              <option value="JHODY AIDO SAUT HUTAGALUNG">JHODY AIDO SAUT HUTAGALUNG</option>
+              <option value="KEYSHA ZARA ALIFA PANJAITAN">KEYSHA ZARA ALIFA PANJAITAN</option>
+            </select>
           </div>
+          <!-- Hidden inputs for backward compatibility -->
+          <input type="hidden" id="inpTrafoNamePT" value="Trafo Power">
+          <input type="hidden" id="inpTrafoVoltPT" value="20 kV / 400 V">
 
         </div>
         <div class="modal-footer">
