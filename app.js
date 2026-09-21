@@ -208,7 +208,7 @@ let prj2Units = [
 ];
 
 // PT Project Data — Hierarchy: PT Company → Project → Trafo Units
-let ptProjects = [
+const defaultPTProjects = [
   {
     id: 'PT-PTM-01',
     pt: 'PT Pertamina Persero',
@@ -267,6 +267,23 @@ let ptProjects = [
     ]
   }
 ];
+
+let ptProjects;
+try {
+  const savedPT = localStorage.getItem('SYMTRAFLOW_PT_PROJECTS');
+  ptProjects = savedPT !== null ? JSON.parse(savedPT) : defaultPTProjects;
+} catch (e) {
+  ptProjects = defaultPTProjects;
+}
+
+function savePTProjects() {
+  try {
+    localStorage.setItem('SYMTRAFLOW_PT_PROJECTS', JSON.stringify(ptProjects));
+  } catch (err) {
+    console.error('Gagal menyimpan PT Projects ke localStorage', err);
+  }
+}
+
 
 // Activity Feed Log Data
 let activityLogs = [
@@ -965,6 +982,20 @@ function renderPTProjects() {
   if (!container) return;
   container.innerHTML = '';
 
+  if (!ptProjects || ptProjects.length === 0) {
+    container.innerHTML = `
+      <div class="section-card" style="text-align:center; padding:45px 20px; color:#64748b; background:#ffffff; border-radius:var(--radius-lg); border:1px dashed var(--border-color);">
+        <i class="fa-solid fa-building-circle-xmark" style="font-size:42px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+        <div style="font-weight:700; font-size:15px; color:#334155; margin-bottom:6px;">Belum Ada Proyek Perusahaan (PT)</div>
+        <div style="font-size:12px; margin-bottom:16px;">Semua proyek telah dihapus atau belum ditambahkan. Klik tombol di bawah untuk membuat proyek baru.</div>
+        <button class="btn-primary" onclick="openAddPTProjectModal()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+          <i class="fa-solid fa-folder-plus"></i> + Tambah Proyek PT Baru
+        </button>
+      </div>
+    `;
+    return;
+  }
+
   ptProjects.forEach(pt => {
     const totalUnits = pt.units.length;
     const selesai    = pt.units.filter(u => u.status === 'SELESAI').length;
@@ -1021,14 +1052,6 @@ function renderPTProjects() {
           </div>
           <div>
             <div style="font-size:18px; font-weight:800; color:#fff; letter-spacing:0.3px;">${pt.pt}</div>
-            <div style="font-size:12px; color:rgba(255,255,255,0.8); margin-top:2px;">
-              <i class="fa-solid fa-folder-open" style="margin-right:5px;"></i>${pt.project}
-              <span style="margin:0 8px; opacity:0.5;">|</span>
-              <i class="fa-solid fa-file-contract" style="margin-right:5px;"></i>${pt.contract}
-            </div>
-            <div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;">
-              <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>${pt.location}
-            </div>
           </div>
         </div>
 
@@ -1052,6 +1075,9 @@ function renderPTProjects() {
 
           <button class="btn-add-trafo-pt" onclick="openAddTrafoModal('${pt.id}')" title="Tambah trafo baru di bawah ${pt.pt}">
             <i class="fa-solid fa-plus-circle"></i> Tambah Trafo
+          </button>
+          <button class="btn-delete-pt" onclick="deletePTProject('${pt.id}')" title="Hapus seluruh proyek ${pt.pt}">
+            <i class="fa-solid fa-trash-can"></i> Hapus Proyek PT
           </button>
         </div>
       </div>
@@ -1131,7 +1157,7 @@ function populateProjectDropdowns() {
   ptProjects.forEach(pt => {
     const opt = document.createElement('option');
     opt.value = pt.id;
-    opt.innerText = `${pt.pt} — ${pt.project} (${pt.units.length} Unit)`;
+    opt.innerText = `${pt.pt} (${pt.ptShort}) — ${pt.units.length} Unit`;
     sel.appendChild(opt);
   });
 
@@ -1243,6 +1269,7 @@ function handleAddTrafoSubmit(e) {
       stageIdx: stageIdx
     };
     targetPT.units.push(newUnit);
+    savePTProjects();
     renderPTProjects();
   } else if (targetId === 'PRJ-240522-01') {
     projectTitle = 'PROYEK TRAFO 10 UNIT';
@@ -1340,10 +1367,10 @@ function handleAddPTProjectSubmit(e) {
   e.preventDefault();
   const ptName    = document.getElementById('inpPTName').value.trim();
   const ptShort   = document.getElementById('inpPTShort').value.trim().toUpperCase();
-  const projTitle = document.getElementById('inpPTProjectTitle').value.trim();
+  const projTitle = document.getElementById('inpPTProjectTitle') ? document.getElementById('inpPTProjectTitle').value.trim() : '';
   const colorVal  = document.getElementById('inpPTColor').value;
-  const contract  = document.getElementById('inpPTContract').value.trim();
-  const location  = document.getElementById('inpPTLocation').value.trim();
+  const contract  = document.getElementById('inpPTContract') ? document.getElementById('inpPTContract').value.trim() : '';
+  const location  = document.getElementById('inpPTLocation') ? document.getElementById('inpPTLocation').value.trim() : '';
   const startDate = document.getElementById('inpPTStartDate').value;
   const endDate   = document.getElementById('inpPTEndDate').value;
 
@@ -1357,19 +1384,42 @@ function handleAddPTProjectSubmit(e) {
     ptShort: ptShort,
     ptColor: ptColor,
     ptBg: ptBg,
-    project: projTitle,
-    contract: contract,
-    location: location,
+    project: projTitle || 'PROYEK TRAFO',
+    contract: contract || `SO/${ptShort}/${new Date().getFullYear()}/001`,
+    location: location || '-',
     startDate: formatDateDisplay(startDate),
     endDate: formatDateDisplay(endDate),
     units: []
   };
 
   ptProjects.push(newPt);
+  savePTProjects();
   renderPTProjects();
+  populateProjectDropdowns();
 
+  if (document.getElementById('addPTProjectForm')) {
+    document.getElementById('addPTProjectForm').reset();
+  }
   closeModal('addPTProjectModal');
-  showToast(`✅ Proyek ${ptName} (${projTitle}) berhasil dibuat!`);
+  showToast(`✅ Proyek ${ptName} berhasil dibuat!`);
+}
+
+// Delete Entire PT Project
+function deletePTProject(ptId) {
+  const pt = ptProjects.find(p => p.id === ptId);
+  if (!pt) return;
+
+  const total = pt.units ? pt.units.length : 0;
+  const unitInfo = total > 0 ? `\nSemua ${total} unit trafo di bawah proyek ini akan ikut terhapus permanen.` : '';
+  const confirmMsg = `⚠️ Apakah Anda yakin ingin menghapus seluruh proyek "${pt.pt}"?${unitInfo}\n\nTindakan ini tidak dapat dibatalkan.`;
+  
+  if (confirm(confirmMsg)) {
+    ptProjects = ptProjects.filter(p => p.id !== ptId);
+    savePTProjects();
+    renderPTProjects();
+    populateProjectDropdowns();
+    showToast(`🗑️ Proyek ${pt.pt} beserta seluruh unitnya telah dihapus.`);
+  }
 }
 
 // Delete Trafo Unit from PT Project
@@ -1381,6 +1431,7 @@ function deleteTrafoUnit(ptId, trafoId) {
     pt.units = pt.units.filter(u => u.id !== trafoId);
     // Recalculate 'no' indexing
     pt.units.forEach((u, i) => u.no = i + 1);
+    savePTProjects();
     renderPTProjects();
     showToast(`🗑️ Unit trafo ${trafoId} telah dihapus dari ${pt.ptShort}.`);
   }
@@ -1870,6 +1921,7 @@ function quickSetUnitStage(idx, stageCode) {
     const u = pt.units.find(item => item.id === currentActiveUnit.id);
     if (u) Object.assign(u, currentActiveUnit);
   });
+  savePTProjects();
   renderPTProjects();
 
   // Sync with orders
@@ -2021,6 +2073,7 @@ function handleSaveTrafoEdit(e) {
     const u = pt.units.find(item => item.id === currentActiveUnit.id);
     if (u) Object.assign(u, currentActiveUnit);
   });
+  savePTProjects();
   renderPTProjects();
 
   // 2. Sync across orders array
