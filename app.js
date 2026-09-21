@@ -471,6 +471,7 @@ const STEPPER_TICK_INTERVAL_MS = 100;
 
 function startStepperSlideshow() {
   stopStepperSlideshow();
+  if (!document.getElementById('flowStepperGrid')) return;
   isStepperSlideshowActive = true;
   updateSlideshowBtnUI();
 
