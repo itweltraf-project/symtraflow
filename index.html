@@ -131,74 +131,37 @@
         <i class="fa-solid fa-bolt"></i>
       </div>
       <div class="brand-text">
-        <span class="brand-title">TRAFO</span>
-        <span class="brand-subtitle">Production System</span>
+        <span class="brand-title">Symphos Electric</span>
+        <span class="brand-subtitle">Production ERP</span>
       </div>
     </div>
 
     <nav class="sidebar-menu">
-      <button class="menu-item active" data-tab="dashboard">
-        <i class="fa-solid fa-square-poll-vertical"></i>
+      <button class="menu-item active" data-tab="dashboard" id="menuDashboard" onclick="switchMainTab('dashboard')">
+        <i class="fa-solid fa-house"></i>
         <span>Dashboard</span>
       </button>
 
-      <button class="menu-item" data-tab="orders">
-        <i class="fa-solid fa-clipboard-list"></i>
-        <span>Order Produksi</span>
+      <button class="menu-item" data-tab="proyek" id="menuProyek" onclick="switchMainTab('proyek')">
+        <i class="fa-regular fa-file-lines"></i>
+        <span>Proyek (SO)</span>
       </button>
 
-      <button class="menu-item menu-monitoring" id="menuMonitoring" onclick="toggleMonitoringMenu()">
-        <i class="fa-solid fa-chart-line"></i>
-        <span>Monitoring</span>
-        <i class="fa-solid fa-chevron-down arrow" id="monitoringArrow"></i>
-      </button>
-      <div class="submenu" id="submenuMonitoring">
-        <button class="submenu-item active" id="tabSingleFlow" onclick="switchView('single-flow')">
-          <i class="fa-solid fa-diagram-project"></i>
-          <span>Overview</span>
-        </button>
-        <button class="submenu-item" id="tabMultiProject" onclick="switchView('multi-project')">
-          <i class="fa-solid fa-bars-progress"></i>
-          <span>Multi-Project (Gantt)</span>
-        </button>
-        <button class="submenu-item" id="tabProjectPT" onclick="switchView('project-pt')">
-          <i class="fa-solid fa-building"></i>
-          <span>Project PT</span>
-        </button>
-      </div>
-
-      <button class="menu-item" data-tab="workcenter">
-        <i class="fa-solid fa-city"></i>
-        <span>Work Center</span>
-      </button>
-
-      <button class="menu-item" data-tab="qc">
-        <i class="fa-solid fa-shield-check"></i>
-        <span>Quality Control</span>
-      </button>
-
-      <button class="menu-item" data-tab="material">
-        <i class="fa-solid fa-boxes-stacked"></i>
-        <span>Material</span>
-      </button>
-
-      <button class="menu-item" data-tab="laporan">
-        <i class="fa-solid fa-file-invoice"></i>
-        <span>Laporan</span>
-      </button>
-
-      <button class="menu-item" data-tab="notifikasi">
-        <i class="fa-solid fa-bell"></i>
-        <span>Notifikasi</span>
-        <span class="badge-count">5</span>
-      </button>
-
-      <button class="menu-item" data-tab="pengaturan" onclick="switchView('pengaturan')">
+      <button class="menu-item" data-tab="produksi" id="menuProduksi" onclick="switchMainTab('produksi')">
         <i class="fa-solid fa-gear"></i>
-        <span>Pengaturan</span>
+        <span>Produksi</span>
+      </button>
+
+      <button class="menu-item" data-tab="pengiriman" id="menuPengiriman" onclick="switchMainTab('pengiriman')">
+        <i class="fa-solid fa-truck"></i>
+        <span>Pengiriman</span>
+      </button>
+
+      <button class="menu-item" data-tab="master-data" id="menuMasterData" onclick="switchMainTab('master-data')">
+        <i class="fa-solid fa-database"></i>
+        <span>Master Data</span>
       </button>
     </nav>
-
   </aside>
 
   <!-- Mobile sidebar backdrop -->
@@ -249,7 +212,18 @@
     </header>
 
     <!-- Action Bar -->
-    <div class="view-mode-bar">
+    <div class="view-mode-bar" id="dashboardActionBar">
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button class="btn-secondary active" id="btnSubSingleFlow" onclick="switchView('single-flow')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+          <i class="fa-solid fa-chart-line"></i> Monitoring Overview
+        </button>
+        <button class="btn-secondary" id="btnSubMultiGantt" onclick="switchView('multi-project')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+          <i class="fa-solid fa-bars-progress"></i> Multi-Project (Gantt)
+        </button>
+        <button class="btn-secondary" id="btnSubProjectPT" onclick="switchView('project-pt')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+          <i class="fa-solid fa-building"></i> Hierarki Proyek PT
+        </button>
+      </div>
       <div class="action-bar-right" style="margin-left: auto;">
         <button class="btn-secondary" onclick="openExportModal()">
           <i class="fa-solid fa-download"></i> Export Laporan
@@ -1054,6 +1028,524 @@
         </div>
       </div>
 
+      <!-- ================= VIEW 5: PROYEK (SALES ORDER) ================= -->
+      <div class="view-section" id="viewProyekSO">
+        <!-- Header -->
+        <div class="erp-page-header">
+          <div class="erp-page-title-wrap">
+            <h1 class="erp-page-title">Proyek (Sales Order)</h1>
+            <p class="erp-page-subtitle">Kelola daftar proyek dan sales order pelanggan</p>
+          </div>
+          <div class="erp-header-actions">
+            <div class="erp-header-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="proyekHeaderSearch" placeholder="Cari No. SO, pelanggan..." onkeyup="filterProyekTable()">
+            </div>
+            <button class="erp-header-notif" title="Notifikasi" onclick="showToast('🔔 3 Proyek menunggu validasi FAT')">
+              <i class="fa-regular fa-bell"></i>
+              <span class="erp-notif-dot">3</span>
+            </button>
+            <div class="erp-header-profile" onclick="handleLogout()" title="Klik untuk keluar / pengaturan akun">
+              <div class="erp-profile-avatar"><i class="fa-solid fa-user"></i></div>
+              <span class="erp-profile-name">Administrator</span>
+              <i class="fa-solid fa-chevron-down erp-profile-chevron"></i>
+            </div>
+            <button class="btn-erp-primary" onclick="openAddSOModal()">
+              <i class="fa-solid fa-plus"></i> Tambah SO
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Stats Cards Grid -->
+        <div class="erp-stats-grid">
+          <!-- Total Proyek -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
+              <i class="fa-regular fa-file-lines"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Total Proyek</span>
+              <span class="erp-stat-val" id="statProyekTotal">3</span>
+              <span class="erp-stat-sub">Proyek aktif</span>
+            </div>
+          </div>
+
+          <!-- Total Unit Trafo -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Total Unit Trafo</span>
+              <span class="erp-stat-val" id="statProyekTrafo">17</span>
+              <span class="erp-stat-sub">Unit dalam order</span>
+            </div>
+          </div>
+
+          <!-- Nilai Proyek -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-amber">
+              <i class="fa-solid fa-coins"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Nilai Proyek</span>
+              <span class="erp-stat-val" id="statProyekNilai">Rp 48,6 M</span>
+              <span class="erp-stat-sub">Total akumulasi nilai</span>
+            </div>
+          </div>
+
+          <!-- Power Transformer 20 MVA Banner -->
+          <div class="erp-banner-card" style="background-image: url('assets/transformer_substation.jpg');">
+            <div>
+              <div class="erp-banner-tag">POWER TRANSFORMER</div>
+              <div class="erp-banner-title">20 MVA</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="erp-filter-bar">
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Status</span>
+            <select id="filterProyekStatus" class="erp-filter-select" onchange="filterProyekTable()">
+              <option value="all">Semua Status</option>
+              <option value="Dalam Proses">Dalam Proses</option>
+              <option value="Belum Mulai">Belum Mulai</option>
+              <option value="Selesai">Selesai</option>
+            </select>
+          </div>
+
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Tahun</span>
+            <select id="filterProyekTahun" class="erp-filter-select" onchange="filterProyekTable()">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+
+          <div class="erp-filter-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="filterProyekSearch" placeholder="Cari nama pelanggan..." onkeyup="filterProyekTable()">
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="erp-table-card">
+          <div class="erp-table-responsive">
+            <table class="erp-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>No. SO</th>
+                  <th>Nama Pelanggan</th>
+                  <th>Variant</th>
+                  <th>KVA</th>
+                  <th>Qty</th>
+                  <th>Tgl Pesan</th>
+                  <th>Target Selesai</th>
+                  <th>Status</th>
+                  <th style="text-align: center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="proyekTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= VIEW 6: PRODUKSI ================= -->
+      <div class="view-section" id="viewProduksi">
+        <!-- Header -->
+        <div class="erp-page-header">
+          <div class="erp-page-title-wrap">
+            <h1 class="erp-page-title">Produksi</h1>
+            <p class="erp-page-subtitle">Monitor proses produksi trafo per unit sesuai sales order</p>
+          </div>
+          <div class="erp-header-actions">
+            <div class="erp-header-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="produksiHeaderSearch" placeholder="Cari No. SO, unit..." onkeyup="filterProduksiTable()">
+            </div>
+            <button class="erp-header-notif" title="Notifikasi" onclick="showToast('⚙️ 7 Unit sedang aktif dalam jalur perakitan')">
+              <i class="fa-regular fa-bell"></i>
+              <span class="erp-notif-dot">3</span>
+            </button>
+            <div class="erp-header-profile" onclick="handleLogout()" title="Administrator">
+              <div class="erp-profile-avatar"><i class="fa-solid fa-user"></i></div>
+              <span class="erp-profile-name">Administrator</span>
+              <i class="fa-solid fa-chevron-down erp-profile-chevron"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Filter Bar -->
+        <div class="erp-filter-bar">
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Proyek</span>
+            <select id="filterProduksiProyek" class="erp-filter-select" onchange="filterProduksiTable()">
+              <option value="all">Semua Proyek</option>
+              <option value="PT PLN UP3 Jateng">PT PLN UP3 Jateng</option>
+              <option value="PT PLN Nusa Daya">PT PLN Nusa Daya</option>
+              <option value="PT PLN Jawa Tengah">PT PLN Jawa Tengah</option>
+            </select>
+          </div>
+
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Tahap Proses</span>
+            <select id="filterProduksiTahap" class="erp-filter-select" onchange="filterProduksiTable()">
+              <option value="all">Semua Tahap</option>
+              <option value="HV">HV</option>
+              <option value="Susun Core">Susun Core</option>
+              <option value="CCA">CCA</option>
+              <option value="LV">LV</option>
+              <option value="Belum Mulai">Belum Mulai</option>
+            </select>
+          </div>
+
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Status</span>
+            <select id="filterProduksiStatus" class="erp-filter-select" onchange="filterProduksiTable()">
+              <option value="all">Semua Status</option>
+              <option value="Dalam Proses">Dalam Proses</option>
+              <option value="Selesai">Selesai</option>
+              <option value="Belum Mulai">Belum Mulai</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stats Grid (4 columns) -->
+        <div class="erp-stats-grid">
+          <!-- Total Unit -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Total Unit</span>
+              <span class="erp-stat-val" id="statProduksiTotal">17</span>
+              <span class="erp-stat-sub">Unit trafo</span>
+            </div>
+          </div>
+
+          <!-- Selesai -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Selesai</span>
+              <span class="erp-stat-val" id="statProduksiSelesai">8</span>
+              <span class="erp-stat-sub"><span style="color:#10b981; font-weight:700;">▲ 47%</span></span>
+            </div>
+          </div>
+
+          <!-- Dalam Proses -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-amber">
+              <i class="fa-solid fa-gear"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Dalam Proses</span>
+              <span class="erp-stat-val" id="statProduksiProses">7</span>
+              <span class="erp-stat-sub"><span style="color:#f59e0b; font-weight:700;">◆ 41%</span></span>
+            </div>
+          </div>
+
+          <!-- Belum Mulai -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-red">
+              <i class="fa-regular fa-clock"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Belum Mulai</span>
+              <span class="erp-stat-val" id="statProduksiBelum">2</span>
+              <span class="erp-stat-sub"><span style="color:#ef4444; font-weight:700;">▼ 12%</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Card: Daftar Unit Produksi -->
+        <div class="erp-table-card">
+          <div class="erp-table-header-title">Daftar Unit Produksi</div>
+          <div class="erp-table-responsive">
+            <table class="erp-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>No. SO</th>
+                  <th>Nama Pelanggan</th>
+                  <th>No. Unit</th>
+                  <th>KVA</th>
+                  <th>Tahap Saat Ini</th>
+                  <th>Progress</th>
+                  <th>Target Selesai</th>
+                  <th>Status</th>
+                  <th style="text-align: center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="produksiTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= VIEW 7: PENGIRIMAN ================= -->
+      <div class="view-section" id="viewPengiriman">
+        <!-- Header -->
+        <div class="erp-page-header">
+          <div class="erp-page-title-wrap">
+            <h1 class="erp-page-title">Pengiriman</h1>
+            <p class="erp-page-subtitle">Kelola unit trafo yang siap dikirim dan tracking pengiriman</p>
+          </div>
+          <div class="erp-header-actions">
+            <div class="erp-header-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="pengirimanHeaderSearch" placeholder="Cari No. SO, pelanggan..." onkeyup="filterPengirimanTable()">
+            </div>
+            <button class="erp-header-notif" title="Notifikasi" onclick="showToast('🚚 3 Unit trafo sedang dalam perjalanan logistik')">
+              <i class="fa-regular fa-bell"></i>
+              <span class="erp-notif-dot">3</span>
+            </button>
+            <div class="erp-header-profile" onclick="handleLogout()" title="Administrator">
+              <div class="erp-profile-avatar"><i class="fa-solid fa-user"></i></div>
+              <span class="erp-profile-name">Administrator</span>
+              <i class="fa-solid fa-chevron-down erp-profile-chevron"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Stats Cards Grid -->
+        <div class="erp-stats-grid">
+          <!-- Siap Kirim -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
+              <i class="fa-solid fa-truck"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Siap Kirim</span>
+              <span class="erp-stat-val" id="statKirimSiap">4</span>
+              <span class="erp-stat-sub">Unit trafo</span>
+            </div>
+          </div>
+
+          <!-- Dalam Pengiriman -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
+              <i class="fa-solid fa-truck-fast"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Dalam Pengiriman</span>
+              <span class="erp-stat-val" id="statKirimProses">3</span>
+              <span class="erp-stat-sub">Unit trafo</span>
+            </div>
+          </div>
+
+          <!-- Selesai -->
+          <div class="erp-stat-card">
+            <div class="erp-stat-icon-wrap erp-stat-icon-green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="erp-stat-info">
+              <span class="erp-stat-label">Selesai</span>
+              <span class="erp-stat-val" id="statKirimSelesai">10</span>
+              <span class="erp-stat-sub">Unit trafo</span>
+            </div>
+          </div>
+
+          <!-- Truck Banner Image Card -->
+          <div class="erp-banner-card" style="background-image: url('assets/transformer_truck.jpg');">
+            <div>
+              <div class="erp-banner-tag">LOGISTIK & DISTRIBUSI</div>
+              <div class="erp-banner-title">Armada Heavy Duty</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="erp-filter-bar">
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Status</span>
+            <select id="filterPengirimanStatus" class="erp-filter-select" onchange="filterPengirimanTable()">
+              <option value="all">Semua Status</option>
+              <option value="Siap Kirim">Siap Kirim</option>
+              <option value="Dalam Pengiriman">Dalam Pengiriman</option>
+              <option value="Selesai">Selesai</option>
+            </select>
+          </div>
+
+          <div class="erp-filter-item">
+            <span class="erp-filter-label">Tahun</span>
+            <select id="filterPengirimanTahun" class="erp-filter-select" onchange="filterPengirimanTable()">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+
+          <div class="erp-filter-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="filterPengirimanSearch" placeholder="Cari nama pelanggan..." onkeyup="filterPengirimanTable()">
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="erp-table-card">
+          <div class="erp-table-responsive">
+            <table class="erp-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>No. SO</th>
+                  <th>Nama Pelanggan</th>
+                  <th>No. Unit</th>
+                  <th>KVA</th>
+                  <th>Tanggal Selesai</th>
+                  <th>Tanggal Kirim</th>
+                  <th>Status</th>
+                  <th style="text-align: center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="pengirimanTableBody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Bottom Card: Tracking Pengiriman Stepper -->
+        <div class="erp-tracking-card">
+          <div class="erp-tracking-title">
+            <span>Tracking Pengiriman</span>
+            <span id="activeTrackingUnitLabel" style="font-size:12px; color:#2563eb; font-weight:700; background:#eff6ff; padding:4px 12px; border-radius:6px; border:1px solid #bfdbfe;">
+              Unit: TRF-001 (PT PLN UP3 Jateng)
+            </span>
+          </div>
+
+          <div class="erp-stepper-container" id="pengirimanStepperContainer">
+            <div class="erp-stepper-line">
+              <div class="erp-stepper-line-progress" id="stepperLineProgress" style="width: 33%;"></div>
+            </div>
+
+            <div class="erp-stepper-item completed" onclick="setTrackingActiveStep(1)">
+              <div class="erp-stepper-node"><i class="fa-solid fa-truck"></i></div>
+              <div class="erp-stepper-name">Siap Kirim</div>
+              <div class="erp-stepper-date" id="stepDate1">20 Jun 2026</div>
+            </div>
+
+            <div class="erp-stepper-item active" onclick="setTrackingActiveStep(2)">
+              <div class="erp-stepper-node"><i class="fa-solid fa-truck-fast"></i></div>
+              <div class="erp-stepper-name">Dalam Pengiriman</div>
+              <div class="erp-stepper-date" id="stepDate2">22 Jun 2026</div>
+            </div>
+
+            <div class="erp-stepper-item" onclick="setTrackingActiveStep(3)">
+              <div class="erp-stepper-node"><i class="fa-solid fa-location-dot"></i></div>
+              <div class="erp-stepper-name">Tiba di Lokasi</div>
+              <div class="erp-stepper-date" id="stepDate3">24 Jun 2026</div>
+            </div>
+
+            <div class="erp-stepper-item" onclick="setTrackingActiveStep(4)">
+              <div class="erp-stepper-node"><i class="fa-solid fa-check"></i></div>
+              <div class="erp-stepper-name">Selesai</div>
+              <div class="erp-stepper-date" id="stepDate4">25 Jun 2026</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= VIEW 8: MASTER DATA ================= -->
+      <div class="view-section" id="viewMasterData">
+        <!-- Header -->
+        <div class="erp-page-header">
+          <div class="erp-page-title-wrap">
+            <h1 class="erp-page-title">Master Data</h1>
+            <p class="erp-page-subtitle">Kelola data utama yang digunakan dalam sistem</p>
+          </div>
+          <div class="erp-header-actions">
+            <div class="erp-header-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="masterDataSearch" placeholder="Cari data..." onkeyup="filterMasterDataCards()">
+            </div>
+            <button class="erp-header-notif" title="Notifikasi" onclick="showToast('📦 6 Modul Master Data siap dikelola')">
+              <i class="fa-regular fa-bell"></i>
+              <span class="erp-notif-dot">3</span>
+            </button>
+            <div class="erp-header-profile" onclick="handleLogout()" title="Administrator">
+              <div class="erp-profile-avatar"><i class="fa-solid fa-user"></i></div>
+              <span class="erp-profile-name">Administrator</span>
+              <i class="fa-solid fa-chevron-down erp-profile-chevron"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3x2 Grid of Master Data Cards -->
+        <div class="erp-master-grid" id="masterDataGrid">
+          <!-- Card 1: Data Pelanggan -->
+          <div class="erp-master-card" onclick="openMasterModal('pelanggan')">
+            <div class="erp-master-icon-circle">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="erp-master-title">Data Pelanggan</div>
+            <div class="erp-master-desc">Kelola data customer / perusahaan</div>
+            <div class="erp-master-link">Lihat Data <i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+
+          <!-- Card 2: Data Trafo / Varian -->
+          <div class="erp-master-card" onclick="openMasterModal('trafo')">
+            <div class="erp-master-icon-box">
+              <img src="assets/transformer_substation.jpg" alt="Trafo Varian">
+            </div>
+            <div class="erp-master-title">Data Trafo / Varian</div>
+            <div class="erp-master-desc">Kelola tipe, kapasitas dan spesifikasi trafo</div>
+            <div class="erp-master-link">Lihat Data <i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+
+          <!-- Card 3: Data Proses -->
+          <div class="erp-master-card" onclick="openMasterModal('proses')">
+            <div class="erp-master-icon-circle" style="color: #2563eb; background: #eff6ff;">
+              <i class="fa-solid fa-gear"></i>
+            </div>
+            <div class="erp-master-title">Data Proses</div>
+            <div class="erp-master-desc">Kelola tahapan proses produksi</div>
+            <div class="erp-master-link">Lihat Data <i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+
+          <!-- Card 4: Data Material -->
+          <div class="erp-master-card" onclick="openMasterModal('material')">
+            <div class="erp-master-icon-box">
+              <img src="assets/master_material.jpg" alt="Material">
+            </div>
+            <div class="erp-master-title">Data Material</div>
+            <div class="erp-master-desc">Kelola material utama dan pendukung</div>
+            <div class="erp-master-link">Lihat Data <i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+
+          <!-- Card 5: Data PIC / User -->
+          <div class="erp-master-card" onclick="openMasterModal('pic')">
+            <div class="erp-master-icon-box">
+              <img src="assets/master_pic.jpg" alt="PIC User">
+            </div>
+            <div class="erp-master-title">Data PIC / User</div>
+            <div class="erp-master-desc">Kelola PIC dan pengguna sistem</div>
+            <div class="erp-master-link">Lihat Data <i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+
+          <!-- Card 6: Pengaturan -->
+          <div class="erp-master-card" onclick="openMasterModal('pengaturan')">
+            <div class="erp-master-icon-circle">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div class="erp-master-title">Pengaturan</div>
+            <div class="erp-master-desc">Pengaturan umum sistem</div>
+            <div class="erp-master-link">Lihat Data <i class="fa-solid fa-arrow-right"></i></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1701,6 +2193,145 @@
           <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Proyek PT</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Sales Order Baru -->
+  <div class="modal-overlay" id="modalAddSO">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-file-circle-plus" style="color: #2563eb;"></i> Tambah Sales Order (SO) Baru</span>
+        <button class="modal-close-btn" onclick="closeModal('modalAddSO')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="formAddSO" onsubmit="handleSaveNewSO(event)">
+        <div class="modal-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">No. Sales Order (SO)</label>
+              <input type="text" class="form-input" id="inpSONumber" placeholder="Misal: 25-0891" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Pelanggan / Perusahaan</label>
+              <input type="text" class="form-input" id="inpSOCustomer" placeholder="Misal: PT PLN UID Jawa Timur" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Varian Trafo</label>
+              <select class="form-select" id="inpSOVariant">
+                <option value="Distribusi">Distribusi</option>
+                <option value="Daya (Power)">Daya (Power)</option>
+                <option value="Step-Up / Down">Step-Up / Down</option>
+                <option value="Dry Type">Dry Type</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kapasitas (kVA)</label>
+              <input type="number" class="form-input" id="inpSOKVA" placeholder="500" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Jumlah Unit (Qty)</label>
+              <input type="number" class="form-input" id="inpSOQty" value="1" min="1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estimasi Nilai Proyek</label>
+              <input type="text" class="form-input" id="inpSOValue" placeholder="Misal: Rp 12,5 M" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Tanggal Pemesanan</label>
+              <input type="date" class="form-input" id="inpSOOrderDate" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Selesai (Delivery)</label>
+              <input type="date" class="form-input" id="inpSOTargetDate" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status Awal</label>
+            <select class="form-select" id="inpSOStatus">
+              <option value="Dalam Proses">Dalam Proses</option>
+              <option value="Belum Mulai">Belum Mulai</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalAddSO')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan Sales Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Detail Sales Order -->
+  <div class="modal-overlay" id="modalDetailSO">
+    <div class="modal-box" style="max-width: 720px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-file-invoice" style="color: #2563eb;"></i> Detail Sales Order: <span id="dtlSOCode">25-0563</span></span>
+        <button class="modal-close-btn" onclick="closeModal('modalDetailSO')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="modalDetailSOBody">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modalDetailSO')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detail Unit Produksi -->
+  <div class="modal-overlay" id="modalDetailProduksi">
+    <div class="modal-box" style="max-width: 680px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-gear" style="color: #2563eb;"></i> Detail Unit Produksi: <span id="dtlProduksiUnit">TRF-001</span></span>
+        <button class="modal-close-btn" onclick="closeModal('modalDetailProduksi')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="modalDetailProduksiBody">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modalDetailProduksi')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Detail Pengiriman -->
+  <div class="modal-overlay" id="modalDetailPengiriman">
+    <div class="modal-box" style="max-width: 680px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-truck" style="color: #2563eb;"></i> Detail Logistik Pengiriman: <span id="dtlKirimUnit">TRF-001</span></span>
+        <button class="modal-close-btn" onclick="closeModal('modalDetailPengiriman')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="modalDetailPengirimanBody">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('modalDetailPengiriman')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Master Data Manager -->
+  <div class="modal-overlay" id="modalMasterData">
+    <div class="modal-box" style="max-width: 820px;">
+      <div class="modal-header">
+        <span class="modal-title" id="masterModalTitle"><i class="fa-solid fa-database" style="color: #2563eb;"></i> Data Master</span>
+        <button class="modal-close-btn" onclick="closeModal('modalMasterData')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="masterModalBody" style="max-height: 70vh; overflow-y: auto;">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn-primary" onclick="showToast('✅ Fitur sinkronisasi cloud siap')"><i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi</button>
+        <button type="button" class="btn-secondary" onclick="closeModal('modalMasterData')">Tutup</button>
+      </div>
     </div>
   </div>
 

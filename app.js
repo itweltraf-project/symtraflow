@@ -949,6 +949,11 @@ function switchView(viewName) {
   // Clear all submenu-item active states
   [tabSingle, tabMulti, tabProjectPT].forEach(t => t && t.classList.remove('active'));
 
+  const btnSingle = document.getElementById('btnSubSingleFlow');
+  const btnMulti = document.getElementById('btnSubMultiGantt');
+  const btnPT = document.getElementById('btnSubProjectPT');
+  [btnSingle, btnMulti, btnPT].forEach(b => b && b.classList.remove('active'));
+
   const monitoringViews = ['single-flow', 'multi-project', 'project-pt'];
 
   // Auto open the monitoring submenu when navigating to a monitoring view
@@ -962,9 +967,11 @@ function switchView(viewName) {
   if (viewName === 'single-flow') {
     if (viewSingle) viewSingle.classList.add('active');
     if (tabSingle) tabSingle.classList.add('active');
+    if (btnSingle) btnSingle.classList.add('active');
   } else if (viewName === 'multi-project') {
     if (viewMulti) viewMulti.classList.add('active');
     if (tabMulti) tabMulti.classList.add('active');
+    if (btnMulti) btnMulti.classList.add('active');
   } else if (viewName === 'pengaturan') {
     if (viewPengaturan) viewPengaturan.classList.add('active');
     loadUserAccountsUI();
@@ -972,6 +979,7 @@ function switchView(viewName) {
   } else if (viewName === 'project-pt') {
     if (viewProjectPT) viewProjectPT.classList.add('active');
     if (tabProjectPT) tabProjectPT.classList.add('active');
+    if (btnPT) btnPT.classList.add('active');
   }
 }
 
@@ -2725,3 +2733,982 @@ function handleLogout() {
   if (navAvatarIcon) navAvatarIcon.style.display = '';
   showToast('🔒 Anda telah keluar dari sistem.');
 }
+
+/* ==========================================================================
+   SYMPHOS ELECTRIC - PRODUCTION ERP LOGIC
+   Proyek (SO), Produksi, Pengiriman, & Master Data
+   ========================================================================== */
+
+// --- Global Data Stores for the ERP Modules ---
+let erpSalesOrders = [
+  {
+    no: 1,
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    variant: 'Distribusi',
+    kva: 500,
+    qty: 10,
+    orderDate: '01/05/2026',
+    targetDate: '30/06/2026',
+    status: 'Dalam Proses',
+    value: 'Rp 14,5 M',
+    pic: 'I Wayan Eva Verdiana',
+    units: [
+      { unitNo: 'TRF-001', kva: 500, stage: 'HV', progress: 60, targetDate: '20/06/2026', status: 'Dalam Proses' },
+      { unitNo: 'TRF-002', kva: 500, stage: 'Susun Core', progress: 40, targetDate: '22/06/2026', status: 'Dalam Proses' }
+    ]
+  },
+  {
+    no: 2,
+    soNumber: '25-0442D',
+    customer: 'PT PLN Nusa Daya',
+    variant: 'Distribusi',
+    kva: 1000,
+    qty: 5,
+    orderDate: '03/05/2026',
+    targetDate: '25/07/2026',
+    status: 'Dalam Proses',
+    value: 'Rp 21,3 M',
+    pic: 'Shevira Indraswari',
+    units: [
+      { unitNo: 'TRF-003', kva: 1000, stage: 'CCA', progress: 30, targetDate: '10/07/2026', status: 'Dalam Proses' },
+      { unitNo: 'TRF-004', kva: 1000, stage: 'LV', progress: 20, targetDate: '10/07/2026', status: 'Dalam Proses' }
+    ]
+  },
+  {
+    no: 3,
+    soNumber: '25-0789',
+    customer: 'PT PLN Jawa Tengah',
+    variant: 'Distribusi',
+    kva: 250,
+    qty: 2,
+    orderDate: '10/05/2026',
+    targetDate: '15/08/2026',
+    status: 'Belum Mulai',
+    value: 'Rp 12,8 M',
+    pic: 'Willi Syukran',
+    units: [
+      { unitNo: 'TRF-005', kva: 250, stage: 'Belum Mulai', progress: 0, targetDate: '15/08/2026', status: 'Belum Mulai' }
+    ]
+  }
+];
+
+let erpProduksiUnits = [
+  {
+    no: 1,
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    unitNo: 'TRF-001',
+    kva: 500,
+    stage: 'HV',
+    progress: 60,
+    targetDate: '20/06/2026',
+    status: 'Dalam Proses',
+    operator: 'Budi Santoso'
+  },
+  {
+    no: 2,
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    unitNo: 'TRF-002',
+    kva: 500,
+    stage: 'Susun Core',
+    progress: 40,
+    targetDate: '22/06/2026',
+    status: 'Dalam Proses',
+    operator: 'Agus Pratama'
+  },
+  {
+    no: 3,
+    soNumber: '25-0442D',
+    customer: 'PT PLN Nusa Daya',
+    unitNo: 'TRF-003',
+    kva: 1000,
+    stage: 'CCA',
+    progress: 30,
+    targetDate: '10/07/2026',
+    status: 'Dalam Proses',
+    operator: 'Hendra Gunawan'
+  },
+  {
+    no: 4,
+    soNumber: '25-0442D',
+    customer: 'PT PLN Nusa Daya',
+    unitNo: 'TRF-004',
+    kva: 1000,
+    stage: 'LV',
+    progress: 20,
+    targetDate: '10/07/2026',
+    status: 'Dalam Proses',
+    operator: 'Dedi Kurniawan'
+  },
+  {
+    no: 5,
+    soNumber: '25-0789',
+    customer: 'PT PLN Jawa Tengah',
+    unitNo: 'TRF-005',
+    kva: 250,
+    stage: 'Belum Mulai',
+    progress: 0,
+    targetDate: '15/08/2026',
+    status: 'Belum Mulai',
+    operator: 'Eko Wahyudi'
+  }
+];
+
+let erpShipments = [
+  {
+    no: 1,
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    unitNo: 'TRF-001',
+    kva: 500,
+    finishDate: '20/06/2026',
+    shipDate: '22/06/2026',
+    status: 'Siap Kirim',
+    driver: 'Supardi (Truk B-9821-TF)',
+    dest: 'Gardu Induk Jateng, Semarang',
+    stepActive: 2,
+    steps: [
+      { name: 'Siap Kirim', date: '20 Jun 2026' },
+      { name: 'Dalam Pengiriman', date: '22 Jun 2026' },
+      { name: 'Tiba di Lokasi', date: '24 Jun 2026' },
+      { name: 'Selesai', date: '25 Jun 2026' }
+    ]
+  },
+  {
+    no: 2,
+    soNumber: '25-0442D',
+    customer: 'PT PLN Nusa Daya',
+    unitNo: 'TRF-003',
+    kva: 1000,
+    finishDate: '10/07/2026',
+    shipDate: '12/07/2026',
+    status: 'Dalam Pengiriman',
+    driver: 'Bambang S. (Low-Bed Trailer L-8812-UX)',
+    dest: 'GI Mataram, Lombok',
+    stepActive: 2,
+    steps: [
+      { name: 'Siap Kirim', date: '10 Jul 2026' },
+      { name: 'Dalam Pengiriman', date: '12 Jul 2026' },
+      { name: 'Tiba di Lokasi', date: '15 Jul 2026' },
+      { name: 'Selesai', date: '16 Jul 2026' }
+    ]
+  },
+  {
+    no: 3,
+    soNumber: '25-0789',
+    customer: 'PT PLN Jawa Tengah',
+    unitNo: 'TRF-005',
+    kva: 250,
+    finishDate: '15/08/2026',
+    shipDate: '18/08/2026',
+    status: 'Selesai',
+    driver: 'Joko Susilo (Flatbed H-9120-EA)',
+    dest: 'PLN UID Jateng-DIY, Kudus',
+    stepActive: 4,
+    steps: [
+      { name: 'Siap Kirim', date: '15 Agu 2026' },
+      { name: 'Dalam Pengiriman', date: '18 Agu 2026' },
+      { name: 'Tiba di Lokasi', date: '19 Agu 2026' },
+      { name: 'Selesai', date: '20 Agu 2026' }
+    ]
+  }
+];
+
+let activeTrackingShipmentIndex = 0;
+
+// --- Main Tab Switcher Function ---
+function switchMainTab(tabName) {
+  // Update sidebar active buttons
+  const tabButtonMap = {
+    'dashboard': 'menuDashboard',
+    'proyek': 'menuProyek',
+    'produksi': 'menuProduksi',
+    'pengiriman': 'menuPengiriman',
+    'master-data': 'menuMasterData'
+  };
+
+  document.querySelectorAll('.sidebar-menu .menu-item').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  const activeBtnId = tabButtonMap[tabName];
+  if (activeBtnId) {
+    const activeBtn = document.getElementById(activeBtnId);
+    if (activeBtn) activeBtn.classList.add('active');
+  }
+
+  // All view containers
+  const viewMap = {
+    'dashboard': 'viewSingleFlow',
+    'proyek': 'viewProyekSO',
+    'produksi': 'viewProduksi',
+    'pengiriman': 'viewPengiriman',
+    'master-data': 'viewMasterData'
+  };
+
+  const allViews = [
+    'viewSingleFlow',
+    'viewMultiProject',
+    'viewProjectPT',
+    'viewPengaturan',
+    'viewProyekSO',
+    'viewProduksi',
+    'viewPengiriman',
+    'viewMasterData'
+  ];
+
+  allViews.forEach(vId => {
+    const el = document.getElementById(vId);
+    if (el) el.classList.remove('active');
+  });
+
+  const targetViewId = viewMap[tabName] || 'viewSingleFlow';
+  const targetView = document.getElementById(targetViewId);
+  if (targetView) targetView.classList.add('active');
+
+  // Toggle dashboard sub-action bar
+  const dashBar = document.getElementById('dashboardActionBar');
+  if (dashBar) {
+    dashBar.style.display = (tabName === 'dashboard') ? 'flex' : 'none';
+  }
+
+  // Update navbar page title
+  const pageTitle = document.querySelector('.page-title');
+  const titleMap = {
+    'dashboard': 'Monitoring Produksi',
+    'proyek': 'Proyek (Sales Order)',
+    'produksi': 'Produksi',
+    'pengiriman': 'Pengiriman',
+    'master-data': 'Master Data'
+  };
+  if (pageTitle && titleMap[tabName]) {
+    pageTitle.innerText = titleMap[tabName];
+  }
+
+  // Trigger relevant renders
+  if (tabName === 'proyek') {
+    renderProyekTable();
+  } else if (tabName === 'produksi') {
+    renderProduksiTable();
+  } else if (tabName === 'pengiriman') {
+    renderPengirimanTable();
+    updateTrackingStepperUI();
+  }
+
+  closeMobileSidebar();
+}
+
+// --- PROYEK (SALES ORDER) FUNCTIONS ---
+function renderProyekTable(filteredList = null) {
+  const tbody = document.getElementById('proyekTableBody');
+  if (!tbody) return;
+
+  const data = filteredList || erpSalesOrders;
+  tbody.innerHTML = '';
+
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#94a3b8;">Tidak ada data Sales Order yang sesuai.</td></tr>`;
+    return;
+  }
+
+  data.forEach((so, idx) => {
+    const badgeClass = so.status === 'Dalam Proses' ? 'erp-badge-orange' : (so.status === 'Selesai' ? 'erp-badge-green' : 'erp-badge-gray');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align: center; color: #64748b; font-weight: 700;">${idx + 1}</td>
+      <td style="font-weight: 800; color: #0f172a;">${so.soNumber}</td>
+      <td style="font-weight: 600;">${so.customer}</td>
+      <td style="color: #64748b;">${so.variant}</td>
+      <td style="font-weight: 700; color: #334155;">${so.kva}</td>
+      <td style="font-weight: 700; text-align: center;">${so.qty}</td>
+      <td style="color: #64748b;">${so.orderDate}</td>
+      <td style="color: #64748b;">${so.targetDate}</td>
+      <td><span class="erp-badge ${badgeClass}">${so.status}</span></td>
+      <td style="text-align: center;">
+        <button class="btn-erp-detail" onclick="openProyekDetail('${so.soNumber}')">Detail</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Update Counters
+  const statProyekTotal = document.getElementById('statProyekTotal');
+  const statProyekTrafo = document.getElementById('statProyekTrafo');
+  if (statProyekTotal) statProyekTotal.innerText = erpSalesOrders.length;
+  if (statProyekTrafo) {
+    const totalUnits = erpSalesOrders.reduce((sum, so) => sum + (parseInt(so.qty) || 0), 0);
+    statProyekTrafo.innerText = totalUnits;
+  }
+}
+
+function filterProyekTable() {
+  const statusFilter = document.getElementById('filterProyekStatus') ? document.getElementById('filterProyekStatus').value : 'all';
+  const tahunFilter = document.getElementById('filterProyekTahun') ? document.getElementById('filterProyekTahun').value : 'all';
+  const searchInput = (document.getElementById('filterProyekSearch') ? document.getElementById('filterProyekSearch').value : '') ||
+                      (document.getElementById('proyekHeaderSearch') ? document.getElementById('proyekHeaderSearch').value : '');
+  const search = searchInput.toLowerCase().trim();
+
+  const filtered = erpSalesOrders.filter(so => {
+    const matchStatus = (statusFilter === 'all') || (so.status === statusFilter);
+    const matchTahun = (tahunFilter === 'all') || (so.targetDate && so.targetDate.includes(tahunFilter)) || (so.orderDate && so.orderDate.includes(tahunFilter));
+    const matchSearch = !search || so.customer.toLowerCase().includes(search) || so.soNumber.toLowerCase().includes(search);
+    return matchStatus && matchTahun && matchSearch;
+  });
+
+  renderProyekTable(filtered);
+}
+
+function openAddSOModal() {
+  const modal = document.getElementById('modalAddSO');
+  if (modal) {
+    modal.classList.add('active');
+    const today = new Date().toISOString().split('T')[0];
+    const inpOrder = document.getElementById('inpSOOrderDate');
+    const inpTarget = document.getElementById('inpSOTargetDate');
+    if (inpOrder) inpOrder.value = today;
+    if (inpTarget) inpTarget.value = today;
+  }
+}
+
+function handleSaveNewSO(e) {
+  e.preventDefault();
+  const soNumber = document.getElementById('inpSONumber').value.trim();
+  const customer = document.getElementById('inpSOCustomer').value.trim();
+  const variant = document.getElementById('inpSOVariant').value;
+  const kva = parseInt(document.getElementById('inpSOKVA').value) || 500;
+  const qty = parseInt(document.getElementById('inpSOQty').value) || 1;
+  const value = document.getElementById('inpSOValue').value.trim() || 'Rp 10 M';
+  const orderDate = document.getElementById('inpSOOrderDate').value.split('-').reverse().join('/');
+  const targetDate = document.getElementById('inpSOTargetDate').value.split('-').reverse().join('/');
+  const status = document.getElementById('inpSOStatus').value;
+
+  const newSO = {
+    no: erpSalesOrders.length + 1,
+    soNumber,
+    customer,
+    variant,
+    kva,
+    qty,
+    orderDate,
+    targetDate,
+    status,
+    value,
+    pic: 'Administrator Produksi',
+    units: []
+  };
+
+  for (let i = 1; i <= qty; i++) {
+    const unitNo = `TRF-${String(erpProduksiUnits.length + i).padStart(3, '0')}`;
+    newSO.units.push({
+      unitNo,
+      kva,
+      stage: status === 'Belum Mulai' ? 'Belum Mulai' : 'Core Making',
+      progress: status === 'Belum Mulai' ? 0 : 15,
+      targetDate,
+      status
+    });
+
+    erpProduksiUnits.push({
+      no: erpProduksiUnits.length + 1,
+      soNumber,
+      customer,
+      unitNo,
+      kva,
+      stage: status === 'Belum Mulai' ? 'Belum Mulai' : 'Core Making',
+      progress: status === 'Belum Mulai' ? 0 : 15,
+      targetDate,
+      status,
+      operator: 'Tim Perakitan ' + i
+    });
+  }
+
+  erpSalesOrders.unshift(newSO);
+  renderProyekTable();
+  renderProduksiTable();
+  closeModal('modalAddSO');
+  showToast(`✅ Sales Order ${soNumber} berhasil ditambahkan!`);
+}
+
+function openProyekDetail(soNumber) {
+  const so = erpSalesOrders.find(item => item.soNumber === soNumber);
+  if (!so) return;
+
+  const modal = document.getElementById('modalDetailSO');
+  const dtlCode = document.getElementById('dtlSOCode');
+  const dtlBody = document.getElementById('modalDetailSOBody');
+
+  if (dtlCode) dtlCode.innerText = so.soNumber;
+  if (dtlBody) {
+    let unitsTableHtml = '';
+    if (so.units && so.units.length > 0) {
+      unitsTableHtml = `
+        <div style="margin-top:16px;">
+          <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:8px;">Daftar Unit Trafo (${so.units.length} Unit)</div>
+          <table class="erp-table" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>No. Unit</th>
+                <th>KVA</th>
+                <th>Tahap Saat Ini</th>
+                <th>Progress</th>
+                <th>Target Selesai</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${so.units.map(u => `
+                <tr>
+                  <td style="font-weight:800; color:#2563eb;">${u.unitNo}</td>
+                  <td>${u.kva} kVA</td>
+                  <td>${u.stage}</td>
+                  <td>${u.progress}%</td>
+                  <td>${u.targetDate}</td>
+                  <td><span class="erp-badge ${u.status === 'Dalam Proses' ? 'erp-badge-orange' : 'erp-badge-gray'}">${u.status}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    dtlBody.innerHTML = `
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; background:#f8fafc; padding:16px; border-radius:10px; border:1px solid #e2e8f0; font-size:12px;">
+        <div><span style="color:#64748b;">No. Sales Order:</span> <strong style="color:#0f172a;">${so.soNumber}</strong></div>
+        <div><span style="color:#64748b;">Nama Pelanggan:</span> <strong style="color:#0f172a;">${so.customer}</strong></div>
+        <div><span style="color:#64748b;">Varian Trafo:</span> <strong>${so.variant}</strong></div>
+        <div><span style="color:#64748b;">Kapasitas:</span> <strong>${so.kva} kVA</strong></div>
+        <div><span style="color:#64748b;">Total Kuantitas:</span> <strong>${so.qty} Unit</strong></div>
+        <div><span style="color:#64748b;">Nilai Proyek:</span> <strong style="color:#d97706;">${so.value || 'Rp 10 M'}</strong></div>
+        <div><span style="color:#64748b;">Tanggal Pesan:</span> <strong>${so.orderDate}</strong></div>
+        <div><span style="color:#64748b;">Target Selesai:</span> <strong>${so.targetDate}</strong></div>
+        <div><span style="color:#64748b;">Status Proyek:</span> <span class="erp-badge erp-badge-orange">${so.status}</span></div>
+        <div><span style="color:#64748b;">PIC Officer:</span> <strong>${so.pic || 'I Wayan Eva Verdiana'}</strong></div>
+      </div>
+      ${unitsTableHtml}
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+// --- PRODUKSI FUNCTIONS ---
+function renderProduksiTable(filteredList = null) {
+  const tbody = document.getElementById('produksiTableBody');
+  if (!tbody) return;
+
+  const data = filteredList || erpProduksiUnits;
+  tbody.innerHTML = '';
+
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#94a3b8;">Tidak ada unit produksi yang sesuai filter.</td></tr>`;
+    return;
+  }
+
+  data.forEach((item, idx) => {
+    const badgeClass = item.status === 'Dalam Proses' ? 'erp-badge-orange' : (item.status === 'Selesai' ? 'erp-badge-green' : 'erp-badge-gray');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="text-align:center; color:#64748b; font-weight:700;">${idx + 1}</td>
+      <td style="font-weight:700; color:#334155;">${item.soNumber}</td>
+      <td style="font-weight:600;">${item.customer}</td>
+      <td style="font-weight:800; color:#2563eb;">${item.unitNo}</td>
+      <td style="font-weight:700;">${item.kva}</td>
+      <td><span style="background:#f1f5f9; padding:3px 8px; border-radius:5px; font-weight:600; font-size:11px;">${item.stage}</span></td>
+      <td>
+        <div class="erp-progress-wrapper">
+          <div class="erp-progress-track">
+            <div class="erp-progress-fill" style="width: ${item.progress}%;"></div>
+          </div>
+          <span class="erp-progress-pct">${item.progress}%</span>
+        </div>
+      </td>
+      <td style="color:#64748b;">${item.targetDate}</td>
+      <td><span class="erp-badge ${badgeClass}">${item.status}</span></td>
+      <td style="text-align: center;">
+        <button class="btn-erp-detail" onclick="openProduksiDetail('${item.unitNo}')">Detail</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Update Counters
+  const statTotal = document.getElementById('statProduksiTotal');
+  const statSelesai = document.getElementById('statProduksiSelesai');
+  const statProses = document.getElementById('statProduksiProses');
+  const statBelum = document.getElementById('statProduksiBelum');
+
+  if (statTotal) statTotal.innerText = erpProduksiUnits.length;
+  if (statSelesai) statSelesai.innerText = erpProduksiUnits.filter(u => u.status === 'Selesai').length;
+  if (statProses) statProses.innerText = erpProduksiUnits.filter(u => u.status === 'Dalam Proses').length;
+  if (statBelum) statBelum.innerText = erpProduksiUnits.filter(u => u.status === 'Belum Mulai').length;
+}
+
+function filterProduksiTable() {
+  const proyekFilter = document.getElementById('filterProduksiProyek') ? document.getElementById('filterProduksiProyek').value : 'all';
+  const tahapFilter = document.getElementById('filterProduksiTahap') ? document.getElementById('filterProduksiTahap').value : 'all';
+  const statusFilter = document.getElementById('filterProduksiStatus') ? document.getElementById('filterProduksiStatus').value : 'all';
+  const searchInput = (document.getElementById('produksiHeaderSearch') ? document.getElementById('produksiHeaderSearch').value : '').toLowerCase().trim();
+
+  const filtered = erpProduksiUnits.filter(u => {
+    const matchPrj = (proyekFilter === 'all') || (u.customer === proyekFilter);
+    const matchTahap = (tahapFilter === 'all') || (u.stage === tahapFilter);
+    const matchStatus = (statusFilter === 'all') || (u.status === statusFilter);
+    const matchSearch = !searchInput || u.unitNo.toLowerCase().includes(searchInput) || u.soNumber.toLowerCase().includes(searchInput) || u.customer.toLowerCase().includes(searchInput);
+    return matchPrj && matchTahap && matchStatus && matchSearch;
+  });
+
+  renderProduksiTable(filtered);
+}
+
+function openProduksiDetail(unitNo) {
+  const unit = erpProduksiUnits.find(u => u.unitNo === unitNo);
+  if (!unit) return;
+
+  const modal = document.getElementById('modalDetailProduksi');
+  const dtlUnit = document.getElementById('dtlProduksiUnit');
+  const dtlBody = document.getElementById('modalDetailProduksiBody');
+
+  if (dtlUnit) dtlUnit.innerText = unit.unitNo;
+  if (dtlBody) {
+    dtlBody.innerHTML = `
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; font-size:12px; display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;">
+        <div><span style="color:#64748b;">Nomor Unit:</span> <strong style="color:#2563eb; font-size:13px;">${unit.unitNo}</strong></div>
+        <div><span style="color:#64748b;">No. Sales Order:</span> <strong>${unit.soNumber}</strong></div>
+        <div><span style="color:#64748b;">Nama Pelanggan:</span> <strong>${unit.customer}</strong></div>
+        <div><span style="color:#64748b;">Kapasitas:</span> <strong>${unit.kva} kVA</strong></div>
+        <div><span style="color:#64748b;">Tahap Saat Ini:</span> <strong style="color:#d97706;">${unit.stage}</strong></div>
+        <div><span style="color:#64748b;">Status Produksi:</span> <span class="erp-badge erp-badge-orange">${unit.status}</span></div>
+        <div><span style="color:#64748b;">Target Selesai:</span> <strong>${unit.targetDate}</strong></div>
+        <div><span style="color:#64748b;">Operator Penanggung Jawab:</span> <strong>${unit.operator || 'Budi Santoso'}</strong></div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px; font-weight:700;">
+          <span>Progress Produksi</span>
+          <span style="color:#2563eb;">${unit.progress}%</span>
+        </div>
+        <div class="erp-progress-track" style="height:10px;">
+          <div class="erp-progress-fill" style="width:${unit.progress}%;"></div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #e2e8f0; padding-top:14px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:#64748b;">Tingkatkan progres unit ini:</span>
+        <button class="btn-erp-primary" onclick="updateUnitProgressStep('${unit.unitNo}')">
+          <i class="fa-solid fa-arrow-up"></i> Majukan Tahap (+20%)
+        </button>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function updateUnitProgressStep(unitNo) {
+  const unit = erpProduksiUnits.find(u => u.unitNo === unitNo);
+  if (!unit) return;
+
+  unit.progress = Math.min(100, unit.progress + 20);
+  if (unit.progress >= 100) {
+    unit.status = 'Selesai';
+    unit.stage = 'Selesai FAT';
+  } else if (unit.progress >= 70) {
+    unit.stage = 'Assembly';
+  } else if (unit.progress >= 50) {
+    unit.stage = 'HV';
+  }
+
+  renderProduksiTable();
+  openProduksiDetail(unitNo);
+  showToast(`📈 Progress ${unitNo} kini ${unit.progress}%!`);
+}
+
+// --- PENGIRIMAN FUNCTIONS ---
+function renderPengirimanTable(filteredList = null) {
+  const tbody = document.getElementById('pengirimanTableBody');
+  if (!tbody) return;
+
+  const data = filteredList || erpShipments;
+  tbody.innerHTML = '';
+
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Tidak ada data pengiriman yang sesuai filter.</td></tr>`;
+    return;
+  }
+
+  data.forEach((item, idx) => {
+    let badgeClass = 'erp-badge-blue';
+    if (item.status === 'Siap Kirim') badgeClass = 'erp-badge-green';
+    if (item.status === 'Selesai') badgeClass = 'erp-badge-green';
+
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => selectShipmentForTracking(idx);
+    tr.innerHTML = `
+      <td style="text-align:center; color:#64748b; font-weight:700;">${idx + 1}</td>
+      <td style="font-weight:700; color:#334155;">${item.soNumber}</td>
+      <td style="font-weight:600;">${item.customer}</td>
+      <td style="font-weight:800; color:#2563eb;">${item.unitNo}</td>
+      <td style="font-weight:700;">${item.kva}</td>
+      <td style="color:#64748b;">${item.finishDate}</td>
+      <td style="color:#64748b;">${item.shipDate}</td>
+      <td><span class="erp-badge ${badgeClass}">${item.status}</span></td>
+      <td style="text-align:center;">
+        <button class="btn-erp-detail" onclick="event.stopPropagation(); openPengirimanDetail('${item.unitNo}')">Detail</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Counters
+  const statKirimSiap = document.getElementById('statKirimSiap');
+  const statKirimProses = document.getElementById('statKirimProses');
+  const statKirimSelesai = document.getElementById('statKirimSelesai');
+  if (statKirimSiap) statKirimSiap.innerText = erpShipments.filter(s => s.status === 'Siap Kirim').length;
+  if (statKirimProses) statKirimProses.innerText = erpShipments.filter(s => s.status === 'Dalam Pengiriman').length;
+  if (statKirimSelesai) statKirimSelesai.innerText = erpShipments.filter(s => s.status === 'Selesai').length;
+}
+
+function filterPengirimanTable() {
+  const statusFilter = document.getElementById('filterPengirimanStatus') ? document.getElementById('filterPengirimanStatus').value : 'all';
+  const tahunFilter = document.getElementById('filterPengirimanTahun') ? document.getElementById('filterPengirimanTahun').value : 'all';
+  const searchInput = (document.getElementById('filterPengirimanSearch') ? document.getElementById('filterPengirimanSearch').value : '') ||
+                      (document.getElementById('pengirimanHeaderSearch') ? document.getElementById('pengirimanHeaderSearch').value : '');
+  const search = searchInput.toLowerCase().trim();
+
+  const filtered = erpShipments.filter(item => {
+    const matchStatus = (statusFilter === 'all') || (item.status === statusFilter);
+    const matchTahun = (tahunFilter === 'all') || (item.shipDate && item.shipDate.includes(tahunFilter));
+    const matchSearch = !search || item.customer.toLowerCase().includes(search) || item.unitNo.toLowerCase().includes(search) || item.soNumber.toLowerCase().includes(search);
+    return matchStatus && matchTahun && matchSearch;
+  });
+
+  renderPengirimanTable(filtered);
+}
+
+function selectShipmentForTracking(idx) {
+  if (!erpShipments[idx]) return;
+  activeTrackingShipmentIndex = idx;
+  updateTrackingStepperUI();
+}
+
+function updateTrackingStepperUI() {
+  const item = erpShipments[activeTrackingShipmentIndex];
+  if (!item) return;
+
+  const label = document.getElementById('activeTrackingUnitLabel');
+  if (label) label.innerText = `Unit: ${item.unitNo} (${item.customer})`;
+
+  const stepDate1 = document.getElementById('stepDate1');
+  const stepDate2 = document.getElementById('stepDate2');
+  const stepDate3 = document.getElementById('stepDate3');
+  const stepDate4 = document.getElementById('stepDate4');
+
+  if (item.steps) {
+    if (stepDate1 && item.steps[0]) stepDate1.innerText = item.steps[0].date;
+    if (stepDate2 && item.steps[1]) stepDate2.innerText = item.steps[1].date;
+    if (stepDate3 && item.steps[2]) stepDate3.innerText = item.steps[2].date;
+    if (stepDate4 && item.steps[3]) stepDate4.innerText = item.steps[3].date;
+  }
+
+  const stepItems = document.querySelectorAll('#pengirimanStepperContainer .erp-stepper-item');
+  const activeStep = item.stepActive || 2;
+
+  stepItems.forEach((el, i) => {
+    const stepNum = i + 1;
+    el.classList.remove('completed', 'active');
+    if (stepNum < activeStep) {
+      el.classList.add('completed');
+    } else if (stepNum === activeStep) {
+      el.classList.add('active');
+    }
+  });
+
+  const progressLine = document.getElementById('stepperLineProgress');
+  if (progressLine) {
+    const pct = ((activeStep - 1) / 3) * 100;
+    progressLine.style.width = `${pct}%`;
+  }
+}
+
+function setTrackingActiveStep(stepNum) {
+  const item = erpShipments[activeTrackingShipmentIndex];
+  if (!item) return;
+
+  item.stepActive = stepNum;
+  if (stepNum === 1) item.status = 'Siap Kirim';
+  else if (stepNum === 2 || stepNum === 3) item.status = 'Dalam Pengiriman';
+  else if (stepNum === 4) item.status = 'Selesai';
+
+  updateTrackingStepperUI();
+  renderPengirimanTable();
+  showToast(`📍 Status pengiriman ${item.unitNo} diperbarui ke Step ${stepNum}!`);
+}
+
+function openPengirimanDetail(unitNo) {
+  const ship = erpShipments.find(s => s.unitNo === unitNo);
+  if (!ship) return;
+
+  const modal = document.getElementById('modalDetailPengiriman');
+  const dtlUnit = document.getElementById('dtlKirimUnit');
+  const dtlBody = document.getElementById('modalDetailPengirimanBody');
+
+  if (dtlUnit) dtlUnit.innerText = ship.unitNo;
+  if (dtlBody) {
+    dtlBody.innerHTML = `
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; font-size:12px; display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:16px;">
+        <div><span style="color:#64748b;">Nomor Unit:</span> <strong style="color:#2563eb; font-size:13px;">${ship.unitNo}</strong></div>
+        <div><span style="color:#64748b;">No. Sales Order:</span> <strong>${ship.soNumber}</strong></div>
+        <div><span style="color:#64748b;">Pelanggan Penerima:</span> <strong>${ship.customer}</strong></div>
+        <div><span style="color:#64748b;">Kapasitas Trafo:</span> <strong>${ship.kva} kVA</strong></div>
+        <div><span style="color:#64748b;">Tanggal Selesai:</span> <strong>${ship.finishDate}</strong></div>
+        <div><span style="color:#64748b;">Tanggal Kirim:</span> <strong>${ship.shipDate}</strong></div>
+        <div><span style="color:#64748b;">Driver & Armada:</span> <strong style="color:#0f172a;">${ship.driver || 'Tim Ekspedisi'}</strong></div>
+        <div><span style="color:#64748b;">Status Logistik:</span> <span class="erp-badge erp-badge-blue">${ship.status}</span></div>
+        <div style="grid-column: span 2;"><span style="color:#64748b;">Alamat Tujuan:</span> <strong>${ship.dest || 'Gardu Induk PLN Jawa'}</strong></div>
+      </div>
+
+      <div style="font-size:12px; font-weight:700; margin-bottom:10px; color:#0f172a;">Ubah Status Tracking Cepat:</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-secondary" onclick="setTrackingActiveStep(1); closeModal('modalDetailPengiriman');">1. Siap Kirim</button>
+        <button class="btn-secondary" onclick="setTrackingActiveStep(2); closeModal('modalDetailPengiriman');">2. Dalam Pengiriman</button>
+        <button class="btn-secondary" onclick="setTrackingActiveStep(3); closeModal('modalDetailPengiriman');">3. Tiba di Lokasi</button>
+        <button class="btn-primary" onclick="setTrackingActiveStep(4); closeModal('modalDetailPengiriman');">4. Selesai Terkirim</button>
+      </div>
+    `;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+// --- MASTER DATA FUNCTIONS ---
+const erpMasterDataStore = {
+  pelanggan: [
+    { code: 'CUST-01', name: 'PT PLN UP3 Jateng', sector: 'BUMN Distribusi Listrik', city: 'Semarang', contact: 'Ir. Hendra (024-8412345)', orders: '10 Unit' },
+    { code: 'CUST-02', name: 'PT PLN Nusa Daya', sector: 'BUMN Pembangkitan', city: 'Mataram', contact: 'Ibu Ratna (0370-621980)', orders: '5 Unit' },
+    { code: 'CUST-03', name: 'PT PLN Jawa Tengah', sector: 'Transmisi & Gardu Induk', city: 'Kudus', contact: 'Bpk. Tri Wahyudi (0274-512990)', orders: '2 Unit' },
+    { code: 'CUST-04', name: 'PT Pertamina Persero', sector: 'Oil & Gas Refinery', city: 'Cilacap', contact: 'Dimas Anggara (021-3815111)', orders: '4 Unit' },
+    { code: 'CUST-05', name: 'PT Semen Indonesia', sector: 'Industrial Manufacturing', city: 'Gresik', contact: 'Ir. Bambang (031-3981732)', orders: '2 Unit' }
+  ],
+  trafo: [
+    { model: 'TRF-DIS-250', type: 'Trafo Distribusi', cap: '250 kVA', volt: '20 kV / 400 V', cooling: 'ONAN (Minyak Mineral)', standard: 'SPLN D3.002-1' },
+    { model: 'TRF-DIS-500', type: 'Trafo Distribusi', cap: '500 kVA', volt: '20 kV / 400 V', cooling: 'ONAN (Hermetically Sealed)', standard: 'IEC 60076' },
+    { model: 'TRF-DIS-1000', type: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V', cooling: 'ONAN Tier-2 Low Loss', standard: 'SPLN D3.002-1' },
+    { model: 'TRF-PWR-2500', type: 'Trafo Tenaga / Daya', cap: '2500 kVA', volt: '20 kV / 6.6 kV', cooling: 'ONAF with Radiator Fans', standard: 'IEC 60076' },
+    { model: 'TRF-PWR-20MVA', type: 'Power Transformer', cap: '20 MVA', volt: '150 kV / 20 kV', cooling: 'ONAF / OFAF Substation', standard: 'IEEE C57.12' }
+  ],
+  proses: [
+    { step: 1, name: 'Tank Making', dept: 'Fabrikasi', desc: 'Pemotongan, pembentukan plat, pengelasan & uji kebocoran tangki trafo', cycle: '3 Hari' },
+    { step: 2, name: 'Core Making', dept: 'Core Stacking', desc: 'Pemotongan & penyusunan plat silikon baja CRGO dengan presisi tinggi', cycle: '2 Hari' },
+    { step: 3, name: 'Coil Making (LV & HV)', dept: 'Winding', desc: 'Penggulungan kawat tembaga enamel lapis isolasi paper/nomex', cycle: '4 Hari' },
+    { step: 4, name: 'Assembly', dept: 'Perakitan', desc: 'Pemasangan kumparan ke inti besi & insulasi fasa', cycle: '2 Hari' },
+    { step: 5, name: 'Connection', dept: 'Wiring & Tap', desc: 'Penyambungan tap changer, terminal lead, dan bushing', cycle: '1 Hari' },
+    { step: 6, name: 'Final Assembly', dept: 'Oven & Tanking', desc: 'Pengeringan ruang vakum dan pemasangan trafo ke dalam tangki', cycle: '2 Hari' },
+    { step: 7, name: 'Internal Test', dept: 'Testing Lab', desc: 'Pengujian rasio tegangan, polaritas, dan tahanan isolasi Megger', cycle: '1 Hari' },
+    { step: 8, name: 'Finishing', dept: 'Painting', desc: 'Sandblasting, pelapisan primer epoxy, dan pengecatan polyurethane', cycle: '2 Hari' },
+    { step: 9, name: 'FAT (Factory Acceptance Test)', dept: 'Quality Control', desc: 'Pengujian saksi langsung bersama pihak pelanggan/PLN', cycle: '1 Hari' },
+    { step: 10, name: 'Packaging & Delivery', dept: 'Logistik', desc: 'Pengisian oli trafo, sealing, pemasangan proteksi pengiriman', cycle: '1 Hari' }
+  ],
+  material: [
+    { code: 'MAT-CU-01', name: 'Kawat Tembaga Enamel Kelas H', spec: '99.9% Cu ETP, Suhu 180°C', stock: '4,850 kg', uom: 'Kilogram', status: 'Aman' },
+    { code: 'MAT-CRGO-02', name: 'Silicon Steel CRGO M4/0.27', spec: 'Grain-oriented low core loss', stock: '12,400 kg', uom: 'Kilogram', status: 'Aman' },
+    { code: 'MAT-OIL-03', name: 'Minyak Trafo Nytro Taurus', spec: 'IEC 60296 Uninhibited, BDV > 70kV', stock: '8,500 Liter', uom: 'Liter', status: 'Aman' },
+    { code: 'MAT-BSH-04', name: 'Bushing HV Porselen 24 kV', spec: 'DIN 42531 Standard outdoor', stock: '64 Pcs', uom: 'Pcs', status: 'Cukup' },
+    { code: 'MAT-BSH-05', name: 'Bushing LV 1 kV / 1000A', spec: 'DIN 42530 Standard copper stud', stock: '96 Pcs', uom: 'Pcs', status: 'Aman' },
+    { code: 'MAT-RAD-06', name: 'Radiator Fin Panel 1200x520', spec: 'Ketebalan 1.2mm Cold Rolled Steel', stock: '180 Pcs', uom: 'Pcs', status: 'Aman' }
+  ],
+  pic: [
+    { id: 'EMP-101', name: 'I Wayan Eva Verdiana', role: 'Supervisor Produksi & Assembly', dept: 'Produksi', status: 'Aktif' },
+    { id: 'EMP-102', name: 'Shevira Indraswari', role: 'Quality Control & FAT Engineer', dept: 'QC Lab', status: 'Aktif' },
+    { id: 'EMP-103', name: 'Willi Syukran', role: 'Electrical Design & Core Specialist', dept: 'Engineering', status: 'Aktif' },
+    { id: 'EMP-104', name: 'Cassa Vita Sari', role: 'Planning & Material Controller', dept: 'PPIC', status: 'Aktif' },
+    { id: 'EMP-105', name: 'Budi Santoso', role: 'Lead Technician HV Winding', dept: 'Workshop', status: 'Aktif' },
+    { id: 'ADM-001', name: 'Administrator', role: 'Super Administrator ERP', dept: 'IT & System', status: 'Online' }
+  ]
+};
+
+function openMasterModal(type) {
+  if (type === 'pengaturan') {
+    switchView('pengaturan');
+    return;
+  }
+
+  const modal = document.getElementById('modalMasterData');
+  const title = document.getElementById('masterModalTitle');
+  const body = document.getElementById('masterModalBody');
+  if (!modal || !title || !body) return;
+
+  const titles = {
+    pelanggan: '<i class="fa-solid fa-users" style="color:#2563eb;"></i> Data Pelanggan / Perusahaan',
+    trafo: '<i class="fa-solid fa-bolt-lightning" style="color:#2563eb;"></i> Data Trafo & Varian',
+    proses: '<i class="fa-solid fa-gear" style="color:#2563eb;"></i> Data Tahapan Proses Produksi',
+    material: '<i class="fa-solid fa-cubes-stacked" style="color:#2563eb;"></i> Data Material Utama & Pendukung',
+    pic: '<i class="fa-solid fa-user-tie" style="color:#2563eb;"></i> Data PIC & Pengguna Sistem'
+  };
+
+  title.innerHTML = titles[type] || 'Data Master';
+
+  if (type === 'pelanggan') {
+    const list = erpMasterDataStore.pelanggan;
+    body.innerHTML = `
+      <table class="erp-master-modal-table">
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Nama Customer</th>
+            <th>Sektor</th>
+            <th>Kota</th>
+            <th>Kontak Person</th>
+            <th>Order Aktif</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(p => `
+            <tr>
+              <td><strong style="color:#2563eb;">${p.code}</strong></td>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.sector}</td>
+              <td>${p.city}</td>
+              <td>${p.contact}</td>
+              <td><span class="erp-badge erp-badge-blue">${p.orders}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (type === 'trafo') {
+    const list = erpMasterDataStore.trafo;
+    body.innerHTML = `
+      <table class="erp-master-modal-table">
+        <thead>
+          <tr>
+            <th>Model Code</th>
+            <th>Tipe Trafo</th>
+            <th>Kapasitas</th>
+            <th>Tegangan</th>
+            <th>Pendingin</th>
+            <th>Standar</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(t => `
+            <tr>
+              <td><strong style="color:#2563eb;">${t.model}</strong></td>
+              <td><strong>${t.type}</strong></td>
+              <td><span class="erp-badge erp-badge-orange">${t.cap}</span></td>
+              <td>${t.volt}</td>
+              <td>${t.cooling}</td>
+              <td>${t.standard}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (type === 'proses') {
+    const list = erpMasterDataStore.proses;
+    body.innerHTML = `
+      <table class="erp-master-modal-table">
+        <thead>
+          <tr>
+            <th>Tahap</th>
+            <th>Nama Proses</th>
+            <th>Departemen</th>
+            <th>Keterangan Aktivitas</th>
+            <th>Standar Waktu</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(p => `
+            <tr>
+              <td style="text-align:center;"><strong style="background:#2563eb; color:#ffffff; padding:2px 8px; border-radius:50%; font-size:11px;">${p.step}</strong></td>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.dept}</td>
+              <td style="color:#64748b;">${p.desc}</td>
+              <td><span class="erp-badge erp-badge-gray">${p.cycle}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (type === 'material') {
+    const list = erpMasterDataStore.material;
+    body.innerHTML = `
+      <table class="erp-master-modal-table">
+        <thead>
+          <tr>
+            <th>Kode Material</th>
+            <th>Nama Bahan Baku</th>
+            <th>Spesifikasi</th>
+            <th>Stok Gudang</th>
+            <th>Satuan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(m => `
+            <tr>
+              <td><strong style="color:#2563eb;">${m.code}</strong></td>
+              <td><strong>${m.name}</strong></td>
+              <td>${m.spec}</td>
+              <td><strong>${m.stock}</strong></td>
+              <td>${m.uom}</td>
+              <td><span class="erp-badge erp-badge-green">${m.status}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } else if (type === 'pic') {
+    const list = erpMasterDataStore.pic;
+    body.innerHTML = `
+      <table class="erp-master-modal-table">
+        <thead>
+          <tr>
+            <th>ID User</th>
+            <th>Nama Lengkap</th>
+            <th>Jabatan / Role</th>
+            <th>Departemen</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(u => `
+            <tr>
+              <td><strong style="color:#2563eb;">${u.id}</strong></td>
+              <td><strong>${u.name}</strong></td>
+              <td>${u.role}</td>
+              <td>${u.dept}</td>
+              <td><span class="erp-badge erp-badge-green">${u.status}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  modal.classList.add('active');
+}
+
+function filterMasterDataCards() {
+  const input = document.getElementById('masterDataSearch');
+  if (!input) return;
+  const q = input.value.toLowerCase().trim();
+  const cards = document.querySelectorAll('#masterDataGrid .erp-master-card');
+
+  cards.forEach(card => {
+    const text = card.innerText.toLowerCase();
+    card.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+  });
+}
+
+// Auto-initialize ERP tables on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+  renderProyekTable();
+  renderProduksiTable();
+  renderPengirimanTable();
+  updateTrackingStepperUI();
+});
+
