@@ -142,24 +142,61 @@
         <span>Dashboard</span>
       </button>
 
-      <button class="menu-item" data-tab="proyek" id="menuProyek" onclick="switchMainTab('proyek')">
+      <!-- Monitoring Produksi (Parent menu with dropdown to access single flow, gantt, PT, SO, line, pengiriman) -->
+      <div class="menu-item-group" id="groupMonitoring">
+        <button class="menu-item" data-tab="monitoring" id="menuMonitoring" onclick="handleMonitoringMenuClick(event)">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Monitoring Produksi</span>
+          <i class="fa-solid fa-chevron-down arrow" id="arrowMonitoring" style="margin-left: auto; font-size: 10px; transition: transform 0.25s ease;"></i>
+        </button>
+        <div class="submenu" id="submenuMonitoring">
+          <button class="submenu-item active" id="tabSingleFlow" onclick="switchMonitoringSubView('single-flow')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Overview Monitoring</span>
+          </button>
+          <button class="submenu-item" id="tabMultiProject" onclick="switchMonitoringSubView('multi-project')">
+            <i class="fa-solid fa-bars-progress"></i>
+            <span>Multi-Project (Gantt)</span>
+          </button>
+          <button class="submenu-item" id="tabProjectPT" onclick="switchMonitoringSubView('project-pt')">
+            <i class="fa-solid fa-building"></i>
+            <span>Hierarki Proyek PT</span>
+          </button>
+          <button class="submenu-item" id="menuProyek" onclick="switchMainTab('proyek')">
+            <i class="fa-regular fa-file-lines"></i>
+            <span>Proyek (SO)</span>
+          </button>
+          <button class="submenu-item" id="menuProduksi" onclick="switchMainTab('produksi')">
+            <i class="fa-solid fa-gear"></i>
+            <span>Produksi</span>
+          </button>
+          <button class="submenu-item" id="menuPengiriman" onclick="switchMainTab('pengiriman')">
+            <i class="fa-solid fa-truck"></i>
+            <span>Pengiriman</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="menu-item" data-tab="document-control" id="menuDocumentControl" onclick="switchMainTab('document-control')">
         <i class="fa-regular fa-file-lines"></i>
-        <span>Proyek (SO)</span>
+        <span>Document Control</span>
       </button>
 
-      <button class="menu-item" data-tab="produksi" id="menuProduksi" onclick="switchMainTab('produksi')">
-        <i class="fa-solid fa-gear"></i>
-        <span>Produksi</span>
-      </button>
-
-      <button class="menu-item" data-tab="pengiriman" id="menuPengiriman" onclick="switchMainTab('pengiriman')">
-        <i class="fa-solid fa-truck"></i>
-        <span>Pengiriman</span>
-      </button>
+      <div class="sidebar-divider" style="margin: 10px 8px; border-top: 1px solid rgba(255, 255, 255, 0.08);"></div>
 
       <button class="menu-item" data-tab="master-data" id="menuMasterData" onclick="switchMainTab('master-data')">
         <i class="fa-solid fa-database"></i>
         <span>Master Data</span>
+      </button>
+
+      <button class="menu-item" data-tab="laporan" id="menuLaporan" onclick="switchMainTab('laporan')">
+        <i class="fa-regular fa-file-lines"></i>
+        <span>Laporan</span>
+      </button>
+
+      <button class="menu-item" data-tab="pengaturan" id="menuPengaturan" onclick="switchMainTab('pengaturan')">
+        <i class="fa-solid fa-gear"></i>
+        <span>Pengaturan</span>
       </button>
     </nav>
   </aside>
@@ -175,27 +212,85 @@
         <button class="toggle-sidebar-btn" id="toggleSidebar" onclick="openMobileSidebar()">
           <i class="fa-solid fa-bars"></i>
         </button>
-        <h1 class="page-title">Monitoring Produksi</h1>
+        <div class="navbar-title-group">
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+          <div class="page-subtitle" id="pageSubtitle">Pilih modul yang ingin diakses</div>
+        </div>
       </div>
 
       <div class="navbar-right">
         <!-- Live Realtime Status -->
         <div class="realtime-status">
           <span class="pulse-dot"></span>
-          <span>Realtime</span>
+          <span>Real-time</span>
         </div>
 
-        <!-- Digital Clock -->
+        <!-- Digital Clock / Date -->
         <div class="time-display" id="timeDisplay">
-          <i class="fa-regular fa-clock"></i>
-          <span id="liveClock">22 Mei 2024 10:24:35</span>
+          <i class="fa-regular fa-calendar" style="color: #64748b;"></i>
+          <span id="liveClock">01 Okt 2026 13:51:52</span>
         </div>
 
         <!-- Notifications Icon -->
-        <button class="nav-icon-btn" id="btnNotifications">
+        <button class="nav-icon-btn" id="btnNotifications" onclick="toggleNotificationDropdown()" title="Notifikasi Sistem">
           <i class="fa-regular fa-bell"></i>
           <span class="nav-icon-badge">5</span>
         </button>
+
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+          <div class="notif-header">
+            <span class="notif-title"><i class="fa-regular fa-bell"></i> Notifikasi Sistem</span>
+            <span class="notif-badge-sm">5 Baru</span>
+          </div>
+          <div class="notif-list">
+            <div class="notif-item" onclick="switchMainTab('monitoring')">
+              <div class="notif-item-icon" style="background:#eff6ff; color:#2563eb;">
+                <i class="fa-solid fa-gears"></i>
+              </div>
+              <div>
+                <div class="notif-item-text"><strong>TRF-240522-001</strong> memasuki proses <strong>ASSEMBLY</strong></div>
+                <div class="notif-item-time">10 menit yang lalu</div>
+              </div>
+            </div>
+            <div class="notif-item" onclick="switchMainTab('document-control')">
+              <div class="notif-item-icon" style="background:#f5f3ff; color:#7c3aed;">
+                <i class="fa-regular fa-file-lines"></i>
+              </div>
+              <div>
+                <div class="notif-item-text">GA Drawing <strong>SO 25-0563</strong> telah diverifikasi Engineering</div>
+                <div class="notif-item-time">25 menit yang lalu</div>
+              </div>
+            </div>
+            <div class="notif-item" onclick="switchMainTab('document-control')">
+              <div class="notif-item-icon" style="background:#ecfdf5; color:#059669;">
+                <i class="fa-solid fa-certificate"></i>
+              </div>
+              <div>
+                <div class="notif-item-text">Sertifikat <strong>FAT Trafo 1000 kVA</strong> siap diunduh</div>
+                <div class="notif-item-time">1 jam yang lalu</div>
+              </div>
+            </div>
+            <div class="notif-item" onclick="switchMainTab('pengiriman')">
+              <div class="notif-item-icon" style="background:#fffbeb; color:#d97706;">
+                <i class="fa-solid fa-truck"></i>
+              </div>
+              <div>
+                <div class="notif-item-text">Truk Ekspedisi <strong>SO 25-0565</strong> dalam perjalanan ke Semarang</div>
+                <div class="notif-item-time">2 jam yang lalu</div>
+              </div>
+            </div>
+            <div class="notif-item" onclick="switchMainTab('master-data')">
+              <div class="notif-item-icon" style="background:#fee2e2; color:#dc2626;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <div class="notif-item-text">Stok <strong>Insulating Oil (DialaS)</strong> tersisa 1,200 Liter</div>
+                <div class="notif-item-time">4 jam yang lalu</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Admin Profile -->
         <div class="user-nav-profile" onclick="handleLogout()" title="Klik untuk Logout / Keluar">
@@ -204,24 +299,33 @@
             <img id="navUserAvatar" src="" alt="Avatar" class="user-nav-avatar" style="display:none; width:36px; height:36px; border-radius:50%; object-fit:cover; position:absolute; top:0; left:0;">
           </div>
           <div class="user-nav-info">
-            <span class="user-nav-name">Admin <i class="fa-solid fa-right-from-bracket" style="font-size: 10px; margin-left: 4px; color: #ef4444;"></i></span>
-            <span class="user-nav-role">Administrator</span>
+            <span class="user-nav-name" style="display:flex; align-items:center; gap:4px;">Administrator Produksi <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: #64748b;"></i></span>
+            <span class="user-nav-role">Admin</span>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Action Bar -->
-    <div class="view-mode-bar" id="dashboardActionBar">
+    <!-- Action Bar (Displayed in Monitoring Produksi) -->
+    <div class="view-mode-bar" id="dashboardActionBar" style="display: none;">
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <button class="btn-secondary active" id="btnSubSingleFlow" onclick="switchView('single-flow')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+        <button class="btn-secondary active" id="btnSubSingleFlow" onclick="switchMonitoringSubView('single-flow')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
           <i class="fa-solid fa-chart-line"></i> Monitoring Overview
         </button>
-        <button class="btn-secondary" id="btnSubMultiGantt" onclick="switchView('multi-project')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+        <button class="btn-secondary" id="btnSubMultiGantt" onclick="switchMonitoringSubView('multi-project')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
           <i class="fa-solid fa-bars-progress"></i> Multi-Project (Gantt)
         </button>
-        <button class="btn-secondary" id="btnSubProjectPT" onclick="switchView('project-pt')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+        <button class="btn-secondary" id="btnSubProjectPT" onclick="switchMonitoringSubView('project-pt')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
           <i class="fa-solid fa-building"></i> Hierarki Proyek PT
+        </button>
+        <button class="btn-secondary" id="btnSubProyekSO" onclick="switchMainTab('proyek')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+          <i class="fa-regular fa-file-lines"></i> Proyek (SO)
+        </button>
+        <button class="btn-secondary" id="btnSubProduksi" onclick="switchMainTab('produksi')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+          <i class="fa-solid fa-gear"></i> Produksi
+        </button>
+        <button class="btn-secondary" id="btnSubPengiriman" onclick="switchMainTab('pengiriman')" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+          <i class="fa-solid fa-truck"></i> Pengiriman
         </button>
       </div>
       <div class="action-bar-right" style="margin-left: auto;">
@@ -237,8 +341,99 @@
     <!-- Main Content Container -->
     <div class="content-body">
       
-      <!-- ================= VIEW 1: SINGLE ORDER FLOW (IMAGE 1 REPLICA) ================= -->
-      <div class="view-section active" id="viewSingleFlow">
+      <!-- ================= VIEW 0: DASHBOARD PORTAL (EXACT REPLICA OF REFERENCE IMAGE) ================= -->
+      <div class="view-section active" id="viewDashboardPortal">
+        <!-- Bottom Industrial Substation Panorama Background -->
+        <div class="portal-substation-bg"></div>
+
+        <div class="portal-container">
+          <!-- Hero Section -->
+          <div class="portal-hero">
+            <div class="portal-hero-greeting">SELAMAT DATANG DI</div>
+            <h1 class="portal-hero-title">Symphos Electric</h1>
+            <div class="portal-hero-subtitle">Production ERP</div>
+            <p class="portal-hero-desc">Pilih modul untuk mulai mengakses sistem</p>
+          </div>
+
+          <!-- Two Big Module Cards Grid -->
+          <div class="portal-cards-grid">
+            
+            <!-- Card 1: Monitoring Produksi -->
+            <div class="portal-module-card portal-card-blue" onclick="switchMainTab('monitoring')" id="cardModuleMonitoring">
+              <div class="portal-card-glow-blue"></div>
+              <div class="portal-card-body">
+                <div class="portal-card-left">
+                  <div class="portal-card-icon-box blue">
+                    <i class="fa-solid fa-chart-simple"></i>
+                  </div>
+                  <h2 class="portal-card-title">Monitoring Produksi</h2>
+                  <p class="portal-card-desc">
+                    Pantau seluruh proses produksi trafo mulai dari perencanaan, produksi, pengujian hingga pengiriman secara real-time.
+                  </p>
+                  <div class="portal-card-btn-action blue">
+                    <div class="portal-btn-arrow-circle blue">
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                    <span class="portal-btn-text">
+                      Masuk ke<br><strong>Monitoring Produksi</strong>
+                    </span>
+                  </div>
+                </div>
+                <div class="portal-card-right">
+                  <img src="assets/portal_transformer_3d.jpg" alt="Trafo 3D Model" class="portal-trafo-img">
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Document Control -->
+            <div class="portal-module-card portal-card-purple" onclick="switchMainTab('document-control')" id="cardModuleDocControl">
+              <div class="portal-card-glow-purple"></div>
+              <div class="portal-card-body">
+                <div class="portal-card-left">
+                  <div class="portal-card-icon-box purple">
+                    <i class="fa-regular fa-file-lines"></i>
+                  </div>
+                  <h2 class="portal-card-title">Document Control</h2>
+                  <p class="portal-card-desc">
+                    Kelola dan akses dokumen proyek, gambar teknik, sertifikat, dan dokumen terkait.
+                  </p>
+                  <div class="portal-card-btn-action purple">
+                    <div class="portal-btn-arrow-circle purple">
+                      <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                    <span class="portal-btn-text">
+                      Masuk ke<br><strong>Document Control</strong>
+                    </span>
+                  </div>
+                </div>
+                <div class="portal-card-right">
+                  <img src="assets/portal_docs_3d.jpg" alt="Document Control 3D Illustration" class="portal-docs-img">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Quick Stats Summary Strip -->
+          <div class="portal-quick-stats">
+            <div class="portal-stat-pill">
+              <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i>
+              <span>15 Order Aktif Berjalan</span>
+            </div>
+            <div class="portal-stat-pill">
+              <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+              <span>Sistem Monitoring Realtime (100% Online)</span>
+            </div>
+            <div class="portal-stat-pill">
+              <i class="fa-solid fa-folder-open" style="color: #8b5cf6;"></i>
+              <span>48 Dokumen Teknik & Sertifikat</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= VIEW 1: SINGLE ORDER FLOW (MONITORING PRODUKSI) ================= -->
+      <div class="view-section" id="viewSingleFlow">
         
         <!-- Top 5 KPI Cards Grid -->
         <div class="kpi-cards-grid">
@@ -1546,6 +1741,191 @@
         </div>
       </div>
 
+      <!-- ================= VIEW 9: DOCUMENT CONTROL ================= -->
+      <div class="view-section" id="viewDocumentControl">
+        <!-- Header -->
+        <div class="erp-page-header">
+          <div class="erp-page-title-wrap">
+            <h1 class="erp-page-title">Document Control</h1>
+            <p class="erp-page-subtitle">Kelola dan akses dokumen proyek, gambar teknik, sertifikat pengujian (FAT), dan dokumen mutu transformator</p>
+          </div>
+          <div class="erp-header-actions">
+            <button class="btn-secondary" onclick="exportDocumentsList()">
+              <i class="fa-solid fa-download"></i> Export Data Dokumen
+            </button>
+            <button class="btn-primary" onclick="openUploadDocModal()" style="background: #7c3aed; border-color: #7c3aed;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> + Upload Dokumen
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Cards -->
+        <div class="doc-kpi-grid">
+          <div class="doc-kpi-card">
+            <div class="doc-kpi-icon" style="background: #eff6ff; color: #2563eb;">
+              <i class="fa-regular fa-folder-open"></i>
+            </div>
+            <div>
+              <div class="doc-kpi-val" id="docKpiTotal">48</div>
+              <div class="doc-kpi-label">TOTAL DOKUMEN</div>
+            </div>
+          </div>
+          <div class="doc-kpi-card">
+            <div class="doc-kpi-icon" style="background: #f5f3ff; color: #7c3aed;">
+              <i class="fa-solid fa-compass-drafting"></i>
+            </div>
+            <div>
+              <div class="doc-kpi-val" id="docKpiCAD">18</div>
+              <div class="doc-kpi-label">GAMBAR TEKNIK (CAD / GA)</div>
+            </div>
+          </div>
+          <div class="doc-kpi-card">
+            <div class="doc-kpi-icon" style="background: #ecfdf5; color: #059669;">
+              <i class="fa-solid fa-stamp"></i>
+            </div>
+            <div>
+              <div class="doc-kpi-val" id="docKpiFAT">16</div>
+              <div class="doc-kpi-label">SERTIFIKAT FAT & TEST REPORT</div>
+            </div>
+          </div>
+          <div class="doc-kpi-card">
+            <div class="doc-kpi-icon" style="background: #fffbe6; color: #d97706;">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+              <div class="doc-kpi-val" id="docKpiReview">3</div>
+              <div class="doc-kpi-label">MENUNGGU REVIEW & APPROVAL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="doc-filter-bar">
+          <div class="doc-filter-pills">
+            <button class="doc-pill-btn active" id="pillDocAll" onclick="filterDocsCategory('all', this)">Semua (48)</button>
+            <button class="doc-pill-btn" onclick="filterDocsCategory('drawing', this)">Gambar Teknik (18)</button>
+            <button class="doc-pill-btn" onclick="filterDocsCategory('fat', this)">FAT & Uji Lab (16)</button>
+            <button class="doc-pill-btn" onclick="filterDocsCategory('manual', this)">Manual Book (8)</button>
+            <button class="doc-pill-btn" onclick="filterDocsCategory('legal', this)">Kontrak & BAST (6)</button>
+          </div>
+          <div class="erp-header-search" style="margin: 0;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="docSearchInput" placeholder="Cari judul, No SO, tipe berkas..." onkeyup="filterDocsTable()">
+          </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="section-card" style="padding: 0; overflow: hidden; border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+          <table class="erp-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-transform: uppercase; color: #475569; letter-spacing: 0.5px;">
+                <th style="padding: 14px 16px; text-align: left; width: 80px;">Format</th>
+                <th style="padding: 14px 16px; text-align: left;">Judul Dokumen & Deskripsi</th>
+                <th style="padding: 14px 16px; text-align: left;">No. Proyek / SO</th>
+                <th style="padding: 14px 16px; text-align: left;">Kategori</th>
+                <th style="padding: 14px 16px; text-align: center;">Revisi</th>
+                <th style="padding: 14px 16px; text-align: left;">Ukuran & Tanggal</th>
+                <th style="padding: 14px 16px; text-align: center;">Status Verifikasi</th>
+                <th style="padding: 14px 16px; text-align: center; width: 140px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="documentControlTableBody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= VIEW 10: LAPORAN & ANALITIK ================= -->
+      <div class="view-section" id="viewLaporan">
+        <div class="erp-page-header">
+          <div class="erp-page-title-wrap">
+            <h1 class="erp-page-title">Laporan & Analitik Produksi</h1>
+            <p class="erp-page-subtitle">Rekapitulasi performa lini fabrikasi trafo, efisiensi waktu pengerjaan, dan statistik pengujian</p>
+          </div>
+          <div class="erp-header-actions">
+            <button class="btn-primary" onclick="openExportModal()">
+              <i class="fa-solid fa-file-excel"></i> Ekspor Laporan Excel / PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-cards-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="fa-solid fa-industry"></i></div>
+            <div class="kpi-content">
+              <span class="kpi-label">TOTAL PRODUKSI TAHUN INI</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value">124</span>
+                <span class="kpi-unit">Unit Trafo</span>
+              </div>
+              <span class="kpi-subtext" style="color:#10b981;">+14% dibanding tahun lalu</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="kpi-content">
+              <span class="kpi-label">ON-TIME DELIVERY RATE</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value">96.8</span>
+                <span class="kpi-unit">% Tepat Waktu</span>
+              </div>
+              <span class="kpi-subtext" style="color:#10b981;">Target standar ISO 9001</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon amber"><i class="fa-solid fa-stopwatch"></i></div>
+            <div class="kpi-content">
+              <span class="kpi-label">RATA-RATA LEAD TIME</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value">18.4</span>
+                <span class="kpi-unit">Hari Kerja</span>
+              </div>
+              <span class="kpi-subtext">Dari Tank Making s/d FAT</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon purple"><i class="fa-solid fa-medal"></i></div>
+            <div class="kpi-content">
+              <span class="kpi-label">FIRST PASS YIELD (QC)</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value">98.2</span>
+                <span class="kpi-unit">% Lolos FAT</span>
+              </div>
+              <span class="kpi-subtext" style="color:#10b981;">Tingkat defect sangat rendah</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:var(--radius-lg); padding:24px; box-shadow:var(--shadow-sm); margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:18px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:800; color:#0f172a;">Laporan Produksi Siap Cetak & Unduh</h3>
+              <p style="font-size:12px; color:#64748b; margin-top:2px;">Dokumen rekapitulasi performa resmi divisi produksi trafo Symphos Electric</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-secondary" onclick="triggerQuickReportDownload('harian')"><i class="fa-solid fa-calendar-day"></i> Laporan Harian</button>
+              <button class="btn-secondary" onclick="triggerQuickReportDownload('bulanan')"><i class="fa-solid fa-calendar-week"></i> Laporan Bulanan</button>
+              <button class="btn-primary" onclick="triggerQuickReportDownload('fat')"><i class="fa-solid fa-certificate"></i> Rekapitulasi FAT PLN</button>
+            </div>
+          </div>
+          <div style="border-top:1px solid #f1f5f9; padding-top:16px; display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+            <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid #e2e8f0;">
+              <div style="font-weight:700; color:#1e293b; font-size:13px; margin-bottom:4px;"><i class="fa-solid fa-chart-pie" style="color:#2563eb; margin-right:6px;"></i>Distribusi Kapasitas</div>
+              <div style="font-size:11px; color:#64748b;">500 kVA (40%), 1000 kVA (35%), 1500 kVA (25%)</div>
+            </div>
+            <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid #e2e8f0;">
+              <div style="font-weight:700; color:#1e293b; font-size:13px; margin-bottom:4px;"><i class="fa-solid fa-truck" style="color:#10b981; margin-right:6px;"></i>Pengiriman Terjadwal</div>
+              <div style="font-size:11px; color:#64748b;">4 Proyek dijadwalkan deliver minggu ini</div>
+            </div>
+            <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid #e2e8f0;">
+              <div style="font-weight:700; color:#1e293b; font-size:13px; margin-bottom:4px;"><i class="fa-solid fa-shield-halved" style="color:#7c3aed; margin-right:6px;"></i>Standar Kepatuhan</div>
+              <div style="font-size:11px; color:#64748b;">SPLN D3.002-1:2007 & IEC 60076 Compliant</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -2331,6 +2711,98 @@
       <div class="modal-footer" style="justify-content: space-between;">
         <button type="button" class="btn-primary" onclick="showToast('✅ Fitur sinkronisasi cloud siap')"><i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi</button>
         <button type="button" class="btn-secondary" onclick="closeModal('modalMasterData')">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Upload Dokumen Baru (Document Control) -->
+  <div class="modal-overlay" id="uploadDocModal">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fa-solid fa-cloud-arrow-up" style="color: #7c3aed;"></i> Upload Dokumen Proyek</span>
+        <button class="modal-close-btn" onclick="closeModal('uploadDocModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="uploadDocForm" onsubmit="handleDocUpload(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Judul Dokumen</label>
+            <input type="text" class="form-input" id="docUploadTitle" placeholder="Contoh: General Arrangement Drawing Trafo 1000 kVA" required>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Nomor Proyek / SO</label>
+              <select class="form-input" id="docUploadSO" required>
+                <option value="25-0563">SO 25-0563 (PLN Jateng - 500 kVA)</option>
+                <option value="25-0564">SO 25-0564 (PLN Jatim - 1000 kVA)</option>
+                <option value="25-0565">SO 25-0565 (PLN Jabar - 1500 kVA)</option>
+                <option value="25-0566">SO 25-0566 (PT Indofood - 250 kVA)</option>
+                <option value="TRF-240522-001">TRF-240522-001 (Trafo Distribusi 500 kVA)</option>
+                <option value="UMUM / STANDARD">STANDAR TEKNIK (Non-Proyek)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kategori Dokumen</label>
+              <select class="form-input" id="docUploadCategory" required>
+                <option value="Gambar Teknik">Gambar Teknik (CAD / GA)</option>
+                <option value="FAT & Uji Lab">FAT & Test Report</option>
+                <option value="Manual Book">Manual Book & Katalog</option>
+                <option value="Kontrak & BAST">Kontrak & BAST</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Tipe / Format File</label>
+              <select class="form-input" id="docUploadFormat" required>
+                <option value="PDF">PDF (.pdf)</option>
+                <option value="DWG">AutoCAD Drawing (.dwg / .dxf)</option>
+                <option value="XLS">Excel Sheet (.xlsx)</option>
+                <option value="DOC">Word Document (.docx)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nomor Revisi</label>
+              <input type="text" class="form-input" id="docUploadRev" value="Rev 0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pilih Berkas File</label>
+            <div style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 20px; text-align: center; background: #f8fafc; cursor: pointer;" onclick="document.getElementById('docFileInput').click()">
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size: 28px; color: #7c3aed; margin-bottom: 6px;"></i>
+              <div style="font-size: 13px; font-weight: 700; color: #334155;" id="docFileLabelText">Klik untuk memilih file dokumen</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Mendukung PDF, DWG, XLSX, DOCX (Maks. 25 MB)</div>
+              <input type="file" id="docFileInput" style="display: none;" onchange="handleDocFileSelection(this)">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Catatan Tambahan</label>
+            <textarea class="form-input" id="docUploadNotes" rows="2" placeholder="Catatan engineering atau revisi spesifikasi..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('uploadDocModal')">Batal</button>
+          <button type="submit" class="btn-primary" style="background: #7c3aed; border-color: #7c3aed;"><i class="fa-solid fa-check"></i> Simpan Dokumen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Preview Dokumen & Sertifikat (Document Control) -->
+  <div class="modal-overlay" id="previewDocModal">
+    <div class="modal-box" style="max-width: 720px;">
+      <div class="modal-header">
+        <span class="modal-title" id="previewDocModalTitle"><i class="fa-solid fa-file-contract" style="color: #7c3aed;"></i> Pratinjau Dokumen Proyek</span>
+        <button class="modal-close-btn" onclick="closeModal('previewDocModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="previewDocModalBody" style="max-height: 72vh; overflow-y: auto;">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div>
+          <button type="button" class="btn-secondary" onclick="printDocPreview()"><i class="fa-solid fa-print"></i> Cetak Dokumen</button>
+          <button type="button" class="btn-primary" onclick="simulateDocDownload()"><i class="fa-solid fa-download"></i> Download File</button>
+        </div>
+        <button type="button" class="btn-secondary" onclick="closeModal('previewDocModal')">Tutup</button>
       </div>
     </div>
   </div>

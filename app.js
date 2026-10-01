@@ -2923,13 +2923,17 @@ function switchMainTab(tabName) {
   // Update sidebar active buttons
   const tabButtonMap = {
     'dashboard': 'menuDashboard',
+    'monitoring': 'menuMonitoring',
+    'document-control': 'menuDocumentControl',
     'proyek': 'menuProyek',
     'produksi': 'menuProduksi',
     'pengiriman': 'menuPengiriman',
-    'master-data': 'menuMasterData'
+    'master-data': 'menuMasterData',
+    'laporan': 'menuLaporan',
+    'pengaturan': 'menuPengaturan'
   };
 
-  document.querySelectorAll('.sidebar-menu .menu-item').forEach(btn => {
+  document.querySelectorAll('.sidebar-menu .menu-item, .sidebar-menu .submenu-item').forEach(btn => {
     btn.classList.remove('active');
   });
 
@@ -2941,14 +2945,19 @@ function switchMainTab(tabName) {
 
   // All view containers
   const viewMap = {
-    'dashboard': 'viewSingleFlow',
+    'dashboard': 'viewDashboardPortal',
+    'monitoring': 'viewSingleFlow',
+    'document-control': 'viewDocumentControl',
     'proyek': 'viewProyekSO',
     'produksi': 'viewProduksi',
     'pengiriman': 'viewPengiriman',
-    'master-data': 'viewMasterData'
+    'master-data': 'viewMasterData',
+    'laporan': 'viewLaporan',
+    'pengaturan': 'viewPengaturan'
   };
 
   const allViews = [
+    'viewDashboardPortal',
     'viewSingleFlow',
     'viewMultiProject',
     'viewProjectPT',
@@ -2956,7 +2965,9 @@ function switchMainTab(tabName) {
     'viewProyekSO',
     'viewProduksi',
     'viewPengiriman',
-    'viewMasterData'
+    'viewMasterData',
+    'viewDocumentControl',
+    'viewLaporan'
   ];
 
   allViews.forEach(vId => {
@@ -2964,41 +2975,127 @@ function switchMainTab(tabName) {
     if (el) el.classList.remove('active');
   });
 
-  const targetViewId = viewMap[tabName] || 'viewSingleFlow';
+  const targetViewId = viewMap[tabName] || 'viewDashboardPortal';
   const targetView = document.getElementById(targetViewId);
   if (targetView) targetView.classList.add('active');
 
-  // Toggle dashboard sub-action bar
+  // Toggle dashboard sub-action bar (only visible in Monitoring Produksi)
   const dashBar = document.getElementById('dashboardActionBar');
   if (dashBar) {
-    dashBar.style.display = (tabName === 'dashboard') ? 'flex' : 'none';
+    dashBar.style.display = (tabName === 'monitoring') ? 'flex' : 'none';
   }
 
-  // Update navbar page title
-  const pageTitle = document.querySelector('.page-title');
+  // Update navbar page title and subtitle
+  const pageTitle = document.getElementById('pageTitle') || document.querySelector('.page-title');
+  const pageSubtitle = document.getElementById('pageSubtitle');
+
   const titleMap = {
-    'dashboard': 'Monitoring Produksi',
+    'dashboard': 'Dashboard',
+    'monitoring': 'Monitoring Produksi',
+    'document-control': 'Document Control',
     'proyek': 'Proyek (Sales Order)',
     'produksi': 'Produksi',
     'pengiriman': 'Pengiriman',
-    'master-data': 'Master Data'
+    'master-data': 'Master Data',
+    'laporan': 'Laporan & Analitik',
+    'pengaturan': 'Pengaturan Sistem'
   };
+
+  const subtitleMap = {
+    'dashboard': 'Pilih modul yang ingin diakses',
+    'monitoring': 'Pantau alur dan status proses produksi trafo secara real-time',
+    'document-control': 'Kelola dan akses dokumen proyek, gambar teknik, sertifikat, dan dokumen terkait.',
+    'proyek': 'Daftar seluruh pesanan sales order dan status pengerjaan',
+    'produksi': 'Alur dan tahapan lini fabrikasi transformator',
+    'pengiriman': 'Pelacakan ekspedisi dan status pengiriman trafo ke pelanggan',
+    'master-data': 'Database spesifikasi teknis, data customer, material, dan PIC',
+    'laporan': 'Rekapitulasi performa lini fabrikasi trafo, efisiensi waktu pengerjaan, dan statistik pengujian',
+    'pengaturan': 'Kelola user login, akun admin, dan preferensi aplikasi'
+  };
+
   if (pageTitle && titleMap[tabName]) {
     pageTitle.innerText = titleMap[tabName];
   }
+  if (pageSubtitle && subtitleMap[tabName]) {
+    pageSubtitle.innerText = subtitleMap[tabName];
+  }
+
+  // Submenu behavior for monitoring
+  const submenuMonitoring = document.getElementById('submenuMonitoring');
+  const arrowMonitoring = document.getElementById('arrowMonitoring');
+  if (tabName === 'monitoring' || tabName === 'proyek' || tabName === 'produksi' || tabName === 'pengiriman') {
+    if (submenuMonitoring) submenuMonitoring.classList.add('open');
+    if (arrowMonitoring) arrowMonitoring.style.transform = 'rotate(180deg)';
+  }
 
   // Trigger relevant renders
-  if (tabName === 'proyek') {
+  if (tabName === 'document-control') {
+    renderDocumentsTable();
+  } else if (tabName === 'proyek') {
     renderProyekTable();
   } else if (tabName === 'produksi') {
     renderProduksiTable();
   } else if (tabName === 'pengiriman') {
     renderPengirimanTable();
     updateTrackingStepperUI();
+  } else if (tabName === 'pengaturan') {
+    loadUserAccountsUI();
+    if (typeof updateSupabaseStatusDisplay === 'function') updateSupabaseStatusDisplay();
   }
 
   closeMobileSidebar();
 }
+
+// Toggle Monitoring Produksi Submenu
+function handleMonitoringMenuClick(e) {
+  if (e) e.stopPropagation();
+  const submenu = document.getElementById('submenuMonitoring');
+  const arrow = document.getElementById('arrowMonitoring');
+  if (submenu) {
+    submenu.classList.toggle('open');
+    const isOpen = submenu.classList.contains('open');
+    if (arrow) arrow.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+  switchMainTab('monitoring');
+}
+
+// Switch between Monitoring Sub-views (Single Flow, Multi-Project Gantt, Project PT)
+function switchMonitoringSubView(subview) {
+  switchMainTab('monitoring');
+  switchView(subview);
+
+  // Update submenu items active state
+  const map = {
+    'single-flow': 'tabSingleFlow',
+    'multi-project': 'tabMultiProject',
+    'project-pt': 'tabProjectPT'
+  };
+  ['tabSingleFlow', 'tabMultiProject', 'tabProjectPT'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  if (map[subview]) {
+    const activeSub = document.getElementById(map[subview]);
+    if (activeSub) activeSub.classList.add('active');
+  }
+}
+
+// Toggle Notification Dropdown in Navbar
+function toggleNotificationDropdown() {
+  const dd = document.getElementById('notificationDropdown');
+  if (dd) {
+    dd.classList.toggle('show');
+  }
+}
+
+// Close notification dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('btnNotifications');
+  const dd = document.getElementById('notificationDropdown');
+  if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+    dd.classList.remove('show');
+  }
+});
 
 // --- PROYEK (SALES ORDER) FUNCTIONS ---
 function renderProyekTable(filteredList = null) {
@@ -3706,9 +3803,434 @@ function filterMasterDataCards() {
 
 // Auto-initialize ERP tables on DOM load
 document.addEventListener('DOMContentLoaded', () => {
+  // Session initialization: by default, stay logged in as Administrator Produksi
+  const savedActive = localStorage.getItem('SYMTRAFLOW_ACTIVE_SESSION');
+  if (savedActive !== 'logged_out') {
+    const loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) loginScreen.classList.add('hidden');
+    const navName = document.querySelector('.user-nav-name');
+    const navRole = document.querySelector('.user-nav-role');
+    if (navName && !navName.innerText.includes('Administrator Produksi')) {
+      navName.innerHTML = `Administrator Produksi <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: #64748b;"></i>`;
+    }
+    if (navRole) navRole.innerText = 'Admin';
+  }
+
   renderProyekTable();
   renderProduksiTable();
   renderPengirimanTable();
   updateTrackingStepperUI();
+  renderDocumentsTable();
 });
+
+/* ==========================================================================
+   DOCUMENT CONTROL MODULE LOGIC & DATA
+   ========================================================================== */
+
+let erpDocuments = [
+  {
+    id: 'DOC-2026-001',
+    format: 'DWG',
+    title: 'General Arrangement (GA) Drawing Trafo 500 kVA Step-Down',
+    desc: 'Gambar teknis dimensi luar, posisi bushing HV/LV, conservator tank, dan lubang pondasi.',
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    category: 'Gambar Teknik',
+    categoryKey: 'drawing',
+    revision: 'Rev 2',
+    author: 'Eng. Dimas Prasetya',
+    size: '12.4 MB',
+    date: '28 Sep 2026',
+    status: 'Approved',
+    statusClass: 'erp-badge-green'
+  },
+  {
+    id: 'DOC-2026-002',
+    format: 'PDF',
+    title: 'Factory Acceptance Test (FAT) Routine Test Certificate',
+    desc: 'Sertifikat pengujian komprehensif: rasio tegangan, rugi-rugi tembaga/besi, dan polaritas kumparan.',
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    category: 'FAT & Uji Lab',
+    categoryKey: 'fat',
+    revision: 'Rev 0',
+    author: 'QC Lead - Hendra Kurniawan',
+    size: '4.8 MB',
+    date: '30 Sep 2026',
+    status: 'Verified',
+    statusClass: 'erp-badge-blue'
+  },
+  {
+    id: 'DOC-2026-003',
+    format: 'DWG',
+    title: 'Core & Coil Assembly Detail Drawing 1000 kVA',
+    desc: 'Skema penumpukan laminasi silikon CRGO dan isolasi winding kertas Kraft densitas tinggi.',
+    soNumber: '25-0564',
+    customer: 'PT PLN Distribusi Jatim',
+    category: 'Gambar Teknik',
+    categoryKey: 'drawing',
+    revision: 'Rev 1',
+    author: 'Eng. Rian Sugianto',
+    size: '18.1 MB',
+    date: '25 Sep 2026',
+    status: 'Approved',
+    statusClass: 'erp-badge-green'
+  },
+  {
+    id: 'DOC-2026-004',
+    format: 'XLS',
+    title: 'Dielectric Breakdown Voltage (BDV) Oil Test Report',
+    desc: 'Hasil uji tegangan tembus minyak Shell DialaS 60 kV/2.5mm dan analisa kadar kelembaban (Karl Fischer).',
+    soNumber: '25-0564',
+    customer: 'PT PLN Distribusi Jatim',
+    category: 'FAT & Uji Lab',
+    categoryKey: 'fat',
+    revision: 'Rev 0',
+    author: 'Lab Analyst - Maya Safitri',
+    size: '1.2 MB',
+    date: '29 Sep 2026',
+    status: 'Approved',
+    statusClass: 'erp-badge-green'
+  },
+  {
+    id: 'DOC-2026-005',
+    format: 'PDF',
+    title: 'Marshalling Box Wiring & Alarm Schematic 1500 kVA',
+    desc: 'Diagram pengkabelan sensor suhu winding (WTI), oil temperature (OTI), dan relay Buchholz.',
+    soNumber: '25-0565',
+    customer: 'PT PLN UID Jawa Barat',
+    category: 'Gambar Teknik',
+    categoryKey: 'drawing',
+    revision: 'Rev 0',
+    author: 'Elec. Eng - Fajar Hidayat',
+    size: '6.5 MB',
+    date: '27 Sep 2026',
+    status: 'Under Review',
+    statusClass: 'erp-badge-orange'
+  },
+  {
+    id: 'DOC-2026-006',
+    format: 'DOC',
+    title: 'Manual Pengoperasian, Pemeliharaan & Katalog Suku Cadang Trafo',
+    desc: 'Petunjuk teknis O&M operasional berkala, jadwal filtrasi minyak trafo, dan penggantian silikagel.',
+    soNumber: 'UMUM / STANDARD',
+    customer: 'Symphos Electric Technical',
+    category: 'Manual Book',
+    categoryKey: 'manual',
+    revision: 'Rev 3',
+    author: 'QA Dept Symphos',
+    size: '8.9 MB',
+    date: '15 Sep 2026',
+    status: 'Approved',
+    statusClass: 'erp-badge-green'
+  },
+  {
+    id: 'DOC-2026-007',
+    format: 'PDF',
+    title: 'Berita Acara Serah Terima (BAST) & Surat Jalan Ekspedisi',
+    desc: 'Dokumen legal serah terima pengiriman trafo 250 kVA ke site PT Indofood CBP Sukses Makmur.',
+    soNumber: '25-0566',
+    customer: 'PT Indofood CBP',
+    category: 'Kontrak & BAST',
+    categoryKey: 'legal',
+    revision: 'Rev 0',
+    author: 'Logistics - Budi Santoso',
+    size: '2.4 MB',
+    date: '22 Sep 2026',
+    status: 'Approved',
+    statusClass: 'erp-badge-green'
+  },
+  {
+    id: 'DOC-2026-008',
+    format: 'PDF',
+    title: 'Temperature Rise & Impulse Withstand Test Certificate',
+    desc: 'Laporan pengujian kenaikan suhu kontinu dan uji impuls petir 125 kV BIL standar IEC 60076.',
+    soNumber: '25-0565',
+    customer: 'PT PLN UID Jawa Barat',
+    category: 'FAT & Uji Lab',
+    categoryKey: 'fat',
+    revision: 'Rev 1',
+    author: 'Chief Testing - Ir. Suryanto',
+    size: '5.2 MB',
+    date: '24 Sep 2026',
+    status: 'Under Review',
+    statusClass: 'erp-badge-orange'
+  }
+];
+
+let activeDocFilterCategory = 'all';
+
+function renderDocumentsTable(filteredList = null) {
+  const tbody = document.getElementById('documentControlTableBody');
+  if (!tbody) return;
+
+  const data = filteredList || erpDocuments;
+  tbody.innerHTML = '';
+
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:35px; color:#94a3b8;">Tidak ada berkas dokumen yang sesuai dengan pencarian.</td></tr>`;
+    return;
+  }
+
+  data.forEach(doc => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+
+    const fmtLower = doc.format.toLowerCase();
+    const badgeFmt = `<span class="doc-file-tag ${fmtLower}"><i class="fa-solid fa-file"></i> ${doc.format}</span>`;
+    
+    tr.innerHTML = `
+      <td style="padding: 14px 16px;">${badgeFmt}</td>
+      <td style="padding: 14px 16px;">
+        <div style="font-weight: 700; color: #0f172a; font-size: 13px; margin-bottom: 2px;">${doc.title}</div>
+        <div style="font-size: 11px; color: #64748b; max-width: 420px; line-height: 1.4;">${doc.desc}</div>
+      </td>
+      <td style="padding: 14px 16px;">
+        <strong style="color: #2563eb;">${doc.soNumber}</strong>
+        <div style="font-size: 10px; color: #94a3b8;">${doc.customer}</div>
+      </td>
+      <td style="padding: 14px 16px; font-size: 12px; color: #475569;">
+        ${doc.category}
+      </td>
+      <td style="padding: 14px 16px; text-align: center;">
+        <span style="background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px;">${doc.revision}</span>
+      </td>
+      <td style="padding: 14px 16px; font-size: 11px; color: #64748b;">
+        <div>${doc.date}</div>
+        <div style="font-size: 10px; color: #94a3b8;">${doc.size} · ${doc.author}</div>
+      </td>
+      <td style="padding: 14px 16px; text-align: center;">
+        <span class="erp-badge ${doc.statusClass}">${doc.status}</span>
+      </td>
+      <td style="padding: 14px 16px; text-align: center;">
+        <div style="display: flex; gap: 6px; justify-content: center;">
+          <button class="btn-action-icon" title="Pratinjau Dokumen" onclick="openPreviewDocModal('${doc.id}')" style="background:#eff6ff; color:#2563eb; width:28px; height:28px; border-radius:6px; border:none; cursor:pointer;">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+          <button class="btn-action-icon" title="Unduh Berkas" onclick="simulateDocDownload('${doc.id}')" style="background:#f5f3ff; color:#7c3aed; width:28px; height:28px; border-radius:6px; border:none; cursor:pointer;">
+            <i class="fa-solid fa-download"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Update KPI counters
+  updateDocKpiStats();
+}
+
+function updateDocKpiStats() {
+  const totalEl = document.getElementById('docKpiTotal');
+  const cadEl = document.getElementById('docKpiCAD');
+  const fatEl = document.getElementById('docKpiFAT');
+  const reviewEl = document.getElementById('docKpiReview');
+
+  if (totalEl) totalEl.innerText = erpDocuments.length;
+  if (cadEl) cadEl.innerText = erpDocuments.filter(d => d.categoryKey === 'drawing').length;
+  if (fatEl) fatEl.innerText = erpDocuments.filter(d => d.categoryKey === 'fat').length;
+  if (reviewEl) reviewEl.innerText = erpDocuments.filter(d => d.status === 'Under Review').length;
+}
+
+function filterDocsCategory(catKey, btnEl) {
+  activeDocFilterCategory = catKey;
+  document.querySelectorAll('.doc-filter-pills .doc-pill-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  const q = (document.getElementById('docSearchInput')?.value || '').toLowerCase().trim();
+  applyDocFilters(catKey, q);
+}
+
+function filterDocsTable() {
+  const q = (document.getElementById('docSearchInput')?.value || '').toLowerCase().trim();
+  applyDocFilters(activeDocFilterCategory, q);
+}
+
+function applyDocFilters(catKey, q) {
+  let filtered = erpDocuments;
+  if (catKey !== 'all') {
+    filtered = filtered.filter(d => d.categoryKey === catKey);
+  }
+  if (q) {
+    filtered = filtered.filter(d =>
+      d.title.toLowerCase().includes(q) ||
+      d.desc.toLowerCase().includes(q) ||
+      d.soNumber.toLowerCase().includes(q) ||
+      d.format.toLowerCase().includes(q) ||
+      d.author.toLowerCase().includes(q)
+    );
+  }
+  renderDocumentsTable(filtered);
+}
+
+function openUploadDocModal() {
+  const modal = document.getElementById('uploadDocModal');
+  if (modal) modal.classList.add('active');
+}
+
+function handleDocFileSelection(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const lbl = document.getElementById('docFileLabelText');
+    if (lbl) {
+      lbl.innerText = `📄 ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+      lbl.style.color = '#7c3aed';
+    }
+  }
+}
+
+function handleDocUpload(e) {
+  e.preventDefault();
+  const title = document.getElementById('docUploadTitle').value.trim();
+  const soNumber = document.getElementById('docUploadSO').value;
+  const category = document.getElementById('docUploadCategory').value;
+  const format = document.getElementById('docUploadFormat').value;
+  const revision = document.getElementById('docUploadRev').value.trim() || 'Rev 0';
+  const notes = document.getElementById('docUploadNotes').value.trim();
+
+  const catKeyMap = {
+    'Gambar Teknik': 'drawing',
+    'FAT & Uji Lab': 'fat',
+    'Manual Book': 'manual',
+    'Kontrak & BAST': 'legal'
+  };
+
+  const newDoc = {
+    id: `DOC-2026-${String(erpDocuments.length + 1).padStart(3, '0')}`,
+    format: format,
+    title: title,
+    desc: notes || `Dokumen resmi proyek untuk ${soNumber} kategori ${category}.`,
+    soNumber: soNumber,
+    customer: 'PT PLN (Persero)',
+    category: category,
+    categoryKey: catKeyMap[category] || 'drawing',
+    revision: revision,
+    author: 'Administrator Produksi',
+    size: '3.6 MB',
+    date: 'Hari ini',
+    status: 'Approved',
+    statusClass: 'erp-badge-green'
+  };
+
+  erpDocuments.unshift(newDoc);
+  renderDocumentsTable();
+  closeModal('uploadDocModal');
+  showToast(`✅ Dokumen "${title}" berhasil diunggah ke Document Control!`);
+  e.target.reset();
+}
+
+let activePreviewDoc = null;
+
+function openPreviewDocModal(docId) {
+  const doc = erpDocuments.find(d => d.id === docId);
+  if (!doc) return;
+  activePreviewDoc = doc;
+
+  const modal = document.getElementById('previewDocModal');
+  const titleEl = document.getElementById('previewDocModalTitle');
+  const body = document.getElementById('previewDocModalBody');
+  if (!modal || !body) return;
+
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fa-solid fa-file-contract" style="color: #7c3aed;"></i> Pratinjau: ${doc.title}`;
+  }
+
+  body.innerHTML = `
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <div style="font-size:11px; color:#64748b; text-transform:uppercase; font-weight:700;">PROYEK & PELANGGAN</div>
+        <div style="font-size:15px; font-weight:800; color:#0f172a;">${doc.soNumber} · ${doc.customer}</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="doc-file-tag ${doc.format.toLowerCase()}">${doc.format}</span>
+        <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; color:#334155;">${doc.revision}</span>
+        <span class="erp-badge ${doc.statusClass}">${doc.status}</span>
+      </div>
+    </div>
+
+    <!-- Simulated Document Sheet Preview -->
+    <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:24px; box-shadow:0 4px 14px rgba(0,0,0,0.06); min-height:300px; position:relative;">
+      <!-- Watermark / Stamp -->
+      <div style="position:absolute; top:20px; right:20px; border:3px solid #10b981; border-radius:8px; padding:6px 14px; color:#10b981; font-weight:900; font-size:13px; transform:rotate(-8deg); letter-spacing:1px; text-transform:uppercase;">
+        ✓ VERIFIED & APPROVED<br><span style="font-size:9px; font-weight:600;">SYMPHOS QUALITY CONTROL</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; border-bottom:2px solid #0f172a; padding-bottom:14px; margin-bottom:18px;">
+        <div style="width:34px; height:34px; background:#f97316; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px;">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <div style="font-weight:800; font-size:14px; color:#0f172a; line-height:1.2;">PT SYMPHOS ELECTRIC INDONESIA</div>
+          <div style="font-size:10px; color:#64748b; letter-spacing:0.5px;">POWER & DISTRIBUTION TRANSFORMER MANUFACTURER</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:6px;">${doc.title}</h3>
+      <p style="font-size:12px; color:#475569; line-height:1.5; margin-bottom:16px;">${doc.desc}</p>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:16px; font-size:11px; display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
+        <div>• Nomor Dokumen: <b>${doc.id}</b></div>
+        <div>• Nomor SO / Kontrak: <b>${doc.soNumber}</b></div>
+        <div>• Departemen: <b>${doc.category}</b></div>
+        <div>• Revisi: <b>${doc.revision}</b></div>
+        <div>• Tanggal Terbit: <b>${doc.date}</b></div>
+        <div>• Disetujui Oleh: <b>${doc.author}</b></div>
+      </div>
+
+      <div style="border-top:1px dashed #cbd5e1; padding-top:14px; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div style="font-size:10px; color:#94a3b8;">
+          Digital Signature Hash: <code>${Math.random().toString(36).substring(2, 15).toUpperCase()}</code><br>
+          ISO 9001:2015 Quality Management System Compliant
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px; color:#64748b;">Chief Engineering Approval</div>
+          <div style="font-weight:800; font-size:12px; color:#0f172a; margin-top:2px;">Ir. Bambang Triwahyudi</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('active');
+}
+
+function simulateDocDownload(docId = null) {
+  const doc = docId ? erpDocuments.find(d => d.id === docId) : activePreviewDoc;
+  const filename = doc ? `${doc.title}.${doc.format.toLowerCase()}` : 'Dokumen_Proyek.pdf';
+  showToast(`📥 Mengunduh "${filename}" (${doc ? doc.size : 'File'})...`);
+}
+
+function printDocPreview() {
+  window.print();
+}
+
+function exportDocumentsList() {
+  const csvRows = [
+    ['ID', 'Format', 'Judul Dokumen', 'No SO', 'Kategori', 'Revisi', 'Ukuran', 'Tanggal', 'Status']
+  ];
+  erpDocuments.forEach(d => {
+    csvRows.push([`"${d.id}"`, `"${d.format}"`, `"${d.title}"`, `"${d.soNumber}"`, `"${d.category}"`, `"${d.revision}"`, `"${d.size}"`, `"${d.date}"`, `"${d.status}"`]);
+  });
+  const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => e.join(',')).join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', 'Rekap_Document_Control_Symphos_Electric.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('📊 Berhasil mengekspor daftar Document Control ke CSV!');
+}
+
+function triggerQuickReportDownload(type) {
+  const names = {
+    'harian': 'Laporan_Harian_Produksi_Trafo.pdf',
+    'bulanan': 'Laporan_Bulanan_Fabrikasi_Trafo.xlsx',
+    'fat': 'Rekapitulasi_FAT_Test_PLN.pdf'
+  };
+  const fileName = names[type] || 'Laporan_Produksi.pdf';
+  showToast(`📄 Mempersiapkan unduhan "${fileName}"...`);
+  setTimeout(() => {
+    showToast(`✅ Berhasil mengunduh "${fileName}"!`);
+  }, 1000);
+}
 
