@@ -2689,6 +2689,15 @@ function handleLogin(e) {
   }
 
   if (authenticatedUser) {
+    // Save authentication state to sessionStorage for the active session
+    sessionStorage.setItem('SYMTRAFLOW_AUTH_USER', JSON.stringify({
+      username: authenticatedUser.username,
+      name: authenticatedUser.name,
+      role: authenticatedUser.role,
+      avatar: authenticatedUser.avatar || '',
+      roleKey: roleKey
+    }));
+
     if (loginScreen) {
       loginScreen.classList.add('hidden');
     }
@@ -2697,7 +2706,7 @@ function handleLogin(e) {
     const navRole = document.querySelector('.user-nav-role');
 
     if (navName) {
-      navName.innerHTML = `${authenticatedUser.name} <i class="fa-solid fa-right-from-bracket" style="font-size: 10px; margin-left: 4px; color: #ef4444;"></i>`;
+      navName.innerHTML = `${authenticatedUser.name} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: #64748b;"></i>`;
     }
     if (navRole) {
       navRole.innerText = authenticatedUser.role;
@@ -2715,6 +2724,8 @@ function handleLogin(e) {
       if (navAvatarIcon) navAvatarIcon.style.display = '';
     }
 
+    // Default to Dashboard view
+    switchMainTab('dashboard');
     showWelcomePopup(authenticatedUser, roleKey);
   } else {
     showToast(`⚠️ Username atau Password salah! Periksa Pengaturan.`);
@@ -2722,10 +2733,18 @@ function handleLogin(e) {
 }
 
 function handleLogout() {
+  sessionStorage.removeItem('SYMTRAFLOW_AUTH_USER');
+  localStorage.removeItem('SYMTRAFLOW_ACTIVE_SESSION');
   const loginScreen = document.getElementById('loginScreen');
   if (loginScreen) {
     loginScreen.classList.remove('hidden');
   }
+  // Clear input fields
+  const u = document.getElementById('loginUsername');
+  const p = document.getElementById('loginPassword');
+  if (u) u.value = '';
+  if (p) p.value = '';
+
   // Reset nav avatar
   const navAvatar = document.getElementById('navUserAvatar');
   const navAvatarIcon = document.getElementById('navUserAvatarIcon');
@@ -3803,17 +3822,33 @@ function filterMasterDataCards() {
 
 // Auto-initialize ERP tables on DOM load
 document.addEventListener('DOMContentLoaded', () => {
-  // Session initialization: by default, stay logged in as Administrator Produksi
-  const savedActive = localStorage.getItem('SYMTRAFLOW_ACTIVE_SESSION');
-  if (savedActive !== 'logged_out') {
-    const loginScreen = document.getElementById('loginScreen');
+  // Session authentication check: MUST log in with username & password first!
+  const authUser = JSON.parse(sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || 'null');
+  const loginScreen = document.getElementById('loginScreen');
+
+  if (authUser) {
     if (loginScreen) loginScreen.classList.add('hidden');
     const navName = document.querySelector('.user-nav-name');
     const navRole = document.querySelector('.user-nav-role');
-    if (navName && !navName.innerText.includes('Administrator Produksi')) {
-      navName.innerHTML = `Administrator Produksi <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: #64748b;"></i>`;
+    if (navName) {
+      navName.innerHTML = `${authUser.name} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: #64748b;"></i>`;
     }
-    if (navRole) navRole.innerText = 'Admin';
+    if (navRole) navRole.innerText = authUser.role;
+
+    const navAvatar = document.getElementById('navUserAvatar');
+    const navAvatarIcon = document.getElementById('navUserAvatarIcon');
+    if (navAvatar && authUser.avatar) {
+      navAvatar.src = authUser.avatar;
+      navAvatar.style.display = 'block';
+      if (navAvatarIcon) navAvatarIcon.style.display = 'none';
+    }
+  } else {
+    // Show login screen overlay by default
+    if (loginScreen) loginScreen.classList.remove('hidden');
+    const u = document.getElementById('loginUsername');
+    const p = document.getElementById('loginPassword');
+    if (u) u.value = '';
+    if (p) p.value = '';
   }
 
   renderProyekTable();
