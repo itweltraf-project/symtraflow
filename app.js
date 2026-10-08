@@ -944,10 +944,15 @@ function switchView(viewName) {
   const tabMulti     = document.getElementById('tabMultiProject');
   const tabProjectPT = document.getElementById('tabProjectPT');
 
+  const subMonitoring = document.getElementById('menuSubMonitoring');
+  const subJadwal     = document.getElementById('menuSubJadwal');
+  const subRiwayat    = document.getElementById('menuSubRiwayat');
+  const subDetail     = document.getElementById('menuSubDetail');
+
   // Hide all sections first
   [viewSingle, viewMulti, viewPengaturan, viewProjectPT].forEach(v => v && v.classList.remove('active'));
   // Clear all submenu-item active states
-  [tabSingle, tabMulti, tabProjectPT].forEach(t => t && t.classList.remove('active'));
+  [tabSingle, tabMulti, tabProjectPT, subMonitoring, subJadwal, subRiwayat, subDetail].forEach(t => t && t.classList.remove('active'));
 
   const btnSingle = document.getElementById('btnSubSingleFlow');
   const btnMulti = document.getElementById('btnSubMultiGantt');
@@ -956,21 +961,25 @@ function switchView(viewName) {
 
   const monitoringViews = ['single-flow', 'multi-project', 'project-pt'];
 
-  // Auto open the monitoring submenu when navigating to a monitoring view
+  // Auto open the produksi submenu when navigating to a monitoring/produksi view
   if (monitoringViews.includes(viewName)) {
-    const submenu = document.getElementById('submenuMonitoring');
-    const menuBtn = document.getElementById('menuMonitoring');
+    const submenu = document.getElementById('submenuProduksi') || document.getElementById('submenuMonitoring');
+    const menuBtn = document.getElementById('menuProduksiParent') || document.getElementById('menuMonitoring');
+    const arrow = document.getElementById('arrowProduksi') || document.getElementById('arrowMonitoring');
     if (submenu) submenu.classList.add('open');
     if (menuBtn) menuBtn.classList.add('open');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
   }
 
   if (viewName === 'single-flow') {
     if (viewSingle) viewSingle.classList.add('active');
     if (tabSingle) tabSingle.classList.add('active');
+    if (subMonitoring) subMonitoring.classList.add('active');
     if (btnSingle) btnSingle.classList.add('active');
   } else if (viewName === 'multi-project') {
     if (viewMulti) viewMulti.classList.add('active');
     if (tabMulti) tabMulti.classList.add('active');
+    if (subJadwal) subJadwal.classList.add('active');
     if (btnMulti) btnMulti.classList.add('active');
   } else if (viewName === 'pengaturan') {
     if (viewPengaturan) viewPengaturan.classList.add('active');
@@ -979,7 +988,9 @@ function switchView(viewName) {
   } else if (viewName === 'project-pt') {
     if (viewProjectPT) viewProjectPT.classList.add('active');
     if (tabProjectPT) tabProjectPT.classList.add('active');
+    if (subRiwayat) subRiwayat.classList.add('active');
     if (btnPT) btnPT.classList.add('active');
+    if (typeof renderPTProjects === 'function') renderPTProjects();
   }
 }
 
@@ -2942,12 +2953,18 @@ function switchMainTab(tabName) {
   // Update sidebar active buttons
   const tabButtonMap = {
     'dashboard': 'menuDashboard',
-    'monitoring': 'menuMonitoring',
-    'document-control': 'menuDocumentControl',
     'proyek': 'menuProyek',
-    'produksi': 'menuProduksi',
     'pengiriman': 'menuPengiriman',
     'master-data': 'menuMasterData',
+    'monitoring': 'menuSubMonitoring',
+    'single-flow': 'menuSubMonitoring',
+    'produksi': 'menuSubDetail',
+    'detail': 'menuSubDetail',
+    'multi-project': 'menuSubJadwal',
+    'jadwal': 'menuSubJadwal',
+    'project-pt': 'menuSubRiwayat',
+    'riwayat': 'menuSubRiwayat',
+    'document-control': 'menuDocumentControl',
     'laporan': 'menuLaporan',
     'pengaturan': 'menuPengaturan'
   };
@@ -2962,13 +2979,35 @@ function switchMainTab(tabName) {
     if (activeBtn) activeBtn.classList.add('active');
   }
 
+  // Handle Produksi parent & submenu state
+  const isProduksiView = ['monitoring', 'single-flow', 'produksi', 'detail', 'multi-project', 'jadwal', 'project-pt', 'riwayat'].includes(tabName);
+  const parentProduksi = document.getElementById('menuProduksiParent');
+  const submenuProduksi = document.getElementById('submenuProduksi');
+  const arrowProduksi = document.getElementById('arrowProduksi');
+
+  if (isProduksiView) {
+    if (parentProduksi) parentProduksi.classList.add('open');
+    if (submenuProduksi) submenuProduksi.classList.add('open');
+    if (arrowProduksi) arrowProduksi.style.transform = 'rotate(180deg)';
+  } else {
+    if (parentProduksi) parentProduksi.classList.remove('open');
+    if (submenuProduksi) submenuProduksi.classList.remove('open');
+    if (arrowProduksi) arrowProduksi.style.transform = 'rotate(0deg)';
+  }
+
   // All view containers
   const viewMap = {
     'dashboard': 'viewDashboardPortal',
     'monitoring': 'viewSingleFlow',
+    'single-flow': 'viewSingleFlow',
+    'produksi': 'viewProduksi',
+    'detail': 'viewProduksi',
+    'multi-project': 'viewMultiProject',
+    'jadwal': 'viewMultiProject',
+    'project-pt': 'viewProjectPT',
+    'riwayat': 'viewProjectPT',
     'document-control': 'viewDocumentControl',
     'proyek': 'viewProyekSO',
-    'produksi': 'viewProduksi',
     'pengiriman': 'viewPengiriman',
     'master-data': 'viewMasterData',
     'laporan': 'viewLaporan',
@@ -2998,11 +3037,20 @@ function switchMainTab(tabName) {
   const targetView = document.getElementById(targetViewId);
   if (targetView) targetView.classList.add('active');
 
-  // Toggle dashboard sub-action bar (only visible in Monitoring Produksi)
+  // Toggle dashboard sub-action bar (visible for monitoring, gantt, project pt)
   const dashBar = document.getElementById('dashboardActionBar');
   if (dashBar) {
-    dashBar.style.display = (tabName === 'monitoring') ? 'flex' : 'none';
+    dashBar.style.display = ['monitoring', 'single-flow', 'multi-project', 'jadwal', 'project-pt', 'riwayat'].includes(tabName) ? 'flex' : 'none';
   }
+
+  // Sync sub-action bar buttons in monitoring overview
+  const btnSingle = document.getElementById('btnSubSingleFlow');
+  const btnMulti = document.getElementById('btnSubMultiGantt');
+  const btnPT = document.getElementById('btnSubProjectPT');
+  [btnSingle, btnMulti, btnPT].forEach(b => b && b.classList.remove('active'));
+  if (['monitoring', 'single-flow'].includes(tabName) && btnSingle) btnSingle.classList.add('active');
+  if (['multi-project', 'jadwal'].includes(tabName) && btnMulti) btnMulti.classList.add('active');
+  if (['project-pt', 'riwayat'].includes(tabName) && btnPT) btnPT.classList.add('active');
 
   // Update navbar page title and subtitle
   const pageTitle = document.getElementById('pageTitle') || document.querySelector('.page-title');
@@ -3011,9 +3059,15 @@ function switchMainTab(tabName) {
   const titleMap = {
     'dashboard': 'Dashboard',
     'monitoring': 'Monitoring Produksi',
+    'single-flow': 'Monitoring Produksi',
+    'produksi': 'Detail Produksi',
+    'detail': 'Detail Produksi',
+    'multi-project': 'Jadwal Produksi (Gantt Chart)',
+    'jadwal': 'Jadwal Produksi (Gantt Chart)',
+    'project-pt': 'Riwayat Proyek PT',
+    'riwayat': 'Riwayat Proyek PT',
     'document-control': 'Document Control',
     'proyek': 'Proyek (Sales Order)',
-    'produksi': 'Produksi',
     'pengiriman': 'Pengiriman',
     'master-data': 'Master Data',
     'laporan': 'Laporan & Analitik',
@@ -3023,9 +3077,15 @@ function switchMainTab(tabName) {
   const subtitleMap = {
     'dashboard': 'Pilih modul yang ingin diakses',
     'monitoring': 'Pantau alur dan status proses produksi trafo secara real-time',
+    'single-flow': 'Pantau alur dan status proses produksi trafo secara real-time',
+    'produksi': 'Alur dan tahapan lini fabrikasi transformator',
+    'detail': 'Alur dan tahapan lini fabrikasi transformator',
+    'multi-project': 'Linimasa jadwal multi-proyek transformator',
+    'jadwal': 'Linimasa jadwal multi-proyek transformator',
+    'project-pt': 'Hierarki dan riwayat pengerjaan proyek trafo perusahaan',
+    'riwayat': 'Hierarki dan riwayat pengerjaan proyek trafo perusahaan',
     'document-control': 'Kelola dan akses dokumen proyek, gambar teknik, sertifikat, dan dokumen terkait.',
     'proyek': 'Daftar seluruh pesanan sales order dan status pengerjaan',
-    'produksi': 'Alur dan tahapan lini fabrikasi transformator',
     'pengiriman': 'Pelacakan ekspedisi dan status pengiriman trafo ke pelanggan',
     'master-data': 'Database spesifikasi teknis, data customer, material, dan PIC',
     'laporan': 'Rekapitulasi performa lini fabrikasi trafo, efisiensi waktu pengerjaan, dan statistik pengujian',
@@ -3039,21 +3099,15 @@ function switchMainTab(tabName) {
     pageSubtitle.innerText = subtitleMap[tabName];
   }
 
-  // Submenu behavior for monitoring
-  const submenuMonitoring = document.getElementById('submenuMonitoring');
-  const arrowMonitoring = document.getElementById('arrowMonitoring');
-  if (tabName === 'monitoring' || tabName === 'proyek' || tabName === 'produksi' || tabName === 'pengiriman') {
-    if (submenuMonitoring) submenuMonitoring.classList.add('open');
-    if (arrowMonitoring) arrowMonitoring.style.transform = 'rotate(180deg)';
-  }
-
   // Trigger relevant renders
   if (tabName === 'document-control') {
     renderDocumentsTable();
   } else if (tabName === 'proyek') {
     renderProyekTable();
-  } else if (tabName === 'produksi') {
+  } else if (tabName === 'produksi' || tabName === 'detail') {
     renderProduksiTable();
+  } else if (tabName === 'project-pt' || tabName === 'riwayat') {
+    renderPTProjects();
   } else if (tabName === 'pengiriman') {
     renderPengirimanTable();
     updateTrackingStepperUI();
@@ -3065,38 +3119,60 @@ function switchMainTab(tabName) {
   closeMobileSidebar();
 }
 
-// Toggle Monitoring Produksi Submenu
-function handleMonitoringMenuClick(e) {
+// Toggle Produksi Dropdown Menu
+function toggleProduksiMenu(e) {
   if (e) e.stopPropagation();
-  const submenu = document.getElementById('submenuMonitoring');
-  const arrow = document.getElementById('arrowMonitoring');
-  if (submenu) {
-    submenu.classList.toggle('open');
-    const isOpen = submenu.classList.contains('open');
-    if (arrow) arrow.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  const submenu = document.getElementById('submenuProduksi');
+  const arrow = document.getElementById('arrowProduksi');
+  const parentBtn = document.getElementById('menuProduksiParent');
+  if (!submenu) return;
+
+  const isOpen = submenu.classList.contains('open');
+  if (isOpen) {
+    submenu.classList.remove('open');
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+    if (parentBtn) parentBtn.classList.remove('open');
+  } else {
+    submenu.classList.add('open');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+    if (parentBtn) parentBtn.classList.add('open');
+    const activeSub = submenu.querySelector('.submenu-item.active');
+    if (!activeSub) {
+      switchProduksiSubView('detail');
+    }
   }
-  switchMainTab('monitoring');
 }
 
-// Switch between Monitoring Sub-views (Single Flow, Multi-Project Gantt, Project PT)
-function switchMonitoringSubView(subview) {
-  switchMainTab('monitoring');
-  switchView(subview);
+// Switch between Produksi Sub-views
+function switchProduksiSubView(subview) {
+  const submenu = document.getElementById('submenuProduksi');
+  const arrow = document.getElementById('arrowProduksi');
+  const parentBtn = document.getElementById('menuProduksiParent');
+  if (submenu) submenu.classList.add('open');
+  if (arrow) arrow.style.transform = 'rotate(180deg)';
+  if (parentBtn) parentBtn.classList.add('open');
 
-  // Update submenu items active state
-  const map = {
-    'single-flow': 'tabSingleFlow',
-    'multi-project': 'tabMultiProject',
-    'project-pt': 'tabProjectPT'
-  };
-  ['tabSingleFlow', 'tabMultiProject', 'tabProjectPT'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('active');
-  });
-  if (map[subview]) {
-    const activeSub = document.getElementById(map[subview]);
-    if (activeSub) activeSub.classList.add('active');
+  if (subview === 'monitoring' || subview === 'single-flow') {
+    switchMainTab('monitoring');
+  } else if (subview === 'detail' || subview === 'produksi') {
+    switchMainTab('produksi');
+  } else if (subview === 'jadwal' || subview === 'multi-project') {
+    switchMainTab('multi-project');
+  } else if (subview === 'riwayat' || subview === 'project-pt') {
+    switchMainTab('project-pt');
   }
+}
+
+// Backward-compatibility aliases
+function handleMonitoringMenuClick(e) {
+  toggleProduksiMenu(e);
+}
+
+function switchMonitoringSubView(subview) {
+  if (subview === 'single-flow') switchProduksiSubView('monitoring');
+  else if (subview === 'multi-project') switchProduksiSubView('jadwal');
+  else if (subview === 'project-pt') switchProduksiSubView('riwayat');
+  else switchProduksiSubView(subview);
 }
 
 // Toggle Notification Dropdown in Navbar

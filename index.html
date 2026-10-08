@@ -142,61 +142,49 @@
         <span>Dashboard</span>
       </button>
 
-      <!-- Monitoring Produksi (Parent menu with dropdown to access single flow, gantt, PT, SO, line, pengiriman) -->
-      <div class="menu-item-group" id="groupMonitoring">
-        <button class="menu-item" data-tab="monitoring" id="menuMonitoring" onclick="handleMonitoringMenuClick(event)">
-          <i class="fa-solid fa-chart-line"></i>
-          <span>Monitoring Produksi</span>
-          <i class="fa-solid fa-chevron-down arrow" id="arrowMonitoring" style="margin-left: auto; font-size: 10px; transition: transform 0.25s ease;"></i>
+      <button class="menu-item" data-tab="proyek" id="menuProyek" onclick="switchMainTab('proyek')">
+        <i class="fa-solid fa-file-invoice"></i>
+        <span>Proyek (SO)</span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
+      </button>
+
+      <!-- Produksi Parent with Submenu -->
+      <div class="menu-item-group" id="groupProduksi">
+        <button class="menu-item menu-parent" data-tab="produksi-group" id="menuProduksiParent" onclick="toggleProduksiMenu(event)">
+          <i class="fa-solid fa-gear"></i>
+          <span>Produksi</span>
+          <i class="fa-solid fa-chevron-down arrow" id="arrowProduksi"></i>
         </button>
-        <div class="submenu" id="submenuMonitoring">
-          <button class="submenu-item active" id="tabSingleFlow" onclick="switchMonitoringSubView('single-flow')">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>Overview Monitoring</span>
+        <div class="submenu" id="submenuProduksi">
+          <button class="submenu-item" id="menuSubMonitoring" onclick="switchProduksiSubView('monitoring')">
+            <i class="fa-solid fa-plus"></i>
+            <span>Monitoring Produksi</span>
           </button>
-          <button class="submenu-item" id="tabMultiProject" onclick="switchMonitoringSubView('multi-project')">
-            <i class="fa-solid fa-bars-progress"></i>
-            <span>Multi-Project (Gantt)</span>
+          <button class="submenu-item" id="menuSubDetail" onclick="switchProduksiSubView('detail')">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Detail Produksi</span>
           </button>
-          <button class="submenu-item" id="tabProjectPT" onclick="switchMonitoringSubView('project-pt')">
-            <i class="fa-solid fa-building"></i>
-            <span>Hierarki Proyek PT</span>
+          <button class="submenu-item" id="menuSubJadwal" onclick="switchProduksiSubView('jadwal')">
+            <i class="fa-regular fa-calendar-check"></i>
+            <span>Jadwal Produksi</span>
           </button>
-          <button class="submenu-item" id="menuProyek" onclick="switchMainTab('proyek')">
-            <i class="fa-regular fa-file-lines"></i>
-            <span>Proyek (SO)</span>
-          </button>
-          <button class="submenu-item" id="menuProduksi" onclick="switchMainTab('produksi')">
-            <i class="fa-solid fa-gear"></i>
-            <span>Produksi</span>
-          </button>
-          <button class="submenu-item" id="menuPengiriman" onclick="switchMainTab('pengiriman')">
-            <i class="fa-solid fa-truck"></i>
-            <span>Pengiriman</span>
+          <button class="submenu-item" id="menuSubRiwayat" onclick="switchProduksiSubView('riwayat')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Riwayat Produksi</span>
           </button>
         </div>
       </div>
 
-      <button class="menu-item" data-tab="document-control" id="menuDocumentControl" onclick="switchMainTab('document-control')">
-        <i class="fa-regular fa-file-lines"></i>
-        <span>Document Control</span>
+      <button class="menu-item" data-tab="pengiriman" id="menuPengiriman" onclick="switchMainTab('pengiriman')">
+        <i class="fa-solid fa-truck"></i>
+        <span>Pengiriman</span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
       </button>
-
-      <div class="sidebar-divider" style="margin: 10px 8px; border-top: 1px solid rgba(255, 255, 255, 0.08);"></div>
 
       <button class="menu-item" data-tab="master-data" id="menuMasterData" onclick="switchMainTab('master-data')">
-        <i class="fa-solid fa-database"></i>
+        <i class="fa-regular fa-rectangle-list"></i>
         <span>Master Data</span>
-      </button>
-
-      <button class="menu-item" data-tab="laporan" id="menuLaporan" onclick="switchMainTab('laporan')">
-        <i class="fa-regular fa-file-lines"></i>
-        <span>Laporan</span>
-      </button>
-
-      <button class="menu-item" data-tab="pengaturan" id="menuPengaturan" onclick="switchMainTab('pengaturan')">
-        <i class="fa-solid fa-gear"></i>
-        <span>Pengaturan</span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
       </button>
     </nav>
   </aside>

@@ -175,26 +175,41 @@ body {
 }
 
 .menu-item.active {
-  background-color: var(--bg-sidebar-active);
+  background-color: #1d4ed8;
   color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+}
+
+.menu-item.menu-parent.open {
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
 }
 
 .menu-item i {
   font-size: 15px;
   width: 20px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .menu-item .arrow {
   margin-left: auto;
   font-size: 11px;
   transition: transform 0.25s ease;
+  color: #64748b;
 }
 
+.menu-item:hover .arrow {
+  color: #94a3b8;
+}
+
+.menu-item.active .arrow,
 .menu-item.open .arrow,
-.menu-monitoring.open .arrow {
+.menu-item.menu-parent.open .arrow {
+  color: #ffffff;
   transform: rotate(180deg);
 }
 
@@ -202,22 +217,27 @@ body {
 .submenu {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease;
-  padding-left: 12px;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
 }
 
 .submenu.open {
   max-height: 350px;
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 .submenu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  color: #64748b;
-  border-radius: var(--radius-md);
-  font-size: 12px;
+  gap: 12px;
+  padding: 10px 14px 10px 22px;
+  color: #94a3b8;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -225,27 +245,25 @@ body {
   width: 100%;
   text-align: left;
   transition: all var(--transition-fast);
-  border-left: 2px solid rgba(255,255,255,0.06);
-  margin-bottom: 2px;
 }
 
 .submenu-item:hover {
   color: #ffffff;
-  background-color: rgba(255,255,255,0.06);
-  border-left-color: #2563eb;
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .submenu-item.active {
-  color: #60a5fa;
-  background-color: rgba(37, 99, 235, 0.15);
-  border-left-color: #2563eb;
-  font-weight: 600;
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
 }
 
 .submenu-item i {
-  font-size: 13px;
-  width: 16px;
+  font-size: 14px;
+  width: 18px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .badge-count {
