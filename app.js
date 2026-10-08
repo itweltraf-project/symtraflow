@@ -1083,174 +1083,228 @@ function filterOrders() {
   });
 }
 
-// Render PT Projects View
-function renderPTProjects() {
-  const container = document.getElementById('ptProjectsContainer');
-  if (!container) return;
-  container.innerHTML = '';
+// Switch between Table and Hierarchy views inside Monitoring Produksi
+function switchMonitoringSubTab(tab) {
+  const secTable = document.getElementById('monSectionTable');
+  const secHier = document.getElementById('monSectionHierarchy');
+  const btnTable = document.getElementById('btnMonSubTable');
+  const btnHier = document.getElementById('btnMonSubHierarchy');
 
-  if (!ptProjects || ptProjects.length === 0) {
-    container.innerHTML = `
-      <div class="section-card" style="text-align:center; padding:45px 20px; color:#64748b; background:#ffffff; border-radius:var(--radius-lg); border:1px dashed var(--border-color);">
-        <i class="fa-solid fa-building-circle-xmark" style="font-size:42px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
-        <div style="font-weight:700; font-size:15px; color:#334155; margin-bottom:6px;">Belum Ada Proyek Perusahaan (PT)</div>
-        <div style="font-size:12px; margin-bottom:16px;">Semua proyek telah dihapus atau belum ditambahkan. Klik tombol di bawah untuk membuat proyek baru.</div>
-        <button class="btn-primary" onclick="openAddPTProjectModal()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
-          <i class="fa-solid fa-folder-plus"></i> + Tambah Proyek PT Baru
-        </button>
-      </div>
-    `;
-    return;
+  if (tab === 'hierarchy') {
+    if (secTable) secTable.style.display = 'none';
+    if (secHier) secHier.style.display = 'block';
+    if (btnTable) {
+      btnTable.className = 'btn-secondary';
+    }
+    if (btnHier) {
+      btnHier.className = 'btn-primary';
+    }
+    renderPTProjects();
+  } else {
+    if (secTable) secTable.style.display = 'block';
+    if (secHier) secHier.style.display = 'none';
+    if (btnTable) {
+      btnTable.className = 'btn-primary';
+    }
+    if (btnHier) {
+      btnHier.className = 'btn-secondary';
+    }
+    renderOrdersTable();
   }
+}
 
-  ptProjects.forEach(pt => {
-    const totalUnits = pt.units.length;
-    const selesai    = pt.units.filter(u => u.status === 'SELESAI').length;
-    const proses     = pt.units.filter(u => u.status !== 'SELESAI' && u.status !== 'BELUM MULAI' && u.progress > 0).length;
-    const belumMulai = pt.units.filter(u => u.status === 'BELUM MULAI').length;
-    const avgProgress = totalUnits > 0 ? Math.round(pt.units.reduce((s, u) => s + u.progress, 0) / totalUnits) : 0;
+// Generate PT Project Groups dynamically from unified getUnitsData()
+function getPTProjectsFromUnitsData() {
+  const units = getUnitsData();
+  units.forEach(u => recomputeUnitProgress(u));
 
-    // Rows for each trafo unit
-    const unitRows = pt.units.map(u => {
-      const pctColor = u.progress === 100 ? '#10b981' : u.progress >= 50 ? '#f59e0b' : '#3b82f6';
-      const orderDateVal = u.orderDate || u.tglPesan || pt.startDate || '-';
-      return `
-        <tr>
-          <td style="font-weight:700; color:#64748b; text-align:center;">${u.no}</td>
-          <td style="font-weight:700; font-size:11px;">
-            <span style="background:${pt.ptBg}; color:${pt.ptColor}; padding:4px 8px; border-radius:6px; border:1px solid ${pt.ptColor}44; display:inline-flex; align-items:center; gap:5px; font-weight:800;" title="Klik untuk lihat progres detail trafo">
-              <i class="fa-solid fa-up-right-from-square" style="font-size:9px;"></i> ${u.id}
-            </span>
-          </td>
-          <td><span style="font-size:12px; font-weight:700; color:#0f172a;">${u.cap}</span></td>
-          <td style="font-size:11px; color:#475569; white-space:nowrap;">
-            <span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-weight:600; color:#334155; display:inline-flex; align-items:center; gap:5px;">
-              <i class="fa-regular fa-calendar-check" style="color:${pt.ptColor}; font-size:11px;"></i> ${orderDateVal}
-            </span>
-          </td>
-          <td>
-            <div style="display:flex; align-items:center; gap:6px; min-width:110px;">
-              <div style="flex:1; background:#f1f5f9; border-radius:999px; height:6px; overflow:hidden;">
-                <div style="height:100%; width:${u.progress}%; background:${pctColor}; border-radius:999px; transition:width 0.4s;"></div>
+  const groups = [
+    {
+      id: 'PT-PLN-01',
+      pt: 'PT PLN (Persero)',
+      ptShort: 'PLN',
+      ptColor: '#2563eb',
+      ptBg: '#dbeafe',
+      project: 'PENGADAAN TRAFO DISTRIBUSI REGIONAL',
+      contract: 'SO/PLN/2026/007',
+      location: 'GI Jateng & Distribusi Jawa Bagian Barat',
+      startDate: '01/05/2026',
+      endDate: '30/08/2026',
+      units: units.filter(u => u.customer && u.customer.includes('PLN'))
+    },
+    {
+      id: 'PT-PTM-01',
+      pt: 'PT Pertamina Persero',
+      ptShort: 'PTM',
+      ptColor: '#16a34a',
+      ptBg: '#dcfce7',
+      project: 'TRAFO POWER REFINERY UNIT',
+      contract: 'SO/PTM/2026/001',
+      location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+      startDate: '10/05/2026',
+      endDate: '15/07/2026',
+      units: units.filter(u => u.customer && u.customer.includes('Pertamina'))
+    },
+    {
+      id: 'PT-PKT-01',
+      pt: 'PT Pupuk Kaltim',
+      ptShort: 'PKT',
+      ptColor: '#d97706',
+      ptBg: '#fef3c7',
+      project: 'TRAFO POWER PABRIK AMONIAK',
+      contract: 'SO/PKT/2026/003',
+      location: 'Pabrik Bontang, Kalimantan Timur',
+      startDate: '15/05/2026',
+      endDate: '20/08/2026',
+      units: units.filter(u => u.customer && (u.customer.includes('Pupuk') || u.customer.includes('PKT')))
+    }
+  ];
+
+  return groups;
+}
+
+// Render PT Projects View (In Monitoring Produksi & Project PT)
+function renderPTProjects() {
+  const containers = [
+    document.getElementById('ptProjectsContainerInMonitoring'),
+    document.getElementById('ptProjectsContainer')
+  ].filter(Boolean);
+
+  if (containers.length === 0) return;
+
+  const projectGroups = getPTProjectsFromUnitsData();
+
+  containers.forEach(container => {
+    container.innerHTML = '';
+
+    projectGroups.forEach(pt => {
+      const totalUnits = pt.units.length;
+      const selesai    = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+      const proses     = pt.units.filter(u => u.status !== 'Selesai' && u.status !== 'Belum Mulai' && u.progress > 0).length;
+      const belumMulai = pt.units.filter(u => u.status === 'Belum Mulai' || u.progress === 0).length;
+      const avgProgress = totalUnits > 0 ? Math.round(pt.units.reduce((s, u) => s + (u.progress || 0), 0) / totalUnits) : 0;
+
+      // Rows for each trafo unit (Using unified units data & openFullDetailModal in read-only mode)
+      const unitRows = pt.units.map((u, idx) => {
+        const pctColor = u.progress === 100 ? '#10b981' : u.progress >= 50 ? '#f59e0b' : '#3b82f6';
+        let badgeClass = 'badge-assembly';
+        if (u.progress === 100) badgeClass = 'badge-selesai';
+        else if (u.progress === 0) badgeClass = 'badge-belum';
+
+        return `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="font-weight:700; color:#64748b; text-align:center; padding:10px 12px;">${idx + 1}</td>
+            <td style="font-weight:700; font-size:12px; padding:10px 12px;">
+              <span style="background:${pt.ptBg}; color:${pt.ptColor}; padding:4px 8px; border-radius:6px; border:1px solid ${pt.ptColor}44; display:inline-flex; align-items:center; gap:5px; font-weight:800;">
+                <i class="fa-solid fa-bolt" style="font-size:10px;"></i> ${u.unitId}
+              </span>
+            </td>
+            <td style="font-weight:700; color:#0f172a; padding:10px 12px;">${u.customer}</td>
+            <td style="font-weight:600; padding:10px 12px;">${u.capacity}</td>
+            <td style="color:#64748b; padding:10px 12px;">${u.voltage || '20 kV / 400 V'}</td>
+            <td style="padding:10px 12px;"><span class="badge-status ${badgeClass}">${u.status}</span></td>
+            <td style="padding:10px 12px;">
+              <div style="display:flex; align-items:center; gap:6px; min-width:110px;">
+                <div style="flex:1; background:#f1f5f9; border-radius:999px; height:6px; overflow:hidden;">
+                  <div style="height:100%; width:${u.progress}%; background:${pctColor}; border-radius:999px; transition:width 0.4s;"></div>
+                </div>
+                <span style="font-size:11px; font-weight:700; color:${pctColor}; min-width:32px;">${u.progress}%</span>
               </div>
-              <span style="font-size:11px; font-weight:700; color:${pctColor}; min-width:30px;">${u.progress}%</span>
+            </td>
+            <td style="font-size:11px; color:#64748b; padding:10px 12px;">${u.targetDate}</td>
+            <td style="font-size:11px; color:#0f172a; font-weight:600; padding:10px 12px;">${u.pic}</td>
+            <td style="text-align:center; white-space:nowrap; padding:10px 12px;">
+              <button class="btn-secondary" onclick="event.stopPropagation(); openFullDetailModal('${u.unitId}')" style="padding:4px 10px; font-size:11px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;" title="Lihat Detail Trafo (Mode Pantau: Electrical & Mechanical)">
+                <i class="fa-solid fa-eye"></i> Detail
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const card = document.createElement('div');
+      card.className = 'section-card';
+      card.style.marginBottom = '20px';
+      card.innerHTML = `
+        <!-- PT Header Bar -->
+        <div style="background: linear-gradient(135deg, ${pt.ptColor} 0%, ${pt.ptColor}cc 100%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:52px; height:52px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:#fff; letter-spacing:-1px; flex-shrink:0;">
+              ${pt.ptShort}
             </div>
-          </td>
-          <td style="font-size:11px; color:#64748b;">${u.dead}</td>
-          <td style="font-size:11px; color:#0f172a; font-weight:500;">${u.operator}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn-secondary" onclick="event.stopPropagation(); openTrafoDetailModalById('${pt.id}', '${u.id}')" style="padding:3px 8px; font-size:10px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; margin-right:4px;" title="Lihat Detail Trafo">
-              <i class="fa-solid fa-eye"></i> Detail
-            </button>
-            <button class="btn-icon-danger" onclick="event.stopPropagation(); deleteTrafoUnit('${pt.id}', '${u.id}')" title="Hapus Trafo Unit">
-              <i class="fa-solid fa-trash" style="font-size:10px;"></i>
-            </button>
-          </td>
-        </tr>
+            <div>
+              <div style="font-size:18px; font-weight:800; color:#fff; letter-spacing:0.3px;">${pt.pt}</div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.85); margin-top:2px;">
+                <i class="fa-regular fa-folder" style="margin-right:4px;"></i>${pt.project} &bull; <i class="fa-solid fa-location-dot" style="margin-left:4px; margin-right:3px;"></i>${pt.location}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-shrink:0; align-items:center; flex-wrap:wrap;">
+            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+              <div style="font-size:20px; font-weight:900; color:#fff;">${totalUnits}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Total Unit</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+              <div style="font-size:20px; font-weight:900; color:#4ade80;">${selesai}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Selesai</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+              <div style="font-size:20px; font-weight:900; color:#fbbf24;">${proses}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">On Process</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
+              <div style="font-size:20px; font-weight:900; color:rgba(255,255,255,0.7);">${belumMulai}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Belum Mulai</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Overall Bar -->
+        <div style="background:${pt.ptBg}; padding:12px 22px; border-bottom:1px solid ${pt.ptColor}22; display:flex; align-items:center; gap:12px;">
+          <div style="font-size:11px; font-weight:700; color:${pt.ptColor}; min-width:80px;">PROGRESS TOTAL</div>
+          <div style="flex:1; background:#e2e8f0; border-radius:999px; height:10px; overflow:hidden;">
+            <div style="height:100%; width:${avgProgress}%; background:${pt.ptColor}; border-radius:999px; transition:width 0.6s;"></div>
+          </div>
+          <div style="font-size:15px; font-weight:800; color:${pt.ptColor}; min-width:40px;">${avgProgress}%</div>
+          <div style="font-size:10px; color:#64748b;">
+            <i class="fa-regular fa-calendar" style="margin-right:3px;"></i>${pt.startDate} — ${pt.endDate}
+          </div>
+        </div>
+
+        <!-- Trafo Units Table Header -->
+        <div style="background:#f8fafc; padding:8px 16px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted);">
+            <i class="fa-solid fa-boxes-stacked" style="color:${pt.ptColor};"></i> DAFTAR UNIT TRAFO &bull; SINKRONISASI REALTIME
+          </span>
+          <span style="font-size:10px; color:#64748b; font-weight:600;">Mode Pantau (Hanya Bisa Melihat Saja)</span>
+        </div>
+
+        <!-- Trafo Units Table -->
+        <div style="padding:0; overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid var(--border-color); color:#64748b; font-size:11px; text-transform:uppercase;">
+                <th style="padding:10px 12px; text-align:center; width:40px;">No</th>
+                <th style="padding:10px 12px; text-align:left;">No. Unit</th>
+                <th style="padding:10px 12px; text-align:left;">Pelanggan</th>
+                <th style="padding:10px 12px; text-align:left;">Kapasitas</th>
+                <th style="padding:10px 12px; text-align:left;">Tegangan</th>
+                <th style="padding:10px 12px; text-align:left;">Status</th>
+                <th style="padding:10px 12px; text-align:left;">Progress</th>
+                <th style="padding:10px 12px; text-align:left;">Target Selesai</th>
+                <th style="padding:10px 12px; text-align:left;">PIC / Officer</th>
+                <th style="padding:10px 12px; text-align:center; width:80px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${unitRows}
+            </tbody>
+          </table>
+        </div>
       `;
-    }).join('');
 
-    const card = document.createElement('div');
-    card.className = 'section-card';
-    card.style.marginBottom = '0';
-    card.innerHTML = `
-      <!-- PT Header Bar -->
-      <div style="background: linear-gradient(135deg, ${pt.ptColor} 0%, ${pt.ptColor}cc 100%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:center; gap:16px;">
-          <div style="width:52px; height:52px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:#fff; letter-spacing:-1px; flex-shrink:0;">
-            ${pt.ptShort}
-          </div>
-          <div>
-            <div style="font-size:18px; font-weight:800; color:#fff; letter-spacing:0.3px;">${pt.pt}</div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:10px; flex-shrink:0; align-items:center; flex-wrap:wrap;">
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-            <div style="font-size:20px; font-weight:900; color:#fff;">${totalUnits}</div>
-            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Total Unit</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-            <div style="font-size:20px; font-weight:900; color:#4ade80;">${selesai}</div>
-            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Selesai</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-            <div style="font-size:20px; font-weight:900; color:#fbbf24;">${proses}</div>
-            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">On Process</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-            <div style="font-size:20px; font-weight:900; color:rgba(255,255,255,0.6);">${belumMulai}</div>
-            <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Belum Mulai</div>
-          </div>
-
-          <button class="btn-add-trafo-pt" onclick="openAddTrafoModal('${pt.id}')" title="Tambah trafo baru di bawah ${pt.pt}">
-            <i class="fa-solid fa-plus-circle"></i> Tambah Trafo
-          </button>
-          <button class="btn-delete-pt" onclick="deletePTProject('${pt.id}')" title="Hapus seluruh proyek ${pt.pt}">
-            <i class="fa-solid fa-trash-can"></i> Hapus Proyek PT
-          </button>
-        </div>
-      </div>
-
-      <!-- Progress Overall Bar -->
-      <div style="background:${pt.ptBg}; padding:12px 22px; border-bottom:1px solid ${pt.ptColor}22; display:flex; align-items:center; gap:12px;">
-        <div style="font-size:11px; font-weight:700; color:${pt.ptColor}; min-width:80px;">PROGRESS TOTAL</div>
-        <div style="flex:1; background:#e2e8f0; border-radius:999px; height:10px; overflow:hidden;">
-          <div style="height:100%; width:${avgProgress}%; background:${pt.ptColor}; border-radius:999px; transition:width 0.6s;"></div>
-        </div>
-        <div style="font-size:15px; font-weight:800; color:${pt.ptColor}; min-width:40px;">${avgProgress}%</div>
-        <div style="font-size:10px; color:#64748b;">
-          <i class="fa-regular fa-calendar" style="margin-right:3px;"></i>${pt.startDate} — ${pt.endDate}
-        </div>
-      </div>
-
-      <!-- Toolbar Add Unit Button -->
-      <div style="background:#f8fafc; padding:8px 16px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <span style="font-size:11px; font-weight:700; color:var(--text-muted);">
-          <i class="fa-solid fa-boxes-stacked" style="color:${pt.ptColor};"></i> DAFTAR UNIT TRAFO (${totalUnits} UNIT)
-        </span>
-        <button class="btn-primary" onclick="openAddTrafoModal('${pt.id}')" style="padding:4px 10px; font-size:11px; background:${pt.ptColor};">
-          <i class="fa-solid fa-plus"></i> Tambah Trafo ke ${pt.ptShort}
-        </button>
-      </div>
-
-      <!-- Trafo Units Table -->
-      <div style="padding:0; overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:12px;">
-          <thead>
-            <tr style="background:#ffffff; border-bottom:2px solid var(--border-color);">
-              <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; width:40px;">No</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">No. SO</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Variant</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Tanggal Pesan</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Progress</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Deadline</th>
-              <th style="padding:10px 12px; text-align:left; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Sales Officer</th>
-              <th style="padding:10px 12px; text-align:center; font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="ptTbody-${pt.id}" style="font-size:12px;">
-            ${unitRows || '<tr><td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">Belum ada trafo dalam proyek ini. Klik <b>+ Tambah Trafo</b> di atas untuk menambahkan.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    container.appendChild(card);
-
-    // Striped rows effect & modal trigger on row click
-    const rows = card.querySelectorAll('tbody tr');
-    rows.forEach((row, i) => {
-      if (pt.units[i]) {
-        if (i % 2 === 0) row.style.background = '#fafafa';
-        row.style.borderBottom = '1px solid #f1f5f9';
-        row.style.cursor = 'pointer';
-        row.addEventListener('mouseenter', () => row.style.background = pt.ptBg);
-        row.addEventListener('mouseleave', () => row.style.background = i % 2 === 0 ? '#fafafa' : '#fff');
-        row.addEventListener('click', () => {
-          openTrafoDetailModal(pt.units[i], pt);
-        });
-      }
+      container.appendChild(card);
     });
   });
 }
@@ -2522,9 +2576,7 @@ function openNewOrderModal() {
   document.getElementById('newOrderModal').classList.add('active');
 }
 
-function openFullDetailModal() {
-  openTrafoDetailModal(selectedOrder);
-}
+// (openFullDetailModal is implemented below with full read-only electrical & mechanical stages support)
 
 function openExportModal() {
   document.getElementById('exportModal').classList.add('active');
@@ -3083,7 +3135,7 @@ function switchMainTab(tabName) {
     'multi-project': 'viewMultiProject',
     'jadwal': 'viewMultiProject',
     'project-pt': 'viewProjectPT',
-    'riwayat': 'viewProjectPT',
+    'riwayat': 'viewRiwayatProduksi',
     'document-control': 'viewDocumentControl',
     'proyek': 'viewProyekSO',
     'pengiriman': 'viewPengiriman',
@@ -3097,6 +3149,7 @@ function switchMainTab(tabName) {
     'viewSingleFlow',
     'viewMultiProject',
     'viewProjectPT',
+    'viewRiwayatProduksi',
     'viewPengaturan',
     'viewProyekSO',
     'viewProduksi',
@@ -3118,7 +3171,7 @@ function switchMainTab(tabName) {
   // Toggle dashboard sub-action bar (visible for monitoring, gantt, project pt)
   const dashBar = document.getElementById('dashboardActionBar');
   if (dashBar) {
-    dashBar.style.display = ['monitoring', 'single-flow', 'multi-project', 'jadwal', 'project-pt', 'riwayat'].includes(tabName) ? 'flex' : 'none';
+    dashBar.style.display = ['monitoring', 'single-flow', 'multi-project', 'jadwal'].includes(tabName) ? 'flex' : 'none';
   }
 
   // Sync sub-action bar buttons in monitoring overview
@@ -3128,7 +3181,7 @@ function switchMainTab(tabName) {
   [btnSingle, btnMulti, btnPT].forEach(b => b && b.classList.remove('active'));
   if (['monitoring', 'single-flow'].includes(tabName) && btnSingle) btnSingle.classList.add('active');
   if (['multi-project', 'jadwal'].includes(tabName) && btnMulti) btnMulti.classList.add('active');
-  if (['project-pt', 'riwayat'].includes(tabName) && btnPT) btnPT.classList.add('active');
+  if (['project-pt'].includes(tabName) && btnPT) btnPT.classList.add('active');
 
   // Update navbar page title and subtitle
   const pageTitle = document.getElementById('pageTitle') || document.querySelector('.page-title');
@@ -3142,8 +3195,8 @@ function switchMainTab(tabName) {
     'detail': 'Detail Produksi',
     'multi-project': 'Jadwal Produksi (Gantt Chart)',
     'jadwal': 'Jadwal Produksi (Gantt Chart)',
-    'project-pt': 'Riwayat Proyek PT',
-    'riwayat': 'Riwayat Proyek PT',
+    'project-pt': 'Monitoring Produksi (Hierarki PT)',
+    'riwayat': 'Riwayat Produksi',
     'document-control': 'Document Control',
     'proyek': 'Proyek (Sales Order)',
     'pengiriman': 'Pengiriman',
@@ -3160,8 +3213,8 @@ function switchMainTab(tabName) {
     'detail': 'Alur dan tahapan lini fabrikasi transformator',
     'multi-project': 'Linimasa jadwal multi-proyek transformator',
     'jadwal': 'Linimasa jadwal multi-proyek transformator',
-    'project-pt': 'Hierarki dan riwayat pengerjaan proyek trafo perusahaan',
-    'riwayat': 'Hierarki dan riwayat pengerjaan proyek trafo perusahaan',
+    'project-pt': 'Hierarki dan pemantauan pengerjaan proyek trafo per perusahaan',
+    'riwayat': 'Rekapitulasi log perubahan tahapan, riwayat pengujian QC, dan arsip unit selesai',
     'document-control': 'Kelola dan akses dokumen proyek, gambar teknik, sertifikat, dan dokumen terkait.',
     'proyek': 'Daftar seluruh pesanan sales order dan status pengerjaan',
     'pengiriman': 'Pelacakan ekspedisi dan status pengiriman trafo ke pelanggan',
@@ -3180,14 +3233,17 @@ function switchMainTab(tabName) {
   // Trigger relevant renders
   if (tabName === 'monitoring' || tabName === 'single-flow') {
     renderOrdersTable();
+    renderPTProjects();
   } else if (tabName === 'document-control') {
     renderDocumentsTable();
   } else if (tabName === 'proyek') {
     renderProyekTable();
   } else if (tabName === 'produksi' || tabName === 'detail') {
     renderDetailProduksiView();
-  } else if (tabName === 'project-pt' || tabName === 'riwayat') {
+  } else if (tabName === 'project-pt') {
     renderPTProjects();
+  } else if (tabName === 'riwayat') {
+    renderRiwayatProduksiView();
   } else if (tabName === 'pengiriman') {
     renderPengirimanTable();
     updateTrackingStepperUI();
@@ -3238,8 +3294,11 @@ function switchProduksiSubView(subview) {
     switchMainTab('produksi');
   } else if (subview === 'jadwal' || subview === 'multi-project') {
     switchMainTab('multi-project');
-  } else if (subview === 'riwayat' || subview === 'project-pt') {
-    switchMainTab('project-pt');
+  } else if (subview === 'riwayat') {
+    switchMainTab('riwayat');
+  } else if (subview === 'project-pt') {
+    switchMainTab('monitoring');
+    switchMonitoringSubTab('hierarchy');
   }
 }
 
@@ -3249,10 +3308,17 @@ function handleMonitoringMenuClick(e) {
 }
 
 function switchMonitoringSubView(subview) {
-  if (subview === 'single-flow') switchProduksiSubView('monitoring');
-  else if (subview === 'multi-project') switchProduksiSubView('jadwal');
-  else if (subview === 'project-pt') switchProduksiSubView('riwayat');
-  else switchProduksiSubView(subview);
+  if (subview === 'single-flow') {
+    switchMainTab('monitoring');
+    switchMonitoringSubTab('table');
+  } else if (subview === 'multi-project') {
+    switchProduksiSubView('jadwal');
+  } else if (subview === 'project-pt') {
+    switchMainTab('monitoring');
+    switchMonitoringSubTab('hierarchy');
+  } else {
+    switchProduksiSubView(subview);
+  }
 }
 
 // Toggle Notification Dropdown in Navbar
@@ -4119,6 +4185,19 @@ function handleSaveStageProgress(e) {
   unit.lastUpdate = formattedTime;
   recomputeUnitProgress(unit);
 
+  // Append to global production history logs
+  addProductionHistoryLog({
+    timestamp: formattedTime,
+    unitId: unit.unitId,
+    soNumber: unit.soNumber,
+    customer: unit.customer,
+    category: activeEditingCategory === 'electrical' ? 'Electrical' : 'Mechanical',
+    stageName: stage.name,
+    status: status,
+    pic: pic,
+    note: note && note !== '-' ? note : `Status tahapan diperbarui menjadi ${status}`
+  });
+
   // Save to unified local storage
   saveUnitsData(units);
 
@@ -4127,6 +4206,7 @@ function handleSaveStageProgress(e) {
   // Re-render Detail Produksi & Monitoring Produksi
   renderDetailProduksiView();
   renderOrdersTable();
+  renderPTProjects();
   updateMonitoringKPICards();
 
   showToast(`✅ Progress ${stage.name} (${activeEditingCategory}) berhasil diperbarui!`);
@@ -5253,5 +5333,269 @@ function triggerQuickReportDownload(type) {
   setTimeout(() => {
     showToast(`✅ Berhasil mengunduh "${fileName}"!`);
   }, 1000);
+}
+
+// =========================================================================
+// RIWAYAT PRODUKSI & AUDIT TRAIL LOG SYSTEM
+// =========================================================================
+
+const defaultProductionHistoryLogs = [
+  {
+    timestamp: '08 Okt 2026 11:20',
+    unitId: 'TRF-001',
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    category: 'Electrical',
+    stageName: 'HV (High Voltage)',
+    status: 'Proses',
+    pic: 'Rizky',
+    note: 'Pengujian insulasi awal HV memenuhi spesifikasi teknis.'
+  },
+  {
+    timestamp: '08 Okt 2026 09:15',
+    unitId: 'TRF-001',
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    category: 'Electrical',
+    stageName: 'LV (Low Voltage)',
+    status: 'Selesai',
+    pic: 'Budi Santoso',
+    note: 'Winding LV selesai dan lolos inspeksi QC awal.'
+  },
+  {
+    timestamp: '08 Okt 2026 08:30',
+    unitId: 'TRF-001',
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    category: 'Mechanical',
+    stageName: 'Pemotongan & Bending Plat',
+    status: 'Selesai',
+    pic: 'Agus Setiawan',
+    note: 'Plat tangki dipotong presisi CNC tolerance 0.2mm.'
+  },
+  {
+    timestamp: '07 Okt 2026 14:00',
+    unitId: 'TRF-002',
+    soNumber: 'SO/PTM/2026/01',
+    customer: 'PT Pertamina RU IV Cilacap',
+    category: 'Electrical',
+    stageName: 'Susun Core',
+    status: 'Selesai',
+    pic: 'Hendra',
+    note: 'Silicone steel lamination core stacking rampung.'
+  },
+  {
+    timestamp: '07 Okt 2026 11:10',
+    unitId: 'TRF-002',
+    soNumber: 'SO/PTM/2026/01',
+    customer: 'PT Pertamina RU IV Cilacap',
+    category: 'Mechanical',
+    stageName: 'Pengelasan Tangki & Cover',
+    status: 'Selesai',
+    pic: 'Bambang',
+    note: 'Welding full penetration NDT tested.'
+  },
+  {
+    timestamp: '06 Okt 2026 16:20',
+    unitId: 'TRF-003',
+    soNumber: '25-0564',
+    customer: 'PT PLN UP3 Surabaya',
+    category: 'Electrical',
+    stageName: 'LV (Low Voltage)',
+    status: 'Selesai',
+    pic: 'Siti Aminah',
+    note: 'Gulungan LV tembaga murni selesai.'
+  },
+  {
+    timestamp: '05 Okt 2026 10:45',
+    unitId: 'TRF-004',
+    soNumber: 'SO/PKT/2026/02',
+    customer: 'PT Pupuk Kaltim Bontang',
+    category: 'Mechanical',
+    stageName: 'Pemotongan & Bending Plat',
+    status: 'Proses',
+    pic: 'Dedi Kurniawan',
+    note: 'Persiapan material plat baja tangki trafo power 2500 kVA.'
+  }
+];
+
+function getProductionHistoryLogs() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_HISTORY_LOGS');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed reading history logs', e);
+  }
+  return defaultProductionHistoryLogs;
+}
+
+function saveProductionHistoryLogs(logs) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_HISTORY_LOGS', JSON.stringify(logs));
+  } catch (e) {
+    console.error('Failed saving history logs', e);
+  }
+}
+
+function addProductionHistoryLog(log) {
+  const logs = getProductionHistoryLogs();
+  logs.unshift(log);
+  saveProductionHistoryLogs(logs);
+}
+
+// Render dedicated Riwayat Produksi View
+function renderRiwayatProduksiView() {
+  renderRiwayatTable();
+  renderRiwayatArsipTable();
+
+  // Update KPI counters
+  const logs = getProductionHistoryLogs();
+  const units = getUnitsData();
+  const selesaiCount = units.filter(u => u.progress === 100 || u.status === 'Selesai').length;
+
+  const elTotal = document.getElementById('kpiRiwayatTotalLogs');
+  const elSelesai = document.getElementById('kpiRiwayatSelesai');
+  if (elTotal) elTotal.innerText = logs.length;
+  if (elSelesai) elSelesai.innerText = selesaiCount;
+}
+
+// Render Riwayat Audit Trail Table
+function renderRiwayatTable(filteredLogs = null) {
+  const tbody = document.getElementById('riwayatTableBody');
+  if (!tbody) return;
+
+  const logs = filteredLogs || getProductionHistoryLogs();
+  tbody.innerHTML = '';
+
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Belum ada catatan riwayat perubahan.</td></tr>`;
+    return;
+  }
+
+  logs.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+
+    let catBadge = item.category === 'Electrical'
+      ? `<span class="dp-badge" style="background:#eff6ff; color:#2563eb;"><i class="fa-solid fa-bolt"></i> Electrical</span>`
+      : `<span class="dp-badge" style="background:#fef3c7; color:#d97706;"><i class="fa-solid fa-wrench"></i> Mechanical</span>`;
+
+    let statusBadge = item.status === 'Selesai'
+      ? `<span class="dp-badge selesai"><i class="fa-solid fa-check"></i> Selesai</span>`
+      : (item.status === 'Proses'
+        ? `<span class="dp-badge proses"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Proses</span>`
+        : `<span class="dp-badge belum">Belum Mulai</span>`);
+
+    tr.innerHTML = `
+      <td style="color:#64748b; font-size:11px; white-space:nowrap; padding:10px 12px;">
+        <i class="fa-regular fa-clock" style="margin-right:4px;"></i> ${item.timestamp}
+      </td>
+      <td style="font-weight:800; color:#2563eb; padding:10px 12px;">${item.unitId}</td>
+      <td style="font-weight:600; color:#475569; padding:10px 12px;">${item.soNumber}</td>
+      <td style="font-weight:700; color:#0f172a; padding:10px 12px;">${item.customer}</td>
+      <td style="padding:10px 12px;">${catBadge}</td>
+      <td style="font-weight:600; color:#1e293b; padding:10px 12px;">${item.stageName}</td>
+      <td style="padding:10px 12px;">${statusBadge}</td>
+      <td style="font-weight:600; color:#334155; padding:10px 12px;">${item.pic}</td>
+      <td style="color:#64748b; font-size:12px; padding:10px 12px;">${item.note || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Render Arsip Unit Selesai Table
+function renderRiwayatArsipTable() {
+  const tbody = document.getElementById('riwayatArsipTableBody');
+  if (!tbody) return;
+
+  const units = getUnitsData();
+  const completed = units.filter(u => u.progress === 100 || u.status === 'Selesai');
+  tbody.innerHTML = '';
+
+  if (completed.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Belum ada unit trafo yang berstatus selesai 100%. Update semua tahapan di Detail Produksi untuk mengarsipkan unit.</td></tr>`;
+    return;
+  }
+
+  completed.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+    tr.innerHTML = `
+      <td style="font-weight:800; color:#10b981; padding:10px 12px;">
+        <span style="background:#ecfdf5; color:#059669; padding:4px 8px; border-radius:6px; border:1px solid #a7f3d0; font-weight:800;">
+          <i class="fa-solid fa-circle-check"></i> ${u.unitId}
+        </span>
+      </td>
+      <td style="font-weight:700; color:#334155; padding:10px 12px;">${u.soNumber}</td>
+      <td style="font-weight:700; color:#0f172a; padding:10px 12px;">${u.customer}</td>
+      <td style="color:#475569; padding:10px 12px;">${u.capacity} • ${u.voltage || '20 kV / 400 V'}</td>
+      <td style="color:#64748b; font-size:11px; padding:10px 12px;">${u.orderDate}</td>
+      <td style="color:#10b981; font-weight:700; font-size:11px; padding:10px 12px;">${u.targetDate}</td>
+      <td style="padding:10px 12px;">
+        <span class="dp-badge selesai"><i class="fa-solid fa-certificate"></i> PASS QC / SPLN</span>
+      </td>
+      <td style="font-weight:600; color:#334155; padding:10px 12px;">${u.pic}</td>
+      <td style="text-align:center; padding:10px 12px;">
+        <button class="btn-secondary" onclick="openFullDetailModal('${u.unitId}')" style="padding:4px 10px; font-size:11px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+          <i class="fa-solid fa-eye"></i> Detail
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Filter Riwayat Logs by Search input
+function filterRiwayatLogs() {
+  const query = (document.getElementById('riwayatSearchInput')?.value || '').toLowerCase().trim();
+  const logs = getProductionHistoryLogs();
+  if (!query) {
+    renderRiwayatTable(logs);
+    return;
+  }
+  const filtered = logs.filter(l =>
+    (l.unitId && l.unitId.toLowerCase().includes(query)) ||
+    (l.soNumber && l.soNumber.toLowerCase().includes(query)) ||
+    (l.customer && l.customer.toLowerCase().includes(query)) ||
+    (l.pic && l.pic.toLowerCase().includes(query)) ||
+    (l.stageName && l.stageName.toLowerCase().includes(query)) ||
+    (l.note && l.note.toLowerCase().includes(query))
+  );
+  renderRiwayatTable(filtered);
+}
+
+// Export Riwayat Produksi (CSV / PDF)
+function exportRiwayatProduksi(type) {
+  if (type === 'pdf') {
+    window.print();
+    return;
+  }
+
+  const logs = getProductionHistoryLogs();
+  const csvRows = [
+    ['Waktu', 'No Unit', 'No SO', 'Pelanggan', 'Kategori', 'Tahapan', 'Status', 'PIC', 'Catatan']
+  ];
+  logs.forEach(l => {
+    csvRows.push([
+      `"${l.timestamp}"`,
+      `"${l.unitId}"`,
+      `"${l.soNumber}"`,
+      `"${l.customer}"`,
+      `"${l.category}"`,
+      `"${l.stageName}"`,
+      `"${l.status}"`,
+      `"${l.pic}"`,
+      `"${(l.note || '').replace(/"/g, '""')}"`
+    ]);
+  });
+  const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => e.join(',')).join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `Riwayat_Produksi_Symtraflow_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('📊 Berhasil mengekspor Riwayat Produksi ke CSV!');
 }
 
