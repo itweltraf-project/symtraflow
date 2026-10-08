@@ -3105,7 +3105,7 @@ function switchMainTab(tabName) {
   } else if (tabName === 'proyek') {
     renderProyekTable();
   } else if (tabName === 'produksi' || tabName === 'detail') {
-    renderProduksiTable();
+    renderDetailProduksiView();
   } else if (tabName === 'project-pt' || tabName === 'riwayat') {
     renderPTProjects();
   } else if (tabName === 'pengiriman') {
@@ -3384,6 +3384,441 @@ function openProyekDetail(soNumber) {
   }
 
   if (modal) modal.classList.add('active');
+}
+
+// ================= DETAIL PRODUKSI FUNCTIONS (EXACT REPLICA + INTERACTIVE UPDATE) =================
+
+const defaultDetailProduksiData = {
+  unitId: 'TRF-001',
+  status: 'Dalam Proses',
+  soNumber: '25-0563',
+  customer: 'PT PLN UP3 Jateng',
+  variant: 'Distribusi',
+  capacity: '500 KVA',
+  winding: 'CU - CU',
+  orderDate: '01/05/2026',
+  targetDate: '30/06/2026',
+  pic: 'Budi Santoso',
+  location: 'UP3 Jateng',
+  notes: '-',
+  lastUpdate: '29 Sep 2026 10:30',
+  stages: [
+    { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-10', pic: 'Rizky', note: '-', doc: 'Drawing-LV.pdf' },
+    { name: 'HV (High Voltage)', status: 'Proses', date: '2026-06-12', pic: 'Rizky', note: 'Dalam pengerjaan', doc: '' },
+    { name: 'Susun Core', status: 'Belum Mulai', date: '2026-06-15', pic: 'Andi Pratama', note: '-', doc: '' },
+    { name: 'CCA', status: 'Belum Mulai', date: '2026-06-18', pic: 'Budi Santoso', note: '-', doc: '' },
+    { name: 'NSP', status: 'Belum Mulai', date: '2026-06-20', pic: 'Dedi Kurniawan', note: '-', doc: '' },
+    { name: 'Connect', status: 'Belum Mulai', date: '2026-06-24', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+    { name: 'Final', status: 'Belum Mulai', date: '2026-06-28', pic: 'Rizky', note: '-', doc: '' }
+  ],
+  activities: [
+    { time: '29 Sep 2026 10:30', icon: 'gear', color: 'blue', title: 'Proses HV dimulai', desc: 'Unit mulai dikerjakan di area HV' },
+    { time: '29 Sep 2026 09:15', icon: 'check', color: 'green', title: 'LV selesai', desc: 'Proses LV telah selesai' },
+    { time: '28 Sep 2026 16:00', icon: 'file', color: 'blue', title: 'Material LV diterima', desc: 'Tembaga dan isolasi sudah tersedia' },
+    { time: '28 Sep 2026 08:20', icon: 'play', color: 'blue', title: 'Mulai proses LV', desc: 'Unit masuk ke area LV' }
+  ],
+  chatNotes: [
+    { time: '29 Sep 2026 10:30', text: 'Proses HV berjalan normal.', author: 'Rizky' }
+  ]
+};
+
+function getDetailProduksiData() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_DETAIL_PRODUKSI');
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error loading detail produksi from storage:', err);
+  }
+  return JSON.parse(JSON.stringify(defaultDetailProduksiData));
+}
+
+function saveDetailProduksiData(data) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_DETAIL_PRODUKSI', JSON.stringify(data));
+  } catch (err) {
+    console.error('Error saving detail produksi to storage:', err);
+  }
+}
+
+let activeEditingStageIndex = null;
+
+function renderDetailProduksiView() {
+  const data = getDetailProduksiData();
+
+  // Unit Header Card Elements
+  const elCode = document.getElementById('dpUnitCode');
+  const elBadge = document.getElementById('dpUnitStatusBadge');
+  const elSO = document.getElementById('dpMetaSO');
+  const elCust = document.getElementById('dpMetaCustomer');
+  const elVar = document.getElementById('dpMetaVariant');
+  const elCap = document.getElementById('dpMetaCapacity');
+  const elWind = document.getElementById('dpMetaWinding');
+  const elOrderDate = document.getElementById('dpMetaOrderDate');
+  const elTargetDate = document.getElementById('dpMetaTargetDate');
+  const elPIC = document.getElementById('dpMetaPIC');
+  const elLoc = document.getElementById('dpMetaLocation');
+  const elNotes = document.getElementById('dpMetaNotes');
+
+  if (elCode) elCode.innerText = data.unitId;
+  if (elSO) elSO.innerText = data.soNumber;
+  if (elCust) elCust.innerText = data.customer;
+  if (elVar) elVar.innerText = data.variant;
+  if (elCap) elCap.innerText = data.capacity;
+  if (elWind) elWind.innerText = data.winding;
+  if (elOrderDate) elOrderDate.innerText = data.orderDate;
+  if (elTargetDate) elTargetDate.innerText = data.targetDate;
+  if (elPIC) elPIC.innerText = data.pic;
+  if (elLoc) elLoc.innerText = data.location;
+  if (elNotes) elNotes.innerText = data.notes;
+
+  // Calculate Progress Percentage based on completed & in-process stages
+  // Stage weights: LV=30, HV=30, Susun Core=10, CCA=10, NSP=8, Connect=6, Final=6
+  const weights = [30, 30, 10, 10, 8, 6, 6];
+  let calculatedPct = 0;
+  let activeStageName = 'LV';
+
+  data.stages.forEach((stg, i) => {
+    const w = weights[i] || 14;
+    if (stg.status === 'Selesai') {
+      calculatedPct += w;
+    } else if (stg.status === 'Proses') {
+      calculatedPct += Math.round(w); // current in-process stage adds progress
+      activeStageName = stg.name.split(' ')[0];
+    }
+  });
+
+  if (calculatedPct > 100) calculatedPct = 100;
+
+  const hasProses = data.stages.find(s => s.status === 'Proses');
+  if (!hasProses) {
+    const firstBelum = data.stages.find(s => s.status === 'Belum Mulai');
+    if (firstBelum) {
+      activeStageName = firstBelum.name.split(' ')[0];
+    } else {
+      activeStageName = 'Final (Selesai)';
+      calculatedPct = 100;
+    }
+  }
+
+  // Update progress widgets
+  const elPct = document.getElementById('dpProgressPercent');
+  const elBar = document.getElementById('dpProgressFill');
+  const elCurrentStage = document.getElementById('dpCurrentStageName');
+  const elLastUpdate = document.getElementById('dpLastUpdatedTime');
+
+  if (elPct) elPct.innerText = calculatedPct + '%';
+  if (elBar) elBar.style.width = calculatedPct + '%';
+  if (elCurrentStage) elCurrentStage.innerText = activeStageName;
+  if (elLastUpdate) elLastUpdate.innerText = data.lastUpdate;
+
+  // Status badge on unit
+  if (elBadge) {
+    if (calculatedPct === 100) {
+      elBadge.innerText = 'Selesai';
+      elBadge.className = 'dp-badge-status selesai';
+    } else if (calculatedPct > 0) {
+      elBadge.innerText = 'Dalam Proses';
+      elBadge.className = 'dp-badge-status';
+    } else {
+      elBadge.innerText = 'Belum Mulai';
+      elBadge.className = 'dp-badge-status';
+      elBadge.style.background = '#f1f5f9';
+      elBadge.style.color = '#64748b';
+    }
+  }
+
+  // Render Table Rows
+  const tbody = document.getElementById('dpStagesTableBody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    data.stages.forEach((stg, idx) => {
+      let badgeHtml = '';
+      if (stg.status === 'Selesai') {
+        badgeHtml = `<span class="dp-badge selesai"><i class="fa-solid fa-check"></i> Selesai</span>`;
+      } else if (stg.status === 'Proses') {
+        badgeHtml = `<span class="dp-badge proses"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Proses</span>`;
+      } else {
+        badgeHtml = `<span class="dp-badge belum"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Belum Mulai</span>`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:#64748b; font-weight:600; text-align:center;">${idx + 1}</td>
+        <td style="font-weight:600; color:#0f172a;">${stg.name}</td>
+        <td>${badgeHtml}</td>
+        <td style="color:#64748b;">${stg.note && stg.note !== '-' ? stg.note : '-'}</td>
+        <td style="text-align: center;">
+          <button class="dp-btn-lihat" onclick="openUpdateProgressModal(${idx})">Lihat</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Render Timeline Aktivitas Terbaru
+  const timelineEl = document.getElementById('dpActivitiesTimeline');
+  if (timelineEl) {
+    timelineEl.innerHTML = '';
+    data.activities.forEach(act => {
+      const item = document.createElement('div');
+      item.className = 'dp-timeline-item';
+      const iconClass = act.icon === 'check' ? 'fa-solid fa-check' : (act.icon === 'gear' ? 'fa-solid fa-gear' : (act.icon === 'file' ? 'fa-solid fa-file-lines' : 'fa-solid fa-play'));
+      item.innerHTML = `
+        <div class="dp-timeline-time">${act.time}</div>
+        <div class="dp-timeline-icon ${act.color || 'blue'}">
+          <i class="${iconClass}"></i>
+        </div>
+        <div class="dp-timeline-body">
+          <div class="dp-timeline-title">${act.title}</div>
+          <div class="dp-timeline-desc">${act.desc}</div>
+        </div>
+      `;
+      timelineEl.appendChild(item);
+    });
+  }
+
+  // Render Notes list
+  const notesEl = document.getElementById('dpNotesList');
+  if (notesEl) {
+    notesEl.innerHTML = '';
+    (data.chatNotes || []).forEach(n => {
+      const noteItem = document.createElement('div');
+      noteItem.className = 'dp-note-item';
+      noteItem.innerHTML = `
+        <div class="dp-note-dot"></div>
+        <div class="dp-note-text">
+          <span style="color:#64748b; font-size:11px; margin-right:6px;">${n.time}</span>
+          ${n.text}
+        </div>
+        <div class="dp-note-author">${n.author || 'Admin'}</div>
+      `;
+      notesEl.appendChild(noteItem);
+    });
+  }
+
+  // Render full notes list for tab Catatan
+  const fullNotesEl = document.getElementById('dpFullNotesList');
+  if (fullNotesEl) {
+    fullNotesEl.innerHTML = '';
+    (data.chatNotes || []).forEach(n => {
+      const noteItem = document.createElement('div');
+      noteItem.className = 'dp-note-item';
+      noteItem.innerHTML = `
+        <div class="dp-note-dot"></div>
+        <div class="dp-note-text">
+          <div style="color:#64748b; font-size:11px; margin-bottom:2px;">${n.time} • <b>${n.author || 'Admin'}</b></div>
+          <div>${n.text}</div>
+        </div>
+      `;
+      fullNotesEl.appendChild(noteItem);
+    });
+  }
+
+  // Render audit trail in Riwayat tab
+  const auditEl = document.getElementById('dpAuditTrailTimeline');
+  if (auditEl && timelineEl) {
+    auditEl.innerHTML = timelineEl.innerHTML;
+  }
+}
+
+// Switch Detail Produksi Tabs
+function switchDPTab(tabKey) {
+  const tabs = ['progress', 'detail-unit', 'material', 'dokumen', 'riwayat', 'catatan'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`dpTab${t.charAt(0).toUpperCase() + t.slice(1).replace('-', '')}`);
+    if (btn) btn.classList.remove('active');
+  });
+
+  const tabContentMap = {
+    'progress': 'dpContentProgress',
+    'detail-unit': 'dpContentDetailUnit',
+    'material': 'dpContentMaterial',
+    'dokumen': 'dpContentDokumen',
+    'riwayat': 'dpContentRiwayat',
+    'catatan': 'dpContentCatatan'
+  };
+
+  const activeBtnMap = {
+    'progress': 'dpTabProgress',
+    'detail-unit': 'dpTabDetailUnit',
+    'material': 'dpTabMaterial',
+    'dokumen': 'dpTabDokumen',
+    'riwayat': 'dpTabRiwayat',
+    'catatan': 'dpTabCatatan'
+  };
+
+  Object.values(tabContentMap).forEach(cId => {
+    const el = document.getElementById(cId);
+    if (el) el.style.display = 'none';
+  });
+
+  const targetContent = document.getElementById(tabContentMap[tabKey]);
+  if (targetContent) {
+    targetContent.style.display = (tabKey === 'progress') ? 'grid' : 'block';
+  }
+
+  const targetBtn = document.getElementById(activeBtnMap[tabKey]);
+  if (targetBtn) targetBtn.classList.add('active');
+}
+
+// Modal Handlers for Update Progress Produksi
+function openUpdateProgressModal(stageIndex) {
+  const data = getDetailProduksiData();
+  const stage = data.stages[stageIndex];
+  if (!stage) return;
+
+  activeEditingStageIndex = stageIndex;
+
+  const mUnit = document.getElementById('mUpdateUnitCode');
+  const mStage = document.getElementById('mUpdateStageName');
+  const mBadge = document.getElementById('mUpdateCurrentStatusBadge');
+  const mInputStatus = document.getElementById('mInputStatus');
+  const mInputDate = document.getElementById('mInputDate');
+  const mInputPIC = document.getElementById('mInputPIC');
+  const mInputNote = document.getElementById('mInputNote');
+
+  if (mUnit) mUnit.innerText = data.unitId;
+  if (mStage) mStage.innerText = stage.name;
+  if (mBadge) {
+    mBadge.innerText = (stage.status === 'Selesai' ? '✓ ' : '● ') + stage.status;
+    mBadge.className = `dp-badge ${stage.status === 'Selesai' ? 'selesai' : (stage.status === 'Proses' ? 'proses' : 'belum')}`;
+  }
+
+  if (mInputStatus) mInputStatus.value = stage.status;
+  if (mInputDate) mInputDate.value = stage.date || new Date().toISOString().split('T')[0];
+  if (mInputPIC) mInputPIC.value = stage.pic || 'Rizky';
+  if (mInputNote) mInputNote.value = (stage.note && stage.note !== '-') ? stage.note : '';
+
+  updateNoteCharCount();
+
+  const modal = document.getElementById('updateProgressModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeUpdateProgressModal() {
+  const modal = document.getElementById('updateProgressModal');
+  if (modal) modal.style.display = 'none';
+  activeEditingStageIndex = null;
+}
+
+function handleModalStatusSelectChange() {
+  const sel = document.getElementById('mInputStatus');
+  const mBadge = document.getElementById('mUpdateCurrentStatusBadge');
+  if (sel && mBadge) {
+    const val = sel.value;
+    mBadge.innerText = (val === 'Selesai' ? '✓ ' : '● ') + val;
+    mBadge.className = `dp-badge ${val === 'Selesai' ? 'selesai' : (val === 'Proses' ? 'proses' : 'belum')}`;
+  }
+}
+
+function updateNoteCharCount() {
+  const input = document.getElementById('mInputNote');
+  const count = document.getElementById('mNoteCharCount');
+  if (input && count) {
+    count.innerText = input.value.length;
+  }
+}
+
+function handleSaveStageProgress(e) {
+  if (e) e.preventDefault();
+  if (activeEditingStageIndex === null) return;
+
+  const data = getDetailProduksiData();
+  const stage = data.stages[activeEditingStageIndex];
+  if (!stage) return;
+
+  const status = document.getElementById('mInputStatus').value;
+  const date = document.getElementById('mInputDate').value;
+  const pic = document.getElementById('mInputPIC').value;
+  const note = document.getElementById('mInputNote').value.trim();
+  const fileInput = document.getElementById('mInputFile');
+
+  // Format current date & time
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const formattedTime = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  stage.status = status;
+  stage.date = date;
+  stage.pic = pic;
+  stage.note = note || '-';
+
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    stage.doc = fileInput.files[0].name;
+  }
+
+  // Prepend activity log
+  data.activities.unshift({
+    time: formattedTime,
+    icon: (status === 'Selesai' ? 'check' : (status === 'Proses' ? 'gear' : 'play')),
+    color: (status === 'Selesai' ? 'green' : 'blue'),
+    title: `${stage.name} diubah menjadi ${status}`,
+    desc: note ? note : `Status diperbarui oleh ${pic}`
+  });
+
+  // If note provided, append to chat notes
+  if (note && note !== '-') {
+    data.chatNotes.unshift({
+      time: formattedTime,
+      text: `[${stage.name}] ${note}`,
+      author: pic
+    });
+  }
+
+  data.lastUpdate = formattedTime;
+
+  saveDetailProduksiData(data);
+  closeUpdateProgressModal();
+  renderDetailProduksiView();
+
+  showToast(`✅ Progress ${stage.name} berhasil diperbarui!`);
+}
+
+function saveNewProductionNote(isFull = false) {
+  const inputId = isFull ? 'dpFullNoteInput' : 'dpQuickNoteInput';
+  const input = document.getElementById(inputId);
+  if (!input || !input.value.trim()) {
+    showToast('⚠️ Silakan tulis catatan terlebih dahulu');
+    return;
+  }
+
+  const text = input.value.trim();
+  const data = getDetailProduksiData();
+
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const formattedTime = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const author = sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || 'Administrator';
+
+  data.chatNotes.unshift({
+    time: formattedTime,
+    text: text,
+    author: author
+  });
+
+  data.activities.unshift({
+    time: formattedTime,
+    icon: 'file',
+    color: 'blue',
+    title: 'Catatan Ditambahkan',
+    desc: `${author}: ${text}`
+  });
+
+  saveDetailProduksiData(data);
+  input.value = '';
+  renderDetailProduksiView();
+
+  showToast('📝 Catatan berhasil disimpan!');
+}
+
+function handleDPSearch(e) {
+  const val = (e.target.value || '').toLowerCase();
+  const rows = document.querySelectorAll('#dpStagesTableBody tr');
+  rows.forEach(r => {
+    const txt = r.innerText.toLowerCase();
+    r.style.display = txt.includes(val) ? '' : 'none';
+  });
 }
 
 // --- PRODUKSI FUNCTIONS ---
@@ -3929,6 +4364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderProyekTable();
   renderProduksiTable();
+  renderDetailProduksiView();
   renderPengirimanTable();
   updateTrackingStepperUI();
   renderDocumentsTable();

@@ -1339,141 +1339,331 @@
         </div>
       </div>
 
-      <!-- ================= VIEW 6: PRODUKSI ================= -->
+      <!-- ================= VIEW 6: DETAIL PRODUKSI ================= -->
       <div class="view-section" id="viewProduksi">
-        <!-- Header -->
-        <div class="erp-page-header">
-          <div class="erp-page-title-wrap">
-            <h1 class="erp-page-title">Produksi</h1>
-            <p class="erp-page-subtitle">Monitor proses produksi trafo per unit sesuai sales order</p>
+        <div class="dp-container">
+          
+          <!-- Breadcrumb & Header Row -->
+          <div class="dp-breadcrumb">
+            <span class="link" onclick="switchMainTab('dashboard')">
+              <i class="fa-solid fa-arrow-left"></i> Produksi
+            </span>
+            <span>&gt;</span>
+            <span class="current">Detail Produksi</span>
           </div>
-          <div class="erp-header-actions">
-            <div class="erp-header-search">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="produksiHeaderSearch" placeholder="Cari No. SO, unit..." onkeyup="filterProduksiTable()">
+
+          <div class="dp-header-row">
+            <div class="dp-title-box">
+              <h1>Detail Produksi</h1>
+              <p>Lihat dan kelola progress produksi per unit trafo</p>
             </div>
-            <button class="erp-header-notif" title="Notifikasi" onclick="showToast('⚙️ 7 Unit sedang aktif dalam jalur perakitan')">
-              <i class="fa-regular fa-bell"></i>
-              <span class="erp-notif-dot">3</span>
+            <div class="dp-header-actions">
+              <div class="dp-search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="dpSearchUnitInput" placeholder="Cari No, SO, No. Unit..." onkeyup="handleDPSearch(event)">
+              </div>
+              <button class="dp-btn-back" onclick="switchMainTab('dashboard')">
+                <i class="fa-solid fa-arrow-left"></i> Kembali
+              </button>
+            </div>
+          </div>
+
+          <!-- Unit Info Card -->
+          <div class="dp-unit-card">
+            <!-- Left Meta Column -->
+            <div class="dp-unit-info-col">
+              <div class="dp-unit-title-row">
+                <h2 class="dp-unit-code" id="dpUnitCode">TRF-001</h2>
+                <span class="dp-badge-status" id="dpUnitStatusBadge">Dalam Proses</span>
+              </div>
+              <div class="dp-meta-list">
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">No. SO</span>
+                  <span class="dp-meta-val">: <span id="dpMetaSO">25-0563</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Nama Pelanggan</span>
+                  <span class="dp-meta-val">: <span id="dpMetaCustomer">PT PLN UP3 Jateng</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Variant</span>
+                  <span class="dp-meta-val">: <span id="dpMetaVariant">Distribusi</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Kapasitas</span>
+                  <span class="dp-meta-val">: <span id="dpMetaCapacity">500 KVA</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Winding</span>
+                  <span class="dp-meta-val">: <span id="dpMetaWinding">CU - CU</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle Meta Column -->
+            <div class="dp-unit-info-col" style="padding-top: 36px;">
+              <div class="dp-meta-list">
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Tanggal Pesan</span>
+                  <span class="dp-meta-val">: <span id="dpMetaOrderDate">01/05/2026</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Target Selesai</span>
+                  <span class="dp-meta-val">: <span id="dpMetaTargetDate">30/06/2026</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">PIC</span>
+                  <span class="dp-meta-val">: <span id="dpMetaPIC">Budi Santoso</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Lokasi Proyek</span>
+                  <span class="dp-meta-val">: <span id="dpMetaLocation">UP3 Jateng</span></span>
+                </div>
+                <div class="dp-meta-item">
+                  <span class="dp-meta-label">Keterangan</span>
+                  <span class="dp-meta-val">: <span id="dpMetaNotes">-</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Progress Unit Box -->
+            <div class="dp-progress-box">
+              <span class="dp-progress-label">Progress Unit</span>
+              <div class="dp-progress-percent" id="dpProgressPercent">60%</div>
+              <div class="dp-progress-track">
+                <div class="dp-progress-fill" id="dpProgressFill" style="width: 60%;"></div>
+              </div>
+              <div class="dp-progress-meta">
+                <div>Tahap Saat Ini : <strong id="dpCurrentStageName">HV</strong></div>
+                <div>Update Terakhir : <span id="dpLastUpdatedTime">29 Sep 2026 10:30</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs Strip -->
+          <div class="dp-tabs-nav">
+            <button class="dp-tab-btn active" id="dpTabProgress" onclick="switchDPTab('progress')">
+              <i class="fa-solid fa-table-list"></i> Progress Produksi
             </button>
-            <div class="erp-header-profile" onclick="handleLogout()" title="Administrator">
-              <div class="erp-profile-avatar"><i class="fa-solid fa-user"></i></div>
-              <span class="erp-profile-name">Administrator</span>
-              <i class="fa-solid fa-chevron-down erp-profile-chevron"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Top Filter Bar -->
-        <div class="erp-filter-bar">
-          <div class="erp-filter-item">
-            <span class="erp-filter-label">Proyek</span>
-            <select id="filterProduksiProyek" class="erp-filter-select" onchange="filterProduksiTable()">
-              <option value="all">Semua Proyek</option>
-              <option value="PT PLN UP3 Jateng">PT PLN UP3 Jateng</option>
-              <option value="PT PLN Nusa Daya">PT PLN Nusa Daya</option>
-              <option value="PT PLN Jawa Tengah">PT PLN Jawa Tengah</option>
-            </select>
+            <button class="dp-tab-btn" id="dpTabDetailUnit" onclick="switchDPTab('detail-unit')">
+              <i class="fa-solid fa-microchip"></i> Detail Unit
+            </button>
+            <button class="dp-tab-btn" id="dpTabMaterial" onclick="switchDPTab('material')">
+              <i class="fa-solid fa-cubes"></i> Material
+            </button>
+            <button class="dp-tab-btn" id="dpTabDokumen" onclick="switchDPTab('dokumen')">
+              <i class="fa-solid fa-file-lines"></i> Dokumen
+            </button>
+            <button class="dp-tab-btn" id="dpTabRiwayat" onclick="switchDPTab('riwayat')">
+              <i class="fa-solid fa-clock-rotate-left"></i> Riwayat
+            </button>
+            <button class="dp-tab-btn" id="dpTabCatatan" onclick="switchDPTab('catatan')">
+              <i class="fa-solid fa-comment-dots"></i> Catatan
+            </button>
           </div>
 
-          <div class="erp-filter-item">
-            <span class="erp-filter-label">Tahap Proses</span>
-            <select id="filterProduksiTahap" class="erp-filter-select" onchange="filterProduksiTable()">
-              <option value="all">Semua Tahap</option>
-              <option value="HV">HV</option>
-              <option value="Susun Core">Susun Core</option>
-              <option value="CCA">CCA</option>
-              <option value="LV">LV</option>
-              <option value="Belum Mulai">Belum Mulai</option>
-            </select>
+          <!-- TAB CONTENT 1: PROGRESS PRODUKSI -->
+          <div id="dpContentProgress" class="dp-main-grid">
+            <!-- Left Column: Table & Timeline -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <!-- Table Card -->
+              <div class="dp-card">
+                <div class="dp-card-title">Progress Produksi</div>
+                <table class="dp-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 45px;">No.</th>
+                      <th>Tahap Proses</th>
+                      <th style="width: 140px;">Status</th>
+                      <th>Catatan</th>
+                      <th style="width: 80px; text-align: center;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dpStagesTableBody">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Aktivitas Terbaru -->
+              <div class="dp-card">
+                <div class="dp-card-title">Aktivitas Terbaru</div>
+                <div class="dp-timeline" id="dpActivitiesTimeline">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Dokumen Terkait & Catatan -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <!-- Dokumen Terkait -->
+              <div class="dp-card">
+                <div class="dp-card-title">Dokumen Terkait</div>
+                <div class="dp-doc-list" id="dpDocsList">
+                  <div class="dp-doc-item">
+                    <div class="dp-doc-left">
+                      <i class="fa-solid fa-file-pdf dp-doc-icon"></i>
+                      <div class="dp-doc-info">
+                        <span class="dp-doc-name">Drawing Teknis</span>
+                        <span class="dp-doc-meta">PDF • 1.2 MB</span>
+                      </div>
+                    </div>
+                    <button class="dp-doc-dl" onclick="showToast('📄 Mengunduh Drawing Teknis TRF-001...')">
+                      <i class="fa-solid fa-download"></i>
+                    </button>
+                  </div>
+                  <div class="dp-doc-item">
+                    <div class="dp-doc-left">
+                      <i class="fa-solid fa-file-pdf dp-doc-icon"></i>
+                      <div class="dp-doc-info">
+                        <span class="dp-doc-name">Checklist Produksi</span>
+                        <span class="dp-doc-meta">PDF • 850 KB</span>
+                      </div>
+                    </div>
+                    <button class="dp-doc-dl" onclick="showToast('📄 Mengunduh Checklist Produksi TRF-001...')">
+                      <i class="fa-solid fa-download"></i>
+                    </button>
+                  </div>
+                  <div class="dp-doc-item">
+                    <div class="dp-doc-left">
+                      <i class="fa-solid fa-file-pdf dp-doc-icon"></i>
+                      <div class="dp-doc-info">
+                        <span class="dp-doc-name">Hasil Test (jika ada)</span>
+                        <span class="dp-doc-meta">PDF • -</span>
+                      </div>
+                    </div>
+                    <button class="dp-doc-dl" onclick="showToast('ℹ️ Hasil Test belum tersedia.')">
+                      <i class="fa-solid fa-download"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Catatan -->
+              <div class="dp-card">
+                <div class="dp-card-title">Catatan</div>
+                <div class="dp-note-form">
+                  <input type="text" class="dp-note-input" id="dpQuickNoteInput" placeholder="Tulis catatan proses produksi...">
+                  <button class="dp-note-btn" onclick="saveNewProductionNote()">Simpan</button>
+                </div>
+                <div class="dp-note-list" id="dpNotesList">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="erp-filter-item">
-            <span class="erp-filter-label">Status</span>
-            <select id="filterProduksiStatus" class="erp-filter-select" onchange="filterProduksiTable()">
-              <option value="all">Semua Status</option>
-              <option value="Dalam Proses">Dalam Proses</option>
-              <option value="Selesai">Selesai</option>
-              <option value="Belum Mulai">Belum Mulai</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Stats Grid (4 columns) -->
-        <div class="erp-stats-grid">
-          <!-- Total Unit -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
-              <i class="fa-solid fa-industry"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Total Unit</span>
-              <span class="erp-stat-val" id="statProduksiTotal">17</span>
-              <span class="erp-stat-sub">Unit trafo</span>
+          <!-- TAB CONTENT 2: DETAIL UNIT -->
+          <div id="dpContentDetailUnit" class="dp-card" style="display: none;">
+            <div class="dp-card-title">Spesifikasi Detail Elektrikal Unit TRF-001</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; font-size: 13px;">
+              <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 12px;">Tegangan Primer / Sekunder</div>
+                <div style="font-weight: 700; color: #0f172a; margin-top: 4px;">20.000 V (20 kV) / 400 V</div>
+              </div>
+              <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 12px;">Vector Group & Frekuensi</div>
+                <div style="font-weight: 700; color: #0f172a; margin-top: 4px;">Dyn11 • 50 Hz</div>
+              </div>
+              <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 12px;">Tipe Pendingin</div>
+                <div style="font-weight: 700; color: #0f172a; margin-top: 4px;">ONAN (Oil Natural Air Natural)</div>
+              </div>
+              <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="color: #64748b; font-size: 12px;">Impedansi Short Circuit</div>
+                <div style="font-weight: 700; color: #0f172a; margin-top: 4px;">4.5% @ 75°C</div>
+              </div>
             </div>
           </div>
 
-          <!-- Selesai -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-green">
-              <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Selesai</span>
-              <span class="erp-stat-val" id="statProduksiSelesai">8</span>
-              <span class="erp-stat-sub"><span style="color:#10b981; font-weight:700;">▲ 47%</span></span>
-            </div>
-          </div>
-
-          <!-- Dalam Proses -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-amber">
-              <i class="fa-solid fa-gear"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Dalam Proses</span>
-              <span class="erp-stat-val" id="statProduksiProses">7</span>
-              <span class="erp-stat-sub"><span style="color:#f59e0b; font-weight:700;">◆ 41%</span></span>
-            </div>
-          </div>
-
-          <!-- Belum Mulai -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-red">
-              <i class="fa-regular fa-clock"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Belum Mulai</span>
-              <span class="erp-stat-val" id="statProduksiBelum">2</span>
-              <span class="erp-stat-sub"><span style="color:#ef4444; font-weight:700;">▼ 12%</span></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Table Card: Daftar Unit Produksi -->
-        <div class="erp-table-card">
-          <div class="erp-table-header-title">Daftar Unit Produksi</div>
-          <div class="erp-table-responsive">
-            <table class="erp-table">
+          <!-- TAB CONTENT 3: MATERIAL -->
+          <div id="dpContentMaterial" class="dp-card" style="display: none;">
+            <div class="dp-card-title">Bill of Materials (BOM) & Kesiapan Material</div>
+            <table class="dp-table">
               <thead>
                 <tr>
-                  <th>No.</th>
-                  <th>No. SO</th>
-                  <th>Nama Pelanggan</th>
-                  <th>No. Unit</th>
-                  <th>KVA</th>
-                  <th>Tahap Saat Ini</th>
-                  <th>Progress</th>
-                  <th>Target Selesai</th>
-                  <th>Status</th>
-                  <th style="text-align: center;">Aksi</th>
+                  <th>Item Material</th>
+                  <th>Kebutuhan</th>
+                  <th>Status Gudang</th>
+                  <th>Keterangan</th>
                 </tr>
               </thead>
-              <tbody id="produksiTableBody">
-                <!-- Rendered dynamically -->
+              <tbody>
+                <tr>
+                  <td><b>Kawat Tembaga Enamel (Copper Winding)</b></td>
+                  <td>320 kg</td>
+                  <td><span class="dp-badge selesai">✓ Tersedia</span></td>
+                  <td>Telah dialokasikan ke lini LV/HV</td>
+                </tr>
+                <tr>
+                  <td><b>Silicon Steel Core (CRGO M4)</b></td>
+                  <td>450 kg</td>
+                  <td><span class="dp-badge selesai">✓ Tersedia</span></td>
+                  <td>Area potong & susun core</td>
+                </tr>
+                <tr>
+                  <td><b>Minyak Trafo (Mineral Oil Grade 1)</b></td>
+                  <td>480 Liter</td>
+                  <td><span class="dp-badge proses">● Siap Isi</span></td>
+                  <td>Menunggu tangki & oven vacuum</td>
+                </tr>
+                <tr>
+                  <td><b>Tangki Baja & Radiator Fin</b></td>
+                  <td>1 Set</td>
+                  <td><span class="dp-badge selesai">✓ Fabrikasi OK</span></td>
+                  <td>Leak test lulus 0.5 bar</td>
+                </tr>
               </tbody>
             </table>
           </div>
+
+          <!-- TAB CONTENT 4: DOKUMEN -->
+          <div id="dpContentDokumen" class="dp-card" style="display: none;">
+            <div class="dp-card-title">Semua Dokumen Teknik & Sertifikat Pengujian</div>
+            <div class="dp-doc-list">
+              <div class="dp-doc-item">
+                <div class="dp-doc-left">
+                  <i class="fa-solid fa-file-pdf dp-doc-icon"></i>
+                  <div class="dp-doc-info">
+                    <span class="dp-doc-name">Drawing Konstruksi Trafo 500kVA</span>
+                    <span class="dp-doc-meta">DWG-TRF-001.pdf • 2.4 MB</span>
+                  </div>
+                </div>
+                <button class="dp-doc-dl" onclick="showToast('Mengunduh drawing...')"><i class="fa-solid fa-download"></i></button>
+              </div>
+              <div class="dp-doc-item">
+                <div class="dp-doc-left">
+                  <i class="fa-solid fa-file-pdf dp-doc-icon"></i>
+                  <div class="dp-doc-info">
+                    <span class="dp-doc-name">Sertifikat Material Tembaga & Core</span>
+                    <span class="dp-doc-meta">CERT-MAT-2026.pdf • 980 KB</span>
+                  </div>
+                </div>
+                <button class="dp-doc-dl" onclick="showToast('Mengunduh sertifikat...')"><i class="fa-solid fa-download"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT 5: RIWAYAT -->
+          <div id="dpContentRiwayat" class="dp-card" style="display: none;">
+            <div class="dp-card-title">Audit Trail & Riwayat Lengkap Perubahan</div>
+            <div class="dp-timeline" id="dpAuditTrailTimeline">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- TAB CONTENT 6: CATATAN -->
+          <div id="dpContentCatatan" class="dp-card" style="display: none;">
+            <div class="dp-card-title">Diskusi & Log Catatan Tim Produksi</div>
+            <div class="dp-note-form" style="max-width: 500px;">
+              <input type="text" class="dp-note-input" id="dpFullNoteInput" placeholder="Tulis catatan proses produksi...">
+              <button class="dp-note-btn" onclick="saveNewProductionNote(true)">Simpan</button>
+            </div>
+            <div class="dp-note-list" id="dpFullNotesList">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1987,6 +2177,87 @@
           <button type="submit" class="btn-primary">Simpan Order</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: UPDATE PROGRESS PRODUKSI ================= -->
+  <div class="modal-overlay" id="updateProgressModal" style="display: none;">
+    <div class="modal-box" style="max-width: 520px; width: 95%;">
+      <div class="modal-header">
+        <span class="modal-title" style="font-weight: 800; font-size: 16px; color: #0f172a;">
+          Update Progress Produksi
+        </span>
+        <button class="modal-close-btn" onclick="closeUpdateProgressModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <!-- Header Info -->
+        <div class="dp-modal-info-row">
+          <div>No. Unit : <b id="mUpdateUnitCode">TRF-001</b></div>
+          <div>Tahap Proses : <b id="mUpdateStageName">HV (High Voltage)</b></div>
+          <div style="grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <span>Status Saat Ini :</span>
+            <span id="mUpdateCurrentStatusBadge" class="dp-badge proses">● Proses</span>
+          </div>
+        </div>
+
+        <!-- Callout Banner -->
+        <div class="dp-modal-banner">
+          <i class="fa-solid fa-circle-info" style="font-size: 15px;"></i>
+          <span>Pilih status dan isi detail progres untuk tahap proses ini.</span>
+        </div>
+
+        <!-- Form Fields -->
+        <form id="formUpdateProgress" onsubmit="handleSaveStageProgress(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; font-size: 12px;">Status <span style="color:#ef4444;">*</span></label>
+              <select id="mInputStatus" class="form-select" required onchange="handleModalStatusSelectChange()">
+                <option value="Belum Mulai">● Belum Mulai</option>
+                <option value="Proses">● Proses</option>
+                <option value="Selesai">✓ Selesai</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; font-size: 12px;">Tanggal Selesai <span style="color:#ef4444;">*</span></label>
+              <input type="date" id="mInputDate" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-weight: 600; font-size: 12px;">PIC <span style="color:#ef4444;">*</span></label>
+            <select id="mInputPIC" class="form-select" required>
+              <option value="Rizky">Rizky</option>
+              <option value="Budi Santoso">Budi Santoso</option>
+              <option value="Andi Pratama">Andi Pratama</option>
+              <option value="Dedi Kurniawan">Dedi Kurniawan</option>
+              <option value="Wahyu Hidayat">Wahyu Hidayat</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" style="font-weight: 600; font-size: 12px;">Catatan</label>
+            <textarea id="mInputNote" class="form-input" rows="3" maxlength="500" placeholder="Tulis catatan proses produksi..." onkeyup="updateNoteCharCount()"></textarea>
+            <div style="display: flex; justify-content: flex-end; font-size: 11px; color: #94a3b8; margin-top: 4px;">
+              <span id="mNoteCharCount">0</span>/500
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label class="form-label" style="font-weight: 600; font-size: 12px;">Upload Dokumen (Opsional)</label>
+            <input type="file" id="mInputFile" class="form-input" style="padding: 6px;" accept=".pdf,.jpg,.jpeg,.png">
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+              Format: PDF, JPG, PNG. Maksimal 5 MB.
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn-secondary" onclick="closeUpdateProgressModal()">Batal</button>
+            <button type="submit" class="btn-primary" style="background-color: #1d4ed8; padding: 8px 24px;">Simpan</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
