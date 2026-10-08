@@ -643,29 +643,40 @@ function renderStepper(order, animate = false) {
   });
 }
 
-// Render Orders Table
-function renderOrdersTable() {
+// Render Orders Table in Monitoring Produksi (Synchronized with Unified Units Data)
+function renderOrdersTable(filteredList = null) {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  orders.forEach((ord) => {
+  const units = filteredList || getUnitsData();
+  if (units.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Tidak ada data unit yang sesuai.</td></tr>`;
+    return;
+  }
+
+  let activeUnit = units.find(u => u.unitId === activeMonitoringUnitId) || units[0];
+  if (activeUnit) activeMonitoringUnitId = activeUnit.unitId;
+
+  units.forEach((ord) => {
+    recomputeUnitProgress(ord);
     const tr = document.createElement('tr');
-    if (ord.id === selectedOrder.id) {
+    tr.style.cursor = 'pointer';
+    if (ord.unitId === activeMonitoringUnitId) {
       tr.className = 'selected';
     }
 
     let badgeClass = 'badge-assembly';
-    if (ord.status === 'SELESAI') badgeClass = 'badge-selesai';
-    else if (ord.status === 'CONNECTION') badgeClass = 'badge-connection';
-    else if (ord.status === 'TANK MAKING') badgeClass = 'badge-tank';
-    else if (ord.status === 'CORE MAKING') badgeClass = 'badge-core';
+    if (ord.status === 'Selesai') badgeClass = 'badge-selesai';
+    else if (ord.status === 'Belum Mulai') badgeClass = 'badge-belum';
+    else badgeClass = 'badge-assembly';
 
     tr.innerHTML = `
-      <td class="order-code">${ord.id}</td>
-      <td style="font-weight: 600;">${ord.nama}</td>
-      <td>${ord.kapasitas}</td>
-      <td>${ord.tegangan}</td>
+      <td class="order-code">${ord.soNumber}</td>
+      <td style="font-weight: 800; color: #2563eb;">${ord.unitId}</td>
+      <td style="font-weight: 700; color: #0f172a;">${ord.customer}</td>
+      <td style="font-weight: 600;">${ord.capacity}</td>
+      <td>${ord.voltage}</td>
       <td><span class="badge-status ${badgeClass}">${ord.status}</span></td>
       <td>
         <div class="table-progress-cell">
@@ -675,72 +686,139 @@ function renderOrdersTable() {
           </div>
         </div>
       </td>
-      <td style="font-size: 11px; color: var(--text-secondary);">${ord.mulai}</td>
-      <td class="deadline-alert">${ord.deadline}</td>
+      <td class="deadline-alert">${ord.targetDate}</td>
       <td>
         <div class="operator-cell">
-          <img src="${ord.operatorAvatar}" class="operator-avatar">
-          <span>${ord.operator}</span>
+          <img src="${getSalesAvatar(ord.pic)}" class="operator-avatar">
+          <span>${ord.pic}</span>
         </div>
       </td>
     `;
 
     tr.addEventListener('click', () => {
-      selectedOrder = ord;
+      activeMonitoringUnitId = ord.unitId;
       renderOrdersTable();
-      renderStepper(selectedOrder, true);
-      updateDetailPanel(selectedOrder);
-      resetStepperTimer();
+      updateDetailPanel(ord);
     });
 
     tbody.appendChild(tr);
   });
+
+  updateMonitoringKPICards();
+  if (activeUnit) updateDetailPanel(activeUnit);
 }
 
-// Update Detail Order Side Panel
+// Update Detail Order Side Panel in Monitoring Produksi
 function updateDetailPanel(ord) {
-  document.getElementById('detailOrderId').innerText = ord.id;
+  if (!ord) return;
+  recomputeUnitProgress(ord);
+
+  const idEl = document.getElementById('detailOrderId');
+  if (idEl) idEl.innerText = `${ord.unitId} (${ord.soNumber})`;
   
   const badgeEl = document.getElementById('detailStatusBadge');
-  badgeEl.innerText = ord.status;
-  badgeEl.className = `badge-status ${ord.status === 'SELESAI' ? 'badge-selesai' : ord.status === 'CONNECTION' ? 'badge-connection' : 'badge-assembly'}`;
+  if (badgeEl) {
+    badgeEl.innerText = ord.status;
+    badgeEl.className = `badge-status ${ord.status === 'Selesai' ? 'badge-selesai' : ord.status === 'Belum Mulai' ? 'badge-belum' : 'badge-assembly'}`;
+  }
 
-  document.getElementById('detailNamaTrafo').innerText = `: ${ord.nama}`;
-  document.getElementById('detailKapasitas').innerText = `: ${ord.kapasitas}`;
-  document.getElementById('detailTegangan').innerText = `: ${ord.tegangan}`;
-  document.getElementById('detailMulai').innerText = `: ${ord.mulai}`;
-  document.getElementById('detailDeadline').innerText = `: ${ord.deadline}`;
-  document.getElementById('detailStatusSaatIni').innerText = `: ${ord.status} (${ord.progress}%)`;
+  const namaEl = document.getElementById('detailNamaTrafo');
+  if (namaEl) namaEl.innerText = `: ${ord.customer}`;
+  const capEl = document.getElementById('detailKapasitas');
+  if (capEl) capEl.innerText = `: ${ord.capacity}`;
+  const voltEl = document.getElementById('detailTegangan');
+  if (voltEl) voltEl.innerText = `: ${ord.voltage}`;
+  const mulaiEl = document.getElementById('detailMulai');
+  if (mulaiEl) mulaiEl.innerText = `: ${ord.orderDate}`;
+  const deadEl = document.getElementById('detailDeadline');
+  if (deadEl) deadEl.innerText = `: ${ord.targetDate}`;
+  const statusEl = document.getElementById('detailStatusSaatIni');
+  if (statusEl) statusEl.innerText = `: ${ord.status} (${ord.progress}%)`;
   
-  document.getElementById('detailOperator').innerHTML = `
-    <img src="${ord.operatorAvatar}" class="operator-avatar"> ${ord.operator}
-  `;
+  const opEl = document.getElementById('detailOperator');
+  if (opEl) {
+    opEl.innerHTML = `
+      <img src="${getSalesAvatar(ord.pic)}" class="operator-avatar"> ${ord.pic}
+    `;
+  }
 
-  document.getElementById('detailProgressPct').innerText = `${ord.progress}%`;
-  document.getElementById('detailProgressBar').style.width = `${ord.progress}%`;
+  const pctEl = document.getElementById('detailProgressPct');
+  if (pctEl) pctEl.innerText = `${ord.progress}%`;
+  const barEl = document.getElementById('detailProgressBar');
+  if (barEl) barEl.style.width = `${ord.progress}%`;
 
   // Update Vertical Timeline
   const timelineContainer = document.getElementById('timelineProsesList');
   if (!timelineContainer) return;
   timelineContainer.innerHTML = '';
 
-  ord.timeline.forEach((item) => {
+  const allStages = [
+    ...(ord.electricalStages || []).map(s => ({ ...s, cat: 'Elec' })),
+    ...(ord.mechanicalStages || []).map(s => ({ ...s, cat: 'Mech' }))
+  ];
+
+  allStages.forEach((item) => {
     const timeRow = document.createElement('div');
-    timeRow.className = `timeline-item ${item.status}`;
-    
-    let statusText = item.status === 'finished' ? 'Selesai' : item.status === 'process' ? 'Proses' : 'Menunggu';
+    const isDone = item.status === 'Selesai';
+    const isProcess = item.status === 'Proses';
+    timeRow.className = `timeline-item ${isDone ? 'finished' : isProcess ? 'process' : 'waiting'}`;
 
     timeRow.innerHTML = `
       <span class="timeline-dot"></span>
-      <span class="timeline-stage-name">${item.stage}</span>
-      <span class="timeline-stage-status">${statusText}</span>
+      <span class="timeline-stage-name"><strong style="color:#2563eb; font-size:10px; margin-right:4px;">[${item.cat}]</strong>${item.name}</span>
+      <span class="timeline-stage-status">${item.status}</span>
       <div class="timeline-meta">
-        <div>${item.time}</div>
-        <div style="font-size: 9px; font-weight: 600;">${item.operator}</div>
+        <div>${item.date || '-'}</div>
+        <div style="font-size: 9px; font-weight: 600;">${item.pic || '-'}</div>
       </div>
     `;
     timelineContainer.appendChild(timeRow);
   });
+}
+
+function updateMonitoringKPICards() {
+  const units = getUnitsData();
+  const total = units.length;
+  const selesai = units.filter(u => u.status === 'Selesai').length;
+  const proses = units.filter(u => u.status === 'Dalam Proses' || u.status === 'Proses').length;
+  const belum = units.filter(u => u.status === 'Belum Mulai').length;
+  const avg = total > 0 ? Math.round(units.reduce((acc, u) => acc + (u.progress || 0), 0) / total) : 0;
+
+  const elTotal = document.getElementById('kpiTotalOrder');
+  const elSelesai = document.getElementById('kpiSelesai');
+  const elSelesaiPct = document.getElementById('kpiSelesaiPct');
+  const elProses = document.getElementById('kpiProses');
+  const elProsesPct = document.getElementById('kpiProsesPct');
+  const elBelum = document.getElementById('kpiBelum');
+  const elBelumPct = document.getElementById('kpiBelumPct');
+  const elAvg = document.getElementById('kpiAvgProgress');
+
+  if (elTotal) elTotal.innerText = total;
+  if (elSelesai) elSelesai.innerText = selesai;
+  if (elSelesaiPct) elSelesaiPct.innerText = `Order (${total > 0 ? Math.round((selesai/total)*100) : 0}%)`;
+  if (elProses) elProses.innerText = proses;
+  if (elProsesPct) elProsesPct.innerText = `Order (${total > 0 ? Math.round((proses/total)*100) : 0}%)`;
+  if (elBelum) elBelum.innerText = belum;
+  if (elBelumPct) elBelumPct.innerText = `Order (${total > 0 ? Math.round((belum/total)*100) : 0}%)`;
+  if (elAvg) elAvg.innerText = `${avg}%`;
+}
+
+function filterOrders() {
+  const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+  const units = getUnitsData();
+  if (!query) {
+    renderOrdersTable(units);
+    return;
+  }
+  const filtered = units.filter(u =>
+    u.unitId.toLowerCase().includes(query) ||
+    u.soNumber.toLowerCase().includes(query) ||
+    u.customer.toLowerCase().includes(query) ||
+    u.capacity.toLowerCase().includes(query) ||
+    u.pic.toLowerCase().includes(query) ||
+    u.status.toLowerCase().includes(query)
+  );
+  renderOrdersTable(filtered);
 }
 
 // Initialize Chart.js Progress Graph
@@ -3100,7 +3178,9 @@ function switchMainTab(tabName) {
   }
 
   // Trigger relevant renders
-  if (tabName === 'document-control') {
+  if (tabName === 'monitoring' || tabName === 'single-flow') {
+    renderOrdersTable();
+  } else if (tabName === 'document-control') {
     renderDocumentsTable();
   } else if (tabName === 'proyek') {
     renderProyekTable();
@@ -3386,64 +3466,311 @@ function openProyekDetail(soNumber) {
   if (modal) modal.classList.add('active');
 }
 
-// ================= DETAIL PRODUKSI FUNCTIONS (EXACT REPLICA + INTERACTIVE UPDATE) =================
+// ================= UNIFIED UNITS DATA STORE (SINGLE SOURCE OF TRUTH) =================
 
-const defaultDetailProduksiData = {
-  unitId: 'TRF-001',
-  status: 'Dalam Proses',
-  soNumber: '25-0563',
-  customer: 'PT PLN UP3 Jateng',
-  variant: 'Distribusi',
-  capacity: '500 KVA',
-  winding: 'CU - CU',
-  orderDate: '01/05/2026',
-  targetDate: '30/06/2026',
-  pic: 'Budi Santoso',
-  location: 'UP3 Jateng',
-  notes: '-',
-  lastUpdate: '29 Sep 2026 10:30',
-  stages: [
-    { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-10', pic: 'Rizky', note: '-', doc: 'Drawing-LV.pdf' },
-    { name: 'HV (High Voltage)', status: 'Proses', date: '2026-06-12', pic: 'Rizky', note: 'Dalam pengerjaan', doc: '' },
-    { name: 'Susun Core', status: 'Belum Mulai', date: '2026-06-15', pic: 'Andi Pratama', note: '-', doc: '' },
-    { name: 'CCA', status: 'Belum Mulai', date: '2026-06-18', pic: 'Budi Santoso', note: '-', doc: '' },
-    { name: 'NSP', status: 'Belum Mulai', date: '2026-06-20', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-    { name: 'Connect', status: 'Belum Mulai', date: '2026-06-24', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-    { name: 'Final', status: 'Belum Mulai', date: '2026-06-28', pic: 'Rizky', note: '-', doc: '' }
-  ],
-  activities: [
-    { time: '29 Sep 2026 10:30', icon: 'gear', color: 'blue', title: 'Proses HV dimulai', desc: 'Unit mulai dikerjakan di area HV' },
-    { time: '29 Sep 2026 09:15', icon: 'check', color: 'green', title: 'LV selesai', desc: 'Proses LV telah selesai' },
-    { time: '28 Sep 2026 16:00', icon: 'file', color: 'blue', title: 'Material LV diterima', desc: 'Tembaga dan isolasi sudah tersedia' },
-    { time: '28 Sep 2026 08:20', icon: 'play', color: 'blue', title: 'Mulai proses LV', desc: 'Unit masuk ke area LV' }
-  ],
-  chatNotes: [
-    { time: '29 Sep 2026 10:30', text: 'Proses HV berjalan normal.', author: 'Rizky' }
-  ]
-};
-
-function getDetailProduksiData() {
-  try {
-    const raw = localStorage.getItem('SYMTRAFLOW_DETAIL_PRODUKSI');
-    if (raw) return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error loading detail produksi from storage:', err);
+const defaultUnitsData = [
+  {
+    unitId: 'TRF-001',
+    soNumber: '25-0563',
+    customer: 'PT PLN UP3 Jateng',
+    variant: 'Distribusi',
+    capacity: '500 KVA',
+    voltage: '20 kV / 400 V',
+    winding: 'CU - CU',
+    orderDate: '01/05/2026',
+    targetDate: '30/06/2026',
+    pic: 'Budi Santoso',
+    location: 'UP3 Jateng',
+    notes: 'Prioritas suplai gardu distribusi Jawa Tengah',
+    lastUpdate: '29 Sep 2026 10:30',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-10', pic: 'Rizky', note: 'Winding LV tembaga selesai diuji', doc: 'Drawing-LV.pdf' },
+      { name: 'HV (High Voltage)', status: 'Proses', date: '2026-06-12', pic: 'Rizky', note: 'Dalam pengerjaan layer isolasi', doc: '' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '2026-06-15', pic: 'Andi Pratama', note: '-', doc: '' },
+      { name: 'CCA', status: 'Belum Mulai', date: '2026-06-18', pic: 'Budi Santoso', note: '-', doc: '' },
+      { name: 'Connect', status: 'Belum Mulai', date: '2026-06-24', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Final', status: 'Belum Mulai', date: '2026-06-28', pic: 'Rizky', note: '-', doc: '' },
+      { name: 'QC', status: 'Belum Mulai', date: '2026-06-30', pic: 'Shevira Indraswari', note: '-', doc: '' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-06-08', pic: 'Dedi Kurniawan', note: 'Plat baja tebal 4mm sesuai dimensi GA', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Proses', date: '2026-06-11', pic: 'Dedi Kurniawan', note: 'Welding cover dan kupingan lifting lug', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2026-06-14', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2026-06-17', pic: 'Andi Pratama', note: '-', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2026-06-21', pic: 'Dedi Kurniawan', note: '-', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-06-25', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-06-29', pic: 'Budi Santoso', note: '-', doc: '' }
+    ],
+    activities: [
+      { time: '29 Sep 2026 10:30', icon: 'gear', color: 'blue', title: 'Proses HV & Las Tangki Berjalan', desc: 'Pengerjaan HV dan pengelasan cover berjalan bersamaan' },
+      { time: '29 Sep 2026 09:15', icon: 'check', color: 'green', title: 'LV & Potong Plat Selesai', desc: 'Proses LV dan bending plat telah rampung' }
+    ],
+    chatNotes: [
+      { time: '29 Sep 2026 10:30', text: 'Proses HV dan tangki berjalan sesuai jadwal target.', author: 'Rizky' }
+    ]
+  },
+  {
+    unitId: 'TRF-002',
+    soNumber: '25-0564',
+    customer: 'PT PLN Distribusi Jatim',
+    variant: 'Distribusi',
+    capacity: '1000 KVA',
+    voltage: '20 kV / 400 V',
+    winding: 'CU - CU',
+    orderDate: '05/05/2026',
+    targetDate: '10/07/2026',
+    pic: 'Rizky',
+    location: 'Surabaya, Jatim',
+    notes: 'Pesanan tier-2 low loss',
+    lastUpdate: '30 Sep 2026 14:00',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-15', pic: 'Rizky', note: 'Coil LV selesai digulung', doc: '' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2026-06-18', pic: 'Rizky', note: 'Coil HV lulus isolasi tegangan', doc: '' },
+      { name: 'Susun Core', status: 'Proses', date: '2026-06-20', pic: 'Andi Pratama', note: 'Penyusunan laminasi silikon baja CRGO', doc: '' },
+      { name: 'CCA', status: 'Belum Mulai', date: '2026-06-25', pic: 'Budi Santoso', note: '-', doc: '' },
+      { name: 'Connect', status: 'Belum Mulai', date: '2026-06-28', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Final', status: 'Belum Mulai', date: '2026-07-02', pic: 'Rizky', note: '-', doc: '' },
+      { name: 'QC', status: 'Belum Mulai', date: '2026-07-05', pic: 'Shevira Indraswari', note: '-', doc: '' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-06-12', pic: 'Dedi Kurniawan', note: 'Plat tangki selesai potong', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2026-06-16', pic: 'Dedi Kurniawan', note: 'Welding bodi tangki selesai', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Proses', date: '2026-06-19', pic: 'Wahyu Hidayat', note: 'Pemasangan 6 panel fin radiator', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2026-06-23', pic: 'Andi Pratama', note: '-', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2026-06-27', pic: 'Dedi Kurniawan', note: '-', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-07-01', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-07-06', pic: 'Budi Santoso', note: '-', doc: '' }
+    ],
+    activities: [
+      { time: '30 Sep 2026 14:00', icon: 'gear', color: 'blue', title: 'Susun Core & Fin Radiator', desc: 'Perakitan inti & fin radiator tangki berlangsung' }
+    ],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-003',
+    soNumber: '25-0565',
+    customer: 'PT PLN UID Jawa Barat',
+    variant: 'Power',
+    capacity: '1500 KVA',
+    voltage: '20 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '10/05/2026',
+    targetDate: '20/07/2026',
+    pic: 'Andi Pratama',
+    location: 'Bandung, Jabar',
+    notes: 'Spesifikasi gardu induk transmisi',
+    lastUpdate: '01 Okt 2026 09:00',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-10', pic: 'Rizky', note: 'LV OK', doc: '' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2026-06-15', pic: 'Rizky', note: 'HV OK', doc: '' },
+      { name: 'Susun Core', status: 'Selesai', date: '2026-06-20', pic: 'Andi Pratama', note: 'Core OK', doc: '' },
+      { name: 'CCA', status: 'Selesai', date: '2026-06-25', pic: 'Budi Santoso', note: 'Core Coil Assembly OK', doc: '' },
+      { name: 'Connect', status: 'Proses', date: '2026-06-29', pic: 'Wahyu Hidayat', note: 'Wiring tap changer & terminal lead', doc: '' },
+      { name: 'Final', status: 'Belum Mulai', date: '2026-07-05', pic: 'Rizky', note: '-', doc: '' },
+      { name: 'QC', status: 'Belum Mulai', date: '2026-07-10', pic: 'Shevira Indraswari', note: '-', doc: '' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-06-08', pic: 'Dedi Kurniawan', note: 'Plat tangki selesai potong', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2026-06-14', pic: 'Dedi Kurniawan', note: 'Welding selesai', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2026-06-19', pic: 'Wahyu Hidayat', note: 'Fin terpasang rapi', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2026-06-24', pic: 'Andi Pratama', note: 'Leak test 0.5 bar PASS', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Proses', date: '2026-06-28', pic: 'Dedi Kurniawan', note: 'Pembersihan profil permukaan baja', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-07-03', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-07-08', pic: 'Budi Santoso', note: '-', doc: '' }
+    ],
+    activities: [
+      { time: '01 Okt 2026 09:00', icon: 'gear', color: 'blue', title: 'Connection & Sandblasting', desc: 'Wiring tap changer dan sandblasting tangki' }
+    ],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-004',
+    soNumber: '25-0566',
+    customer: 'PT Pertamina Persero',
+    variant: 'Distribusi',
+    capacity: '250 KVA',
+    voltage: '20 kV / 400 V',
+    winding: 'CU - AL',
+    orderDate: '15/05/2026',
+    targetDate: '25/06/2026',
+    pic: 'Dedi Kurniawan',
+    location: 'RU IV Cilacap',
+    notes: 'Kilang Pertamina Cilacap - Siap kirim',
+    lastUpdate: '02 Okt 2026 11:30',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-05-25', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2026-05-28', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
+      { name: 'Susun Core', status: 'Selesai', date: '2026-06-02', pic: 'Andi Pratama', note: 'Selesai 100%', doc: '' },
+      { name: 'CCA', status: 'Selesai', date: '2026-06-06', pic: 'Budi Santoso', note: 'Selesai 100%', doc: '' },
+      { name: 'Connect', status: 'Selesai', date: '2026-06-10', pic: 'Wahyu Hidayat', note: 'Selesai 100%', doc: '' },
+      { name: 'Final', status: 'Selesai', date: '2026-06-15', pic: 'Rizky', note: 'Selesai tanking & oven vacuum', doc: '' },
+      { name: 'QC', status: 'Selesai', date: '2026-06-18', pic: 'Shevira Indraswari', note: 'Sertifikat QC terbit - PASS', doc: '' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-05-22', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2026-05-26', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2026-05-30', pic: 'Wahyu Hidayat', note: 'Selesai', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2026-06-04', pic: 'Andi Pratama', note: 'Selesai', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Selesai', date: '2026-06-08', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Selesai', date: '2026-06-12', pic: 'Wahyu Hidayat', note: 'Selesai', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Selesai', date: '2026-06-16', pic: 'Budi Santoso', note: 'Selesai', doc: '' }
+    ],
+    activities: [
+      { time: '18 Jun 2026 15:30', icon: 'check', color: 'green', title: 'Semua Tahapan Selesai (100%)', desc: 'Unit TRF-004 lulus QC dan siap pengiriman' }
+    ],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-005',
+    soNumber: '25-0567',
+    customer: 'PT Indofood CBP',
+    variant: 'Power',
+    capacity: '2000 KVA',
+    voltage: '30 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '20/05/2026',
+    targetDate: '15/08/2026',
+    pic: 'Wahyu Hidayat',
+    location: 'Semarang, Jateng',
+    notes: 'Industri consumer goods',
+    lastUpdate: '25 Sep 2026 08:00',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '2026-06-25', pic: 'Rizky', note: '-' },
+      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '2026-07-02', pic: 'Rizky', note: '-' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '2026-07-10', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '2026-07-18', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '2026-07-28', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '2026-08-05', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '2026-08-10', pic: 'Shevira Indraswari', note: '-' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '2026-06-20', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '2026-06-30', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2026-07-08', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2026-07-16', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2026-07-25', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-08-02', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-08-08', pic: 'Budi Santoso', note: '-' }
+    ],
+    activities: [
+      { time: '20 Mei 2026 10:00', icon: 'file', color: 'blue', title: 'Order Diterbitkan', desc: 'Antrian produksi disiapkan' }
+    ],
+    chatNotes: []
   }
-  return JSON.parse(JSON.stringify(defaultDetailProduksiData));
+];
+
+let activeDPUnitId = 'TRF-001';
+let activeMonitoringUnitId = 'TRF-001';
+let activeEditingCategory = 'electrical';
+let activeEditingStageIndex = 0;
+
+function getUnitsData() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_UNITS_DATA');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed.forEach(u => recomputeUnitProgress(u));
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error('Error loading units data from storage:', err);
+  }
+  const cloned = JSON.parse(JSON.stringify(defaultUnitsData));
+  cloned.forEach(u => recomputeUnitProgress(u));
+  return cloned;
 }
 
-function saveDetailProduksiData(data) {
+function saveUnitsData(data) {
   try {
-    localStorage.setItem('SYMTRAFLOW_DETAIL_PRODUKSI', JSON.stringify(data));
+    localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(data));
   } catch (err) {
-    console.error('Error saving detail produksi to storage:', err);
+    console.error('Error saving units data to storage:', err);
   }
 }
 
-let activeEditingStageIndex = null;
+// Recompute progress % and status based on 14 stages (7 Electrical + 7 Mechanical)
+function recomputeUnitProgress(unit) {
+  if (!unit) return unit;
+  if (!unit.electricalStages) unit.electricalStages = [];
+  if (!unit.mechanicalStages) unit.mechanicalStages = [];
 
+  let totalPoints = 0;
+  let activeElec = null;
+  let activeMech = null;
+
+  unit.electricalStages.forEach(s => {
+    if (s.status === 'Selesai') totalPoints += 100;
+    else if (s.status === 'Proses') {
+      totalPoints += 50;
+      if (!activeElec) activeElec = s.name.split(' ')[0];
+    }
+  });
+
+  unit.mechanicalStages.forEach(s => {
+    if (s.status === 'Selesai') totalPoints += 100;
+    else if (s.status === 'Proses') {
+      totalPoints += 50;
+      if (!activeMech) activeMech = s.name.split(' ')[0];
+    }
+  });
+
+  const overallPct = Math.min(100, Math.round(totalPoints / 14));
+  unit.progress = overallPct;
+
+  if (overallPct === 100) {
+    unit.status = 'Selesai';
+    unit.currentStageName = 'Selesai (QC & Tangki OK)';
+  } else if (overallPct === 0) {
+    unit.status = 'Belum Mulai';
+    unit.currentStageName = 'Belum Mulai';
+  } else {
+    unit.status = 'Dalam Proses';
+    if (activeElec && activeMech) {
+      unit.currentStageName = `${activeElec} / ${activeMech}`;
+    } else if (activeElec) {
+      unit.currentStageName = activeElec;
+    } else if (activeMech) {
+      unit.currentStageName = activeMech;
+    } else {
+      unit.currentStageName = 'Dalam Pengerjaan';
+    }
+  }
+
+  return unit;
+}
+
+// Switch Active Unit in Detail Produksi view
+function switchDPActiveUnit(unitId) {
+  activeDPUnitId = unitId;
+  renderDetailProduksiView();
+}
+
+// Render Detail Produksi View (Populates Header, Unit Selector, Electrical & Mechanical tables)
 function renderDetailProduksiView() {
-  const data = getDetailProduksiData();
+  const units = getUnitsData();
+  let unit = units.find(u => u.unitId === activeDPUnitId);
+  if (!unit) {
+    unit = units[0];
+    activeDPUnitId = unit ? unit.unitId : 'TRF-001';
+  }
+  if (!unit) return;
+
+  recomputeUnitProgress(unit);
+
+  // Populate Unit Selector Dropdown
+  const selector = document.getElementById('dpUnitSelector');
+  if (selector) {
+    selector.innerHTML = '';
+    units.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.unitId;
+      opt.innerText = `[${u.unitId}] ${u.soNumber} - ${u.customer} (${u.progress}%)`;
+      if (u.unitId === activeDPUnitId) opt.selected = true;
+      selector.appendChild(opt);
+    });
+  }
 
   // Unit Header Card Elements
   const elCode = document.getElementById('dpUnitCode');
@@ -3459,66 +3786,41 @@ function renderDetailProduksiView() {
   const elLoc = document.getElementById('dpMetaLocation');
   const elNotes = document.getElementById('dpMetaNotes');
 
-  if (elCode) elCode.innerText = data.unitId;
-  if (elSO) elSO.innerText = data.soNumber;
-  if (elCust) elCust.innerText = data.customer;
-  if (elVar) elVar.innerText = data.variant;
-  if (elCap) elCap.innerText = data.capacity;
-  if (elWind) elWind.innerText = data.winding;
-  if (elOrderDate) elOrderDate.innerText = data.orderDate;
-  if (elTargetDate) elTargetDate.innerText = data.targetDate;
-  if (elPIC) elPIC.innerText = data.pic;
-  if (elLoc) elLoc.innerText = data.location;
-  if (elNotes) elNotes.innerText = data.notes;
+  if (elCode) elCode.innerText = unit.unitId;
+  if (elSO) elSO.innerText = unit.soNumber;
+  if (elCust) elCust.innerText = unit.customer;
+  if (elVar) elVar.innerText = unit.variant;
+  if (elCap) elCap.innerText = unit.capacity;
+  if (elWind) elWind.innerText = unit.winding;
+  if (elOrderDate) elOrderDate.innerText = unit.orderDate;
+  if (elTargetDate) elTargetDate.innerText = unit.targetDate;
+  if (elPIC) elPIC.innerText = unit.pic;
+  if (elLoc) elLoc.innerText = unit.location;
+  if (elNotes) elNotes.innerText = unit.notes;
 
-  // Calculate Progress Percentage based on completed & in-process stages
-  // Stage weights: LV=30, HV=30, Susun Core=10, CCA=10, NSP=8, Connect=6, Final=6
-  const weights = [30, 30, 10, 10, 8, 6, 6];
-  let calculatedPct = 0;
-  let activeStageName = 'LV';
-
-  data.stages.forEach((stg, i) => {
-    const w = weights[i] || 14;
-    if (stg.status === 'Selesai') {
-      calculatedPct += w;
-    } else if (stg.status === 'Proses') {
-      calculatedPct += Math.round(w); // current in-process stage adds progress
-      activeStageName = stg.name.split(' ')[0];
-    }
-  });
-
-  if (calculatedPct > 100) calculatedPct = 100;
-
-  const hasProses = data.stages.find(s => s.status === 'Proses');
-  if (!hasProses) {
-    const firstBelum = data.stages.find(s => s.status === 'Belum Mulai');
-    if (firstBelum) {
-      activeStageName = firstBelum.name.split(' ')[0];
-    } else {
-      activeStageName = 'Final (Selesai)';
-      calculatedPct = 100;
-    }
-  }
-
-  // Update progress widgets
+  // Progress UI
   const elPct = document.getElementById('dpProgressPercent');
   const elBar = document.getElementById('dpProgressFill');
   const elCurrentStage = document.getElementById('dpCurrentStageName');
   const elLastUpdate = document.getElementById('dpLastUpdatedTime');
 
-  if (elPct) elPct.innerText = calculatedPct + '%';
-  if (elBar) elBar.style.width = calculatedPct + '%';
-  if (elCurrentStage) elCurrentStage.innerText = activeStageName;
-  if (elLastUpdate) elLastUpdate.innerText = data.lastUpdate;
+  if (elPct) elPct.innerText = unit.progress + '%';
+  if (elBar) elBar.style.width = unit.progress + '%';
+  if (elCurrentStage) elCurrentStage.innerText = unit.currentStageName || 'Dalam Proses';
+  if (elLastUpdate) elLastUpdate.innerText = unit.lastUpdate || 'Baru Saja';
 
-  // Status badge on unit
+  // Unit status badge
   if (elBadge) {
-    if (calculatedPct === 100) {
+    if (unit.progress === 100) {
       elBadge.innerText = 'Selesai';
       elBadge.className = 'dp-badge-status selesai';
-    } else if (calculatedPct > 0) {
+      elBadge.style.background = '#dcfce7';
+      elBadge.style.color = '#15803d';
+    } else if (unit.progress > 0) {
       elBadge.innerText = 'Dalam Proses';
       elBadge.className = 'dp-badge-status';
+      elBadge.style.background = '#eff6ff';
+      elBadge.style.color = '#2563eb';
     } else {
       elBadge.innerText = 'Belum Mulai';
       elBadge.className = 'dp-badge-status';
@@ -3527,11 +3829,11 @@ function renderDetailProduksiView() {
     }
   }
 
-  // Render Table Rows
-  const tbody = document.getElementById('dpStagesTableBody');
-  if (tbody) {
-    tbody.innerHTML = '';
-    data.stages.forEach((stg, idx) => {
+  // 1. Render Progres Electrical Table Rows
+  const elecBody = document.getElementById('dpElectricalTableBody');
+  if (elecBody) {
+    elecBody.innerHTML = '';
+    (unit.electricalStages || []).forEach((stg, idx) => {
       let badgeHtml = '';
       if (stg.status === 'Selesai') {
         badgeHtml = `<span class="dp-badge selesai"><i class="fa-solid fa-check"></i> Selesai</span>`;
@@ -3548,40 +3850,60 @@ function renderDetailProduksiView() {
         <td>${badgeHtml}</td>
         <td style="color:#64748b;">${stg.note && stg.note !== '-' ? stg.note : '-'}</td>
         <td style="text-align: center;">
-          <button class="dp-btn-lihat" onclick="openUpdateProgressModal(${idx})">Lihat</button>
+          <button class="dp-btn-lihat" onclick="openUpdateProgressModal(${idx}, 'electrical')">Lihat</button>
         </td>
       `;
-      tbody.appendChild(tr);
+      elecBody.appendChild(tr);
     });
   }
 
-  // Render Timeline Aktivitas Terbaru
-  const timelineEl = document.getElementById('dpActivitiesTimeline');
-  if (timelineEl) {
-    timelineEl.innerHTML = '';
-    data.activities.forEach(act => {
-      const item = document.createElement('div');
-      item.className = 'dp-timeline-item';
-      const iconClass = act.icon === 'check' ? 'fa-solid fa-check' : (act.icon === 'gear' ? 'fa-solid fa-gear' : (act.icon === 'file' ? 'fa-solid fa-file-lines' : 'fa-solid fa-play'));
-      item.innerHTML = `
-        <div class="dp-timeline-time">${act.time}</div>
-        <div class="dp-timeline-icon ${act.color || 'blue'}">
-          <i class="${iconClass}"></i>
-        </div>
-        <div class="dp-timeline-body">
-          <div class="dp-timeline-title">${act.title}</div>
-          <div class="dp-timeline-desc">${act.desc}</div>
-        </div>
+  // 2. Render Progres Mechanical Table Rows (Pembuatan Tangki Trafo)
+  const mechBody = document.getElementById('dpMechanicalTableBody');
+  if (mechBody) {
+    mechBody.innerHTML = '';
+    (unit.mechanicalStages || []).forEach((stg, idx) => {
+      let badgeHtml = '';
+      if (stg.status === 'Selesai') {
+        badgeHtml = `<span class="dp-badge selesai"><i class="fa-solid fa-check"></i> Selesai</span>`;
+      } else if (stg.status === 'Proses') {
+        badgeHtml = `<span class="dp-badge proses"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Proses</span>`;
+      } else {
+        badgeHtml = `<span class="dp-badge belum"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Belum Mulai</span>`;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:#64748b; font-weight:600; text-align:center;">${idx + 1}</td>
+        <td style="font-weight:600; color:#0f172a;">${stg.name}</td>
+        <td>${badgeHtml}</td>
+        <td style="color:#64748b;">${stg.note && stg.note !== '-' ? stg.note : '-'}</td>
+        <td style="text-align: center;">
+          <button class="dp-btn-lihat" onclick="openUpdateProgressModal(${idx}, 'mechanical')">Lihat</button>
+        </td>
       `;
-      timelineEl.appendChild(item);
+      mechBody.appendChild(tr);
     });
   }
 
-  // Render Notes list
+  // Badges overall
+  const elecBadge = document.getElementById('dpElectricalOverallBadge');
+  const mechBadge = document.getElementById('dpMechanicalOverallBadge');
+  if (elecBadge) {
+    const elecDone = unit.electricalStages.filter(s => s.status === 'Selesai').length;
+    elecBadge.innerText = `${elecDone}/7 Selesai`;
+    elecBadge.className = elecDone === 7 ? 'dp-badge selesai' : (elecDone > 0 ? 'dp-badge proses' : 'dp-badge belum');
+  }
+  if (mechBadge) {
+    const mechDone = unit.mechanicalStages.filter(s => s.status === 'Selesai').length;
+    mechBadge.innerText = `${mechDone}/7 Selesai`;
+    mechBadge.className = mechDone === 7 ? 'dp-badge selesai' : (mechDone > 0 ? 'dp-badge proses' : 'dp-badge belum');
+  }
+
+  // Render Notes list for quick note
   const notesEl = document.getElementById('dpNotesList');
   if (notesEl) {
     notesEl.innerHTML = '';
-    (data.chatNotes || []).forEach(n => {
+    (unit.chatNotes || []).forEach(n => {
       const noteItem = document.createElement('div');
       noteItem.className = 'dp-note-item';
       noteItem.innerHTML = `
@@ -3600,7 +3922,7 @@ function renderDetailProduksiView() {
   const fullNotesEl = document.getElementById('dpFullNotesList');
   if (fullNotesEl) {
     fullNotesEl.innerHTML = '';
-    (data.chatNotes || []).forEach(n => {
+    (unit.chatNotes || []).forEach(n => {
       const noteItem = document.createElement('div');
       noteItem.className = 'dp-note-item';
       noteItem.innerHTML = `
@@ -3616,8 +3938,24 @@ function renderDetailProduksiView() {
 
   // Render audit trail in Riwayat tab
   const auditEl = document.getElementById('dpAuditTrailTimeline');
-  if (auditEl && timelineEl) {
-    auditEl.innerHTML = timelineEl.innerHTML;
+  if (auditEl) {
+    auditEl.innerHTML = '';
+    (unit.activities || []).forEach(act => {
+      const item = document.createElement('div');
+      item.className = 'dp-timeline-item';
+      const iconClass = act.icon === 'check' ? 'fa-solid fa-check' : (act.icon === 'gear' ? 'fa-solid fa-gear' : (act.icon === 'file' ? 'fa-solid fa-file-lines' : 'fa-solid fa-play'));
+      item.innerHTML = `
+        <div class="dp-timeline-time">${act.time}</div>
+        <div class="dp-timeline-icon ${act.color || 'blue'}">
+          <i class="${iconClass}"></i>
+        </div>
+        <div class="dp-timeline-body">
+          <div class="dp-timeline-title">${act.title}</div>
+          <div class="dp-timeline-desc">${act.desc}</div>
+        </div>
+      `;
+      auditEl.appendChild(item);
+    });
   }
 }
 
@@ -3661,15 +3999,21 @@ function switchDPTab(tabKey) {
   if (targetBtn) targetBtn.classList.add('active');
 }
 
-// Modal Handlers for Update Progress Produksi
-function openUpdateProgressModal(stageIndex) {
-  const data = getDetailProduksiData();
-  const stage = data.stages[stageIndex];
+// Modal Handlers for Update Progress Produksi (Supports both Electrical and Mechanical)
+function openUpdateProgressModal(stageIndex, category = 'electrical') {
+  const units = getUnitsData();
+  const unit = units.find(u => u.unitId === activeDPUnitId) || units[0];
+  if (!unit) return;
+
+  const stageList = category === 'electrical' ? unit.electricalStages : unit.mechanicalStages;
+  const stage = stageList[stageIndex];
   if (!stage) return;
 
   activeEditingStageIndex = stageIndex;
+  activeEditingCategory = category;
 
   const mUnit = document.getElementById('mUpdateUnitCode');
+  const mCategory = document.getElementById('mUpdateCategoryName');
   const mStage = document.getElementById('mUpdateStageName');
   const mBadge = document.getElementById('mUpdateCurrentStatusBadge');
   const mInputStatus = document.getElementById('mInputStatus');
@@ -3677,7 +4021,11 @@ function openUpdateProgressModal(stageIndex) {
   const mInputPIC = document.getElementById('mInputPIC');
   const mInputNote = document.getElementById('mInputNote');
 
-  if (mUnit) mUnit.innerText = data.unitId;
+  if (mUnit) mUnit.innerText = unit.unitId;
+  if (mCategory) {
+    mCategory.innerText = category === 'electrical' ? 'Progres Electrical' : 'Progres Mechanical (Tangki)';
+    mCategory.style.color = category === 'electrical' ? '#2563eb' : '#d97706';
+  }
   if (mStage) mStage.innerText = stage.name;
   if (mBadge) {
     mBadge.innerText = (stage.status === 'Selesai' ? '✓ ' : '● ') + stage.status;
@@ -3698,7 +4046,6 @@ function openUpdateProgressModal(stageIndex) {
 function closeUpdateProgressModal() {
   const modal = document.getElementById('updateProgressModal');
   if (modal) modal.style.display = 'none';
-  activeEditingStageIndex = null;
 }
 
 function handleModalStatusSelectChange() {
@@ -3719,12 +4066,15 @@ function updateNoteCharCount() {
   }
 }
 
+// Save Progress from Modal (Saves to unified store, recalculates, and syncs both views!)
 function handleSaveStageProgress(e) {
   if (e) e.preventDefault();
-  if (activeEditingStageIndex === null) return;
+  const units = getUnitsData();
+  const unit = units.find(u => u.unitId === activeDPUnitId);
+  if (!unit) return;
 
-  const data = getDetailProduksiData();
-  const stage = data.stages[activeEditingStageIndex];
+  const stageList = activeEditingCategory === 'electrical' ? unit.electricalStages : unit.mechanicalStages;
+  const stage = stageList[activeEditingStageIndex];
   if (!stage) return;
 
   const status = document.getElementById('mInputStatus').value;
@@ -3733,7 +4083,6 @@ function handleSaveStageProgress(e) {
   const note = document.getElementById('mInputNote').value.trim();
   const fileInput = document.getElementById('mInputFile');
 
-  // Format current date & time
   const now = new Date();
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const formattedTime = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -3748,30 +4097,39 @@ function handleSaveStageProgress(e) {
   }
 
   // Prepend activity log
-  data.activities.unshift({
+  if (!unit.activities) unit.activities = [];
+  unit.activities.unshift({
     time: formattedTime,
     icon: (status === 'Selesai' ? 'check' : (status === 'Proses' ? 'gear' : 'play')),
     color: (status === 'Selesai' ? 'green' : 'blue'),
-    title: `${stage.name} diubah menjadi ${status}`,
+    title: `[${activeEditingCategory === 'electrical' ? 'Electrical' : 'Mechanical'}] ${stage.name} → ${status}`,
     desc: note ? note : `Status diperbarui oleh ${pic}`
   });
 
   // If note provided, append to chat notes
   if (note && note !== '-') {
-    data.chatNotes.unshift({
+    if (!unit.chatNotes) unit.chatNotes = [];
+    unit.chatNotes.unshift({
       time: formattedTime,
       text: `[${stage.name}] ${note}`,
       author: pic
     });
   }
 
-  data.lastUpdate = formattedTime;
+  unit.lastUpdate = formattedTime;
+  recomputeUnitProgress(unit);
 
-  saveDetailProduksiData(data);
+  // Save to unified local storage
+  saveUnitsData(units);
+
   closeUpdateProgressModal();
-  renderDetailProduksiView();
 
-  showToast(`✅ Progress ${stage.name} berhasil diperbarui!`);
+  // Re-render Detail Produksi & Monitoring Produksi
+  renderDetailProduksiView();
+  renderOrdersTable();
+  updateMonitoringKPICards();
+
+  showToast(`✅ Progress ${stage.name} (${activeEditingCategory}) berhasil diperbarui!`);
 }
 
 function saveNewProductionNote(isFull = false) {
@@ -3783,21 +4141,26 @@ function saveNewProductionNote(isFull = false) {
   }
 
   const text = input.value.trim();
-  const data = getDetailProduksiData();
+  const units = getUnitsData();
+  const unit = units.find(u => u.unitId === activeDPUnitId);
+  if (!unit) return;
 
   const now = new Date();
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const formattedTime = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  const author = sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || 'Administrator';
+  const authUser = JSON.parse(sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || '{}');
+  const author = authUser.name || 'Administrator';
 
-  data.chatNotes.unshift({
+  if (!unit.chatNotes) unit.chatNotes = [];
+  unit.chatNotes.unshift({
     time: formattedTime,
     text: text,
     author: author
   });
 
-  data.activities.unshift({
+  if (!unit.activities) unit.activities = [];
+  unit.activities.unshift({
     time: formattedTime,
     icon: 'file',
     color: 'blue',
@@ -3805,7 +4168,7 @@ function saveNewProductionNote(isFull = false) {
     desc: `${author}: ${text}`
   });
 
-  saveDetailProduksiData(data);
+  saveUnitsData(units);
   input.value = '';
   renderDetailProduksiView();
 
@@ -3814,11 +4177,122 @@ function saveNewProductionNote(isFull = false) {
 
 function handleDPSearch(e) {
   const val = (e.target.value || '').toLowerCase();
-  const rows = document.querySelectorAll('#dpStagesTableBody tr');
+  const rows = document.querySelectorAll('#dpElectricalTableBody tr, #dpMechanicalTableBody tr');
   rows.forEach(r => {
     const txt = r.innerText.toLowerCase();
     r.style.display = txt.includes(val) ? '' : 'none';
   });
+}
+
+// ================= MONITORING PRODUKSI READ-ONLY MODAL & DETAIL NAVIGATION =================
+
+// Open Full Detail Modal in Monitoring Produksi (Read-Only: Electrical & Mechanical)
+function openFullDetailModal(unitId) {
+  const targetId = unitId || activeMonitoringUnitId || 'TRF-001';
+  const units = getUnitsData();
+  const unit = units.find(u => u.unitId === targetId) || units[0];
+  if (!unit) return;
+
+  recomputeUnitProgress(unit);
+
+  const modal = document.getElementById('fullDetailModal');
+  if (!modal) return;
+
+  // Header info
+  const codeEl = document.getElementById('modalDetailOrderCode');
+  const soEl = document.getElementById('mReadonlySOCode');
+  const badgeEl = document.getElementById('modalDetailBadge');
+  const nameEl = document.getElementById('modalDetailTrafoName');
+  const specsEl = document.getElementById('mReadonlySpecsMeta');
+  const pctEl = document.getElementById('mReadonlyProgressPct');
+  const barEl = document.getElementById('mReadonlyProgressBar');
+  const orderDateEl = document.getElementById('mReadonlyOrderDate');
+  const targetDateEl = document.getElementById('mReadonlyTargetDate');
+  const picEl = document.getElementById('mReadonlyPIC');
+  const locEl = document.getElementById('mReadonlyLocation');
+
+  if (codeEl) codeEl.innerText = unit.unitId;
+  if (soEl) soEl.innerText = `SO: ${unit.soNumber}`;
+  if (nameEl) nameEl.innerText = unit.customer;
+  if (specsEl) specsEl.innerText = `${unit.capacity} • ${unit.voltage} • ${unit.variant} (${unit.winding})`;
+  if (pctEl) pctEl.innerText = `${unit.progress}%`;
+  if (barEl) barEl.style.width = `${unit.progress}%`;
+  if (orderDateEl) orderDateEl.innerText = unit.orderDate;
+  if (targetDateEl) targetDateEl.innerText = unit.targetDate;
+  if (picEl) picEl.innerText = unit.pic;
+  if (locEl) locEl.innerText = unit.location;
+
+  if (badgeEl) {
+    if (unit.progress === 100) {
+      badgeEl.innerText = '✓ Selesai';
+      badgeEl.className = 'dp-badge selesai';
+    } else if (unit.progress > 0) {
+      badgeEl.innerText = '● Proses';
+      badgeEl.className = 'dp-badge proses';
+    } else {
+      badgeEl.innerText = '● Belum Mulai';
+      badgeEl.className = 'dp-badge belum';
+    }
+  }
+
+  // Populate Read-Only Electrical Body
+  const elecBody = document.getElementById('mReadonlyElectricalBody');
+  if (elecBody) {
+    elecBody.innerHTML = '';
+    (unit.electricalStages || []).forEach((stg, i) => {
+      let badgeHtml = '';
+      if (stg.status === 'Selesai') badgeHtml = `<span class="dp-badge selesai">✓ Selesai</span>`;
+      else if (stg.status === 'Proses') badgeHtml = `<span class="dp-badge proses">● Proses</span>`;
+      else badgeHtml = `<span class="dp-badge belum">● Belum Mulai</span>`;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align:center; color:#64748b; font-weight:600;">${i + 1}</td>
+        <td style="font-weight:700; color:#0f172a;">${stg.name}</td>
+        <td>${badgeHtml}</td>
+        <td style="color:#64748b; font-size:11px;">${stg.date || '-'}</td>
+        <td style="font-weight:600; color:#334155;">${stg.pic || '-'}</td>
+        <td style="color:#64748b; font-size:11px;">${stg.note && stg.note !== '-' ? stg.note : '-'}</td>
+      `;
+      elecBody.appendChild(tr);
+    });
+  }
+
+  // Populate Read-Only Mechanical Body (Pembuatan Tangki)
+  const mechBody = document.getElementById('mReadonlyMechanicalBody');
+  if (mechBody) {
+    mechBody.innerHTML = '';
+    (unit.mechanicalStages || []).forEach((stg, i) => {
+      let badgeHtml = '';
+      if (stg.status === 'Selesai') badgeHtml = `<span class="dp-badge selesai">✓ Selesai</span>`;
+      else if (stg.status === 'Proses') badgeHtml = `<span class="dp-badge proses">● Proses</span>`;
+      else badgeHtml = `<span class="dp-badge belum">● Belum Mulai</span>`;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align:center; color:#64748b; font-weight:600;">${i + 1}</td>
+        <td style="font-weight:700; color:#0f172a;">${stg.name}</td>
+        <td>${badgeHtml}</td>
+        <td style="color:#64748b; font-size:11px;">${stg.date || '-'}</td>
+        <td style="font-weight:600; color:#334155;">${stg.pic || '-'}</td>
+        <td style="color:#64748b; font-size:11px;">${stg.note && stg.note !== '-' ? stg.note : '-'}</td>
+      `;
+      mechBody.appendChild(tr);
+    });
+  }
+
+  modal.classList.add('active');
+}
+
+// Jump from Monitoring Read-Only modal to Detail Produksi (where changes can be managed)
+function goToDetailProduksiFromModal(unitId) {
+  closeModal('fullDetailModal');
+  const targetId = unitId || activeMonitoringUnitId || 'TRF-001';
+  activeDPUnitId = targetId;
+  switchMainTab('produksi');
+  switchDPTab('progress');
+  renderDetailProduksiView();
+  showToast(`📋 Membuka Detail Produksi untuk unit ${targetId}...`);
 }
 
 // --- PRODUKSI FUNCTIONS ---

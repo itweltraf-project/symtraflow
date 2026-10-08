@@ -521,14 +521,14 @@
                 <thead>
                   <tr>
                     <th>No. SO</th>
-                    <th>Nama Trafo</th>
+                    <th>No. Unit</th>
+                    <th>Nama Pelanggan</th>
                     <th>Kapasitas</th>
                     <th>Tegangan</th>
                     <th>Status</th>
                     <th>Progress</th>
-                    <th>Mulai</th>
-                    <th>Deadline</th>
-                    <th>Sales Officer</th>
+                    <th>Target Selesai</th>
+                    <th>PIC / Officer</th>
                   </tr>
                 </thead>
                 <tbody id="ordersTableBody">
@@ -1358,6 +1358,14 @@
               <p>Lihat dan kelola progress produksi per unit trafo</p>
             </div>
             <div class="dp-header-actions">
+              <div class="dp-select-unit-wrap" style="display: flex; align-items: center; gap: 8px;">
+                <label for="dpUnitSelector" style="font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap;">
+                  <i class="fa-solid fa-bolt" style="color: #2563eb;"></i> Pilih Unit:
+                </label>
+                <select id="dpUnitSelector" class="form-select" style="font-weight: 700; font-size: 13px; padding: 6px 12px; min-width: 170px; border-radius: 8px; border: 1.5px solid #cbd5e1; background: #fff;" onchange="switchDPActiveUnit(this.value)">
+                  <!-- Dynamically populated -->
+                </select>
+              </div>
               <div class="dp-search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="dpSearchUnitInput" placeholder="Cari No, SO, No. Unit..." onkeyup="handleDPSearch(event)">
@@ -1464,11 +1472,16 @@
 
           <!-- TAB CONTENT 1: PROGRESS PRODUKSI -->
           <div id="dpContentProgress" class="dp-main-grid">
-            <!-- Left Column: Table & Timeline -->
+            <!-- Left Column: Progres Electrical & Progres Mechanical -->
             <div style="display: flex; flex-direction: column; gap: 20px;">
-              <!-- Table Card -->
+              <!-- Table Card 1: Progres Electrical -->
               <div class="dp-card">
-                <div class="dp-card-title">Progress Produksi</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <div class="dp-card-title" style="margin-bottom: 0;">
+                    <i class="fa-solid fa-bolt" style="color: #2563eb; margin-right: 6px;"></i> Progres Electrical
+                  </div>
+                  <span class="dp-badge proses" id="dpElectricalOverallBadge">● Proses</span>
+                </div>
                 <table class="dp-table">
                   <thead>
                     <tr>
@@ -1479,18 +1492,37 @@
                       <th style="width: 80px; text-align: center;">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody id="dpStagesTableBody">
+                  <tbody id="dpElectricalTableBody">
                     <!-- Rendered dynamically -->
                   </tbody>
                 </table>
               </div>
 
-              <!-- Aktivitas Terbaru -->
+              <!-- Table Card 2: Progres Mechanical (Pembuatan Tangki Trafo) -->
               <div class="dp-card">
-                <div class="dp-card-title">Aktivitas Terbaru</div>
-                <div class="dp-timeline" id="dpActivitiesTimeline">
-                  <!-- Rendered dynamically -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <div>
+                    <div class="dp-card-title" style="margin-bottom: 2px;">
+                      <i class="fa-solid fa-boxes-packing" style="color: #d97706; margin-right: 6px;"></i> Progres Mechanical
+                    </div>
+                    <div style="font-size: 11px; color: #64748b;">Pembuatan Tangki Trafo & Konstruksi Mekanikal</div>
+                  </div>
+                  <span class="dp-badge proses" id="dpMechanicalOverallBadge">● Proses</span>
                 </div>
+                <table class="dp-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 45px;">No.</th>
+                      <th>Tahap Proses</th>
+                      <th style="width: 140px;">Status</th>
+                      <th>Catatan</th>
+                      <th style="width: 80px; text-align: center;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dpMechanicalTableBody">
+                    <!-- Rendered dynamically -->
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -2195,7 +2227,8 @@
         <!-- Header Info -->
         <div class="dp-modal-info-row">
           <div>No. Unit : <b id="mUpdateUnitCode">TRF-001</b></div>
-          <div>Tahap Proses : <b id="mUpdateStageName">HV (High Voltage)</b></div>
+          <div>Kategori : <b id="mUpdateCategoryName" style="color: #2563eb;">Electrical</b></div>
+          <div style="grid-column: span 2;">Tahap Proses : <b id="mUpdateStageName">HV (High Voltage)</b></div>
           <div style="grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 4px;">
             <span>Status Saat Ini :</span>
             <span id="mUpdateCurrentStatusBadge" class="dp-badge proses">● Proses</span>
@@ -2261,56 +2294,130 @@
     </div>
   </div>
 
-  <!-- Modal 2: Detail Lengkap Spesifikasi Trafo -->
+  <!-- Modal 2: Detail Monitoring Produksi (Read-Only: Electrical & Mechanical) -->
   <div class="modal-overlay" id="fullDetailModal">
-    <div class="modal-box" style="max-width: 650px;">
-      <div class="modal-header">
-        <span class="modal-title"><i class="fa-solid fa-microchip" style="color: var(--color-primary);"></i> Detail Spesifikasi & Quality Check</span>
-        <button class="modal-close-btn" onclick="closeModal('fullDetailModal')"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body">
-        <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 12px; border-radius: var(--radius-md);">
+    <div class="modal-box" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 20px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="fa-solid fa-chart-line" style="color: var(--color-primary); font-size: 18px;"></i>
           <div>
-            <div style="font-size: 16px; font-weight: 800; color: var(--color-primary);" id="modalDetailOrderCode">TRF-240522-001</div>
-            <div style="font-size: 11px; color: var(--text-muted);" id="modalDetailTrafoName">Trafo Distribusi 500 kVA - Step Down</div>
-          </div>
-          <span class="badge-status badge-assembly" id="modalDetailBadge">ASSEMBLY</span>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px;">
-          <div style="border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md);">
-            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); margin-bottom: 8px;">SPESIFIKASI ELEKTRIKAL</div>
-            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
-              <div>• Kapasitas Nominal: <b>500 kVA</b></div>
-              <div>• Tegangan Primer: <b>20.000 V (20 kV)</b></div>
-              <div>• Tegangan Sekunder: <b>400 V / 231 V</b></div>
-              <div>• Vektor Group: <b>Dyn11</b></div>
-              <div>• Frekuensi: <b>50 Hz</b></div>
-              <div>• Tipe Pendingin: <b>ONAN (Oil Natural Air Natural)</b></div>
-            </div>
-          </div>
-
-          <div style="border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md);">
-            <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); margin-bottom: 8px;">CHECKLIST INSPEKSI QC</div>
-            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="color: #10b981;"><i class="fa-solid fa-check-circle"></i> Tank Pressure Leak Test: <b>PASS</b></div>
-              <div style="color: #10b981;"><i class="fa-solid fa-check-circle"></i> Core Losses & Ratio Test: <b>PASS</b></div>
-              <div style="color: #10b981;"><i class="fa-solid fa-check-circle"></i> Winding Resistance: <b>PASS</b></div>
-              <div style="color: #f59e0b;"><i class="fa-solid fa-spinner"></i> High Voltage Dielectric Test: <b>IN PROGRESS</b></div>
+            <span class="modal-title" style="font-weight: 800; font-size: 16px; color: #0f172a;">
+              Monitoring Detail Unit Trafo
+            </span>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              Informasi spesifikasi teknis dan progres real-time per tahap
             </div>
           </div>
         </div>
-
-        <div style="margin-top: 10px;">
-          <div style="font-weight: 700; font-size: 11px; color: var(--text-primary); margin-bottom: 6px;">CATATAN SALES OFFICER</div>
-          <div style="font-size: 11px; background: #fffbe6; padding: 10px; border-radius: var(--radius-md); border: 1px solid #fef08a; color: #78350f;">
-            Proses Assembly pembungkusan kumparan inti berjalan sesuai skema. Pengujian tegangan menengah dijadwalkan besok pukul 09:00 WIB oleh tim QC Internal.
-          </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-eye"></i> Mode Pantau (Hanya Lihat)
+          </span>
+          <button class="modal-close-btn" onclick="closeModal('fullDetailModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
-      <div class="modal-footer">
+
+      <div class="modal-body" style="padding: 20px; overflow-y: auto;">
+        <!-- Unit Summary Card -->
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; padding: 18px; border-radius: 12px; margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px; font-weight: 800; color: #60a5fa;" id="modalDetailOrderCode">TRF-001</span>
+                <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;" id="mReadonlySOCode">SO: 25-0563</span>
+                <span class="dp-badge proses" id="modalDetailBadge">● Proses</span>
+              </div>
+              <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;" id="modalDetailTrafoName">PT PLN UP3 Jateng</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;" id="mReadonlySpecsMeta">500 KVA • 20 kV / 400 V • Distribusi (CU - CU)</div>
+            </div>
+            <div style="text-align: right; min-width: 140px;">
+              <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">PROGRESS UNIT</div>
+              <div style="font-size: 24px; font-weight: 900; color: #34d399;" id="mReadonlyProgressPct">60%</div>
+              <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; margin-top: 4px; overflow: hidden;">
+                <div id="mReadonlyProgressBar" style="height: 100%; width: 60%; background: #10b981; border-radius: 999px;"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+            <div><span style="color:#94a3b8;">Tgl Pesan:</span> <b id="mReadonlyOrderDate">01/05/2026</b></div>
+            <div><span style="color:#94a3b8;">Target Selesai:</span> <b id="mReadonlyTargetDate">30/06/2026</b></div>
+            <div><span style="color:#94a3b8;">PIC Officer:</span> <b id="mReadonlyPIC">Budi Santoso</b></div>
+            <div><span style="color:#94a3b8;">Lokasi:</span> <b id="mReadonlyLocation">UP3 Jateng</b></div>
+          </div>
+        </div>
+
+        <!-- 2 Read-Only Progress Tables: Electrical & Mechanical -->
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <!-- 1. Progres Electrical Table -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-weight: 700; font-size: 13px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-bolt" style="color: #2563eb;"></i> Progres Electrical
+              </div>
+              <span style="font-size: 11px; color: #64748b;">7 Tahapan Elektrikal Trafo</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="dp-table" style="font-size: 11.5px; width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">No.</th>
+                    <th>Tahap Proses</th>
+                    <th style="width: 125px;">Status</th>
+                    <th>Tanggal</th>
+                    <th>PIC</th>
+                    <th>Catatan</th>
+                  </tr>
+                </thead>
+                <tbody id="mReadonlyElectricalBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Progres Mechanical Table -->
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-weight: 700; font-size: 13px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-boxes-packing" style="color: #d97706;"></i> Progres Mechanical (Pembuatan Tangki Trafo)
+              </div>
+              <span style="font-size: 11px; color: #64748b;">7 Tahapan Fabrikasi Tangki Trafo</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="dp-table" style="font-size: 11.5px; width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">No.</th>
+                    <th>Tahap Proses</th>
+                    <th style="width: 125px;">Status</th>
+                    <th>Tanggal</th>
+                    <th>PIC</th>
+                    <th>Catatan</th>
+                  </tr>
+                </thead>
+                <tbody id="mReadonlyMechanicalBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sync Notification Callout -->
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+          <div style="font-size: 11.5px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-info" style="font-size: 16px; color: #2563eb;"></i>
+            <span>Data tersinkronisasi otomatis dengan Detail Produksi. Untuk mengubah progres, update dilakukan pada menu <b>Detail Produksi</b>.</span>
+          </div>
+          <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 11px; background: #2563eb; white-space: nowrap;" onclick="goToDetailProduksiFromModal()">
+            <i class="fa-solid fa-gauge-high"></i> Kelola di Detail Produksi
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn-secondary" onclick="closeModal('fullDetailModal')">Tutup</button>
-        <button type="button" class="btn-primary" onclick="printSOUnit()"><i class="fa-solid fa-print"></i> Cetak SO</button>
+        <button type="button" class="btn-primary" onclick="goToDetailProduksiFromModal()"><i class="fa-solid fa-pen-to-square"></i> Buka di Detail Produksi</button>
       </div>
     </div>
   </div>
