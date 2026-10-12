@@ -1212,6 +1212,18 @@ function getPTProjectsFromUnitsData() {
   return groups;
 }
 
+// Helper: Check if a unit is 100% completed
+function isUnitDone(u) {
+  if (!u) return false;
+  if (u.status === 'Selesai') return true;
+  if (u.progress >= 100) return true;
+  if (u.electricalStages && u.electricalStages.length > 0 && u.electricalStages.every(s => s.status === 'Selesai') &&
+      u.mechanicalStages && u.mechanicalStages.length > 0 && u.mechanicalStages.every(s => s.status === 'Selesai')) {
+    return true;
+  }
+  return false;
+}
+
 // Render PT Projects View (In Monitoring Produksi & Project PT) - Exactly matching user reference image
 // When all units of a PT are 100% completed, it automatically moves to Riwayat Produksi and disappears from active monitoring
 function renderPTProjects() {
@@ -1227,13 +1239,13 @@ function renderPTProjects() {
   // Filter Active vs Completed (100% finished units)
   const activeGroups = allProjectGroups.filter(pt => {
     const totalUnits = pt.units.length;
-    const selesai = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+    const selesai = pt.units.filter(isUnitDone).length;
     return !(totalUnits > 0 && selesai === totalUnits);
   });
 
   const completedGroups = allProjectGroups.filter(pt => {
     const totalUnits = pt.units.length;
-    const selesai = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+    const selesai = pt.units.filter(isUnitDone).length;
     return totalUnits > 0 && selesai === totalUnits;
   });
 
@@ -1292,9 +1304,9 @@ function renderPTProjects() {
 
     activeGroups.forEach(pt => {
       const totalUnits = pt.units.length;
-      const selesai    = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
-      const proses     = pt.units.filter(u => u.status !== 'Selesai' && u.status !== 'Belum Mulai' && u.progress > 0).length;
-      const belumMulai = pt.units.filter(u => u.status === 'Belum Mulai' || u.progress === 0).length;
+      const selesai    = pt.units.filter(isUnitDone).length;
+      const proses     = pt.units.filter(u => !isUnitDone(u) && u.status !== 'Belum Mulai' && u.progress > 0).length;
+      const belumMulai = pt.units.filter(u => !isUnitDone(u) && (u.status === 'Belum Mulai' || u.progress === 0)).length;
       const avgProgress = totalUnits > 0 ? Math.round(pt.units.reduce((s, u) => s + (u.progress || 0), 0) / totalUnits) : 0;
 
       // Rows for each trafo unit (Using unified units data & openFullDetailModal in read-only mode)
@@ -1458,7 +1470,7 @@ function renderCompletedPTProjectsHistory(completedGroupsParam = null) {
 
   const completed = completedGroupsParam !== null ? completedGroupsParam : getPTProjectsFromUnitsData().filter(pt => {
     const totalUnits = pt.units.length;
-    const selesai = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+    const selesai = pt.units.filter(isUnitDone).length;
     return totalUnits > 0 && selesai === totalUnits;
   });
 
@@ -1590,7 +1602,7 @@ function renderCompletedPTProjectsHistory(completedGroupsParam = null) {
 // Action: Complete ALL units of a PT Project (100%), which triggers automatic archiving to Riwayat Produksi
 function completeAllUnitsInPTProject(ptId) {
   const groups = getPTProjectsFromUnitsData();
-  const targetGroup = groups.find(g => g.id === ptId);
+  const targetGroup = groups.find(g => g.id === ptId || g.pt === ptId || (g.ptShort && g.ptShort.toLowerCase() === String(ptId).toLowerCase()) || (g.id && g.id.toLowerCase().includes(String(ptId).toLowerCase())));
   if (!targetGroup) return;
 
   const confirmMsg = `Selesaikan seluruh ${targetGroup.units.length} unit trafo untuk ${targetGroup.pt} (100% Selesai)?\n\nSetelah seluruh unit selesai, proyek ini akan otomatis tersimpan di Riwayat Produksi dan tidak muncul lagi di monitoring aktif.`;
@@ -1607,21 +1619,36 @@ function completeAllUnitsInPTProject(ptId) {
 
     u.progress = 100;
     u.status = 'Selesai';
+    u.currentStageName = 'Selesai (QC & Tangki OK)';
 
     // Set all electrical stages to 100% Selesai
-    if (u.stages && u.stages.electrical) {
-      u.stages.electrical.forEach(st => {
+    if (u.electricalStages && Array.isArray(u.electricalStages)) {
+      u.electricalStages.forEach(st => {
         st.status = 'Selesai';
-        st.progress = 100;
+        st.date = st.date && st.date !== '-' ? st.date : new Date().toISOString().split('T')[0];
+        st.note = 'Tahapan selesai (100%)';
       });
     }
 
     // Set all mechanical stages to 100% Selesai
-    if (u.stages && u.stages.mechanical) {
-      u.stages.mechanical.forEach(st => {
+    if (u.mechanicalStages && Array.isArray(u.mechanicalStages)) {
+      u.mechanicalStages.forEach(st => {
         st.status = 'Selesai';
-        st.progress = 100;
+        st.date = st.date && st.date !== '-' ? st.date : new Date().toISOString().split('T')[0];
+        st.note = 'Tahapan selesai (100%)';
       });
+    }
+
+    // Fallback if stages property exists
+    if (u.stages) {
+      if (u.stages.electrical) u.stages.electrical.forEach(st => { st.status = 'Selesai'; st.progress = 100; });
+      if (u.stages.mechanical) u.stages.mechanical.forEach(st => { st.status = 'Selesai'; st.progress = 100; });
+    }
+
+    // Update related SO status to Selesai if exists
+    if (u.soNumber && typeof erpSalesOrders !== 'undefined') {
+      const soItem = erpSalesOrders.find(s => s.soNumber === u.soNumber);
+      if (soItem) soItem.status = 'Selesai';
     }
 
     // Log to global audit trail
@@ -1641,24 +1668,26 @@ function completeAllUnitsInPTProject(ptId) {
   });
 
   saveUnitsData(units);
-
-  if (typeof showNotification === 'function') {
-    showNotification(`Seluruh unit ${targetGroup.pt} (${updatedCount} unit) telah 100% Selesai dan otomatis tersimpan di Riwayat Produksi!`, 'success');
-  } else {
-    alert(`Seluruh unit ${targetGroup.pt} (${updatedCount} unit) telah 100% Selesai dan otomatis tersimpan di Riwayat Produksi!`);
+  if (typeof saveERPSalesOrders === 'function') {
+    saveERPSalesOrders(erpSalesOrders);
   }
+
+  showToast(`Proyek ${targetGroup.pt} (${updatedCount} unit) telah 100% Selesai dan otomatis tersimpan di Riwayat Produksi!`);
 
   // Re-render UI
   renderPTProjects();
   if (typeof renderRiwayatProduksiView === 'function') {
     renderRiwayatProduksiView();
   }
+  if (typeof renderProyekTable === 'function') {
+    renderProyekTable();
+  }
 }
 
 // Action: Reactivate a Completed PT Project back to Active Monitoring
 function reactivatePTProject(ptId) {
   const groups = getPTProjectsFromUnitsData();
-  const targetGroup = groups.find(g => g.id === ptId);
+  const targetGroup = groups.find(g => g.id === ptId || g.pt === ptId || (g.ptShort && g.ptShort.toLowerCase() === String(ptId).toLowerCase()));
   if (!targetGroup) return;
 
   if (!confirm(`Aktifkan kembali proyek ${targetGroup.pt} ke monitoring aktif?`)) return;
@@ -1670,18 +1699,15 @@ function reactivatePTProject(ptId) {
   if (u) {
     u.status = 'Dalam Proses';
     u.progress = 90;
-    if (u.stages && u.stages.mechanical && u.stages.mechanical.length > 0) {
-      const lastStage = u.stages.mechanical[u.stages.mechanical.length - 1];
+    if (u.mechanicalStages && u.mechanicalStages.length > 0) {
+      const lastStage = u.mechanicalStages[u.mechanicalStages.length - 1];
       lastStage.status = 'Proses';
-      lastStage.progress = 80;
     }
   }
 
   saveUnitsData(units);
 
-  if (typeof showNotification === 'function') {
-    showNotification(`Proyek ${targetGroup.pt} berhasil diaktifkan kembali ke monitoring aktif!`, 'info');
-  }
+  showToast(`Proyek ${targetGroup.pt} berhasil diaktifkan kembali ke monitoring aktif!`);
 
   renderPTProjects();
   if (typeof renderRiwayatProduksiView === 'function') {
@@ -3840,18 +3866,22 @@ function renderProyekTable(filteredList = null) {
     let statusClass = 'status-belum';
     if (so.status === 'Dalam Proses') statusClass = 'status-dalam';
     else if (so.status === 'Proses Produksi') statusClass = 'status-produksi';
+    else if (so.status === 'Selesai') statusClass = 'status-selesai';
 
     const statusSelectHtml = `
       <select class="erp-status-select ${statusClass}" onchange="changeSOStatus('${so.soNumber}', this.value)" title="Klik untuk mengubah status SO">
         <option value="Belum Proses" ${so.status === 'Belum Proses' ? 'selected' : ''}>Belum Proses</option>
         <option value="Dalam Proses" ${so.status === 'Dalam Proses' ? 'selected' : ''}>Dalam Proses</option>
         <option value="Proses Produksi" ${so.status === 'Proses Produksi' ? 'selected' : ''}>⚡ Proses Produksi</option>
+        <option value="Selesai" ${so.status === 'Selesai' ? 'selected' : ''}>✅ Selesai (100%)</option>
       </select>
     `;
 
-    const actionBtnHtml = so.status === 'Proses Produksi'
-      ? `<button class="btn-erp-monitoring" onclick="goToMonitoringFromSO('${so.soNumber}')" title="Lihat alur di Monitoring Produksi"><i class="fa-solid fa-arrow-up-right-from-square"></i> Monitoring</button>`
-      : `<button class="btn-erp-send-prod" onclick="changeSOStatus('${so.soNumber}', 'Proses Produksi')" title="Klik untuk langsung memulai Proses Produksi dan masuk ke Monitoring Produksi"><i class="fa-solid fa-industry"></i> Produksi</button>`;
+    const actionBtnHtml = so.status === 'Selesai'
+      ? `<button class="btn-erp-monitoring" onclick="switchMainTab('riwayat')" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;" title="Lihat arsip di Riwayat Produksi"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</button>`
+      : (so.status === 'Proses Produksi'
+        ? `<button class="btn-erp-monitoring" onclick="goToMonitoringFromSO('${so.soNumber}')" title="Lihat alur di Monitoring Produksi"><i class="fa-solid fa-arrow-up-right-from-square"></i> Monitoring</button>`
+        : `<button class="btn-erp-send-prod" onclick="changeSOStatus('${so.soNumber}', 'Proses Produksi')" title="Klik untuk langsung memulai Proses Produksi dan masuk ke Monitoring Produksi"><i class="fa-solid fa-industry"></i> Produksi</button>`);
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -3955,7 +3985,7 @@ function handleSaveNewSO(e) {
   }
 }
 
-// Function to change SO status & auto-forward to Monitoring Produksi if 'Proses Produksi'
+// Function to change SO status & auto-forward to Monitoring Produksi if 'Proses Produksi', or archive if 'Selesai'
 function changeSOStatus(soNumber, newStatus) {
   const so = erpSalesOrders.find(item => item.soNumber === soNumber);
   if (!so) return;
@@ -3967,6 +3997,52 @@ function changeSOStatus(soNumber, newStatus) {
     processSOToProduction(so);
     showToast(`🚀 Sales Order ${so.soNumber} (${so.customer} - ${so.qty} Unit) otomatis masuk ke Monitoring Produksi!`);
     goToMonitoringFromSO(so.soNumber);
+  } else if (newStatus === 'Selesai') {
+    // Selesaikan seluruh unit milik SO ini (100%) dan otomatis simpan ke Riwayat Produksi
+    const allUnits = getUnitsData();
+    const soUnits = allUnits.filter(u => u.soNumber === so.soNumber || (u.customer && u.customer.toLowerCase().includes(so.customer.toLowerCase())));
+    const now = new Date();
+    const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    soUnits.forEach(u => {
+      u.progress = 100;
+      u.status = 'Selesai';
+      u.currentStageName = 'Selesai (QC & Tangki OK)';
+      if (u.electricalStages) {
+        u.electricalStages.forEach(s => {
+          s.status = 'Selesai';
+          s.date = s.date && s.date !== '-' ? s.date : new Date().toISOString().split('T')[0];
+          s.note = 'Tahapan selesai (100%)';
+        });
+      }
+      if (u.mechanicalStages) {
+        u.mechanicalStages.forEach(s => {
+          s.status = 'Selesai';
+          s.date = s.date && s.date !== '-' ? s.date : new Date().toISOString().split('T')[0];
+          s.note = 'Tahapan selesai (100%)';
+        });
+      }
+
+      addProductionHistoryLog({
+        timestamp: timeStr,
+        unitId: u.unitId,
+        soNumber: u.soNumber || so.soNumber,
+        customer: u.customer || so.customer,
+        category: 'Mechanical',
+        stageName: 'Final QC & Pengujian Rutin',
+        status: 'Selesai',
+        pic: u.pic || 'Supervisor Produksi',
+        note: `SO ${so.soNumber} (${so.customer}) ditandai Selesai 100% — Seluruh unit otomatis tersimpan di Riwayat Produksi.`
+      });
+    });
+
+    saveUnitsData(allUnits);
+    renderPTProjects();
+    renderProyekTable();
+    if (typeof renderRiwayatProduksiView === 'function') {
+      renderRiwayatProduksiView();
+    }
+    showToast(`✅ Sales Order ${so.soNumber} (${so.customer}) selesai 100% dan seluruh unitnya otomatis diarsipkan ke Riwayat Produksi!`);
   } else {
     renderProyekTable();
     showToast(`Status Sales Order ${so.soNumber} diubah menjadi: ${newStatus}`);
@@ -4675,6 +4751,16 @@ function recomputeUnitProgress(unit) {
   if (!unit.electricalStages) unit.electricalStages = [];
   if (!unit.mechanicalStages) unit.mechanicalStages = [];
 
+  // Guard: Jika unit sudah berstatus Selesai atau progress 100%, pertahankan dan pastikan semua tahap selesai
+  if (unit.status === 'Selesai' || unit.progress === 100) {
+    unit.progress = 100;
+    unit.status = 'Selesai';
+    unit.currentStageName = 'Selesai (QC & Tangki OK)';
+    unit.electricalStages.forEach(s => s.status = 'Selesai');
+    unit.mechanicalStages.forEach(s => s.status = 'Selesai');
+    return unit;
+  }
+
   let totalPoints = 0;
   let activeElec = null;
   let activeMech = null;
@@ -4701,6 +4787,8 @@ function recomputeUnitProgress(unit) {
   if (overallPct === 100) {
     unit.status = 'Selesai';
     unit.currentStageName = 'Selesai (QC & Tangki OK)';
+    unit.electricalStages.forEach(s => s.status = 'Selesai');
+    unit.mechanicalStages.forEach(s => s.status = 'Selesai');
   } else if (overallPct === 0) {
     unit.status = 'Belum Mulai';
     unit.currentStageName = 'Belum Mulai';
@@ -4724,6 +4812,59 @@ function recomputeUnitProgress(unit) {
 function switchDPActiveUnit(unitId) {
   activeDPUnitId = unitId;
   renderDetailProduksiView();
+}
+
+// Complete the currently selected unit in Detail Produksi (100% Selesai)
+function completeCurrentDPUnit() {
+  const units = getUnitsData();
+  const unit = units.find(u => u.unitId === activeDPUnitId);
+  if (!unit) return;
+
+  unit.progress = 100;
+  unit.status = 'Selesai';
+  unit.currentStageName = 'Selesai (QC & Tangki OK)';
+
+  if (unit.electricalStages) {
+    unit.electricalStages.forEach(s => {
+      s.status = 'Selesai';
+      s.date = s.date && s.date !== '-' ? s.date : new Date().toISOString().split('T')[0];
+      s.note = 'Selesai 100%';
+    });
+  }
+
+  if (unit.mechanicalStages) {
+    unit.mechanicalStages.forEach(s => {
+      s.status = 'Selesai';
+      s.date = s.date && s.date !== '-' ? s.date : new Date().toISOString().split('T')[0];
+      s.note = 'Selesai 100%';
+    });
+  }
+
+  const now = new Date();
+  const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  addProductionHistoryLog({
+    timestamp: timeStr,
+    unitId: unit.unitId,
+    soNumber: unit.soNumber,
+    customer: unit.customer,
+    category: 'Mechanical',
+    stageName: 'Final QC & Pengujian Rutin',
+    status: 'Selesai',
+    pic: unit.pic || 'Supervisor Produksi',
+    note: `Unit ${unit.unitId} dinyatakan 100% Selesai dan lulus uji QC.`
+  });
+
+  saveUnitsData(units);
+
+  renderDetailProduksiView();
+  renderOrdersTable();
+  renderPTProjects();
+  if (typeof renderRiwayatProduksiView === 'function') {
+    renderRiwayatProduksiView();
+  }
+
+  showToast(`✅ Unit ${unit.unitId} (${unit.customer}) berhasil diselesaikan 100%!`);
 }
 
 // Render Detail Produksi View (Populates Header, Unit Selector, Electrical & Mechanical tables)
