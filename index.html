@@ -550,6 +550,17 @@
             </div>
           </div>
 
+          <!-- Notice for Completed / Archived PT Projects -->
+          <div id="monArchivedProjectsNotice" style="display:none; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:12px 20px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px; color:#065f46; font-size:12.5px; font-weight:600;">
+              <i class="fa-solid fa-circle-check" style="color:#10b981; font-size:16px;"></i>
+              <span id="monArchivedProjectsNoticeText">Proyek PT yang seluruh unitnya telah rampung 100% otomatis disimpan di Riwayat Produksi.</span>
+            </div>
+            <button class="btn-secondary" onclick="switchMonitoringSubTab('riwayat')" style="font-size:11.5px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px; background:#ffffff; color:#047857; border-color:#a7f3d0; font-weight:700;">
+              <i class="fa-solid fa-clock-rotate-left"></i> Buka Riwayat Produksi
+            </button>
+          </div>
+
           <div style="display:flex; flex-direction:column; gap:20px;" id="ptProjectsContainerInMonitoring">
             <!-- Rendered dynamically via renderPTProjects() -->
           </div>
@@ -697,6 +708,23 @@
                   <!-- Populated dynamically via renderRiwayatArsipTable() -->
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Riwayat Content Card 3: Arsip Proyek Perusahaan (PT) Selesai 100% -->
+          <div class="section-card" style="margin-top: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-building-circle-check" style="color:#10b981;"></i> ARSIP PROYEK PERUSAHAAN (PT) SELESAI FABRIKASI
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                  Proyek perusahaan transformator yang seluruh unit trafonya telah rampung 100% dan diarsipkan secara otomatis dari Monitoring aktif.
+                </div>
+              </div>
+            </div>
+            <div id="monCompletedPTProjectsContainer" class="completed-pt-container" style="display:flex; flex-direction:column; gap:20px;">
+              <!-- Populated dynamically via renderCompletedPTProjectsHistory() -->
             </div>
           </div>
         </div>
@@ -1337,6 +1365,23 @@
                 <!-- Populated dynamically via renderRiwayatArsipTable() -->
               </tbody>
             </table>
+          </div>
+
+          <!-- Riwayat Content Card 3: Arsip Proyek Perusahaan (PT) Selesai 100% -->
+          <div class="section-card" style="margin-top: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+              <div>
+                <div style="font-size:14px; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-building-circle-check" style="color:#10b981;"></i> ARSIP PROYEK PERUSAHAAN (PT) SELESAI FABRIKASI
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                  Proyek perusahaan transformator yang seluruh unit trafonya telah rampung 100% dan diarsipkan secara otomatis dari Monitoring aktif.
+                </div>
+              </div>
+            </div>
+            <div id="completedPTProjectsContainer" class="completed-pt-container" style="display:flex; flex-direction:column; gap:20px;">
+              <!-- Populated dynamically via renderCompletedPTProjectsHistory() -->
+            </div>
           </div>
         </div>
       </div>

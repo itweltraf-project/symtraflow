@@ -1100,6 +1100,7 @@ function switchMonitoringSubTab(tab) {
     if (btnRiw) btnRiw.className = 'btn-primary';
     if (typeof renderRiwayatTable === 'function') renderRiwayatTable();
     if (typeof renderRiwayatArsipTable === 'function') renderRiwayatArsipTable();
+    if (typeof renderCompletedPTProjectsHistory === 'function') renderCompletedPTProjectsHistory();
   } else if (tab === 'table') {
     if (secTable) secTable.style.display = 'block';
     if (btnTable) btnTable.className = 'btn-primary';
@@ -1212,6 +1213,7 @@ function getPTProjectsFromUnitsData() {
 }
 
 // Render PT Projects View (In Monitoring Produksi & Project PT) - Exactly matching user reference image
+// When all units of a PT are 100% completed, it automatically moves to Riwayat Produksi and disappears from active monitoring
 function renderPTProjects() {
   const containers = [
     document.getElementById('ptProjectsContainerInMonitoring'),
@@ -1220,12 +1222,75 @@ function renderPTProjects() {
 
   if (containers.length === 0) return;
 
-  const projectGroups = getPTProjectsFromUnitsData();
+  const allProjectGroups = getPTProjectsFromUnitsData();
+
+  // Filter Active vs Completed (100% finished units)
+  const activeGroups = allProjectGroups.filter(pt => {
+    const totalUnits = pt.units.length;
+    const selesai = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+    return !(totalUnits > 0 && selesai === totalUnits);
+  });
+
+  const completedGroups = allProjectGroups.filter(pt => {
+    const totalUnits = pt.units.length;
+    const selesai = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+    return totalUnits > 0 && selesai === totalUnits;
+  });
+
+  // Update notification banner in Monitoring if there are archived completed projects
+  const noticeBanner = document.getElementById('monArchivedProjectsNotice');
+  if (noticeBanner) {
+    if (completedGroups.length > 0) {
+      noticeBanner.style.display = 'block';
+      const completedNames = completedGroups.map(p => `<strong>${p.pt}</strong> (${p.units.length} Unit)`).join(', ');
+      noticeBanner.innerHTML = `
+        <div style="background:linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border:1.5px solid #a7f3d0; border-radius:12px; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; box-shadow:0 1px 4px rgba(16,185,129,0.1);">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:10px; background:#10b981; color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">
+              <i class="fa-solid fa-box-archive"></i>
+            </div>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#065f46;">
+                ${completedGroups.length} Proyek PT Telah Selesai 100% & Tersimpan di Riwayat Produksi
+              </div>
+              <div style="font-size:11.5px; color:#047857; margin-top:2px;">
+                Proyek: ${completedNames}. Kartu proyek otomatis diarsipkan dan tidak lagi muncul di monitoring aktif.
+              </div>
+            </div>
+          </div>
+          <button onclick="switchMonitoringSubTab('riwayat')" style="background:#10b981; color:#ffffff; border:none; padding:8px 16px; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(16,185,129,0.25); transition:all 0.2s;">
+            <i class="fa-solid fa-clock-rotate-left"></i> Buka Riwayat Produksi
+          </button>
+        </div>
+      `;
+    } else {
+      noticeBanner.style.display = 'none';
+      noticeBanner.innerHTML = '';
+    }
+  }
 
   containers.forEach(container => {
     container.innerHTML = '';
 
-    projectGroups.forEach(pt => {
+    if (activeGroups.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:48px 24px; background:#ffffff; border-radius:16px; border:2px dashed #cbd5e1; color:#64748b; margin-bottom:20px;">
+          <div style="width:56px; height:56px; border-radius:50%; background:#ecfdf5; color:#10b981; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:26px;">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div style="font-size:17px; font-weight:800; color:#0f172a; margin-bottom:6px;">Semua Proyek Perusahaan (PT) Selesai 100%!</div>
+          <div style="font-size:12.5px; color:#64748b; max-width:540px; margin:0 auto 16px; line-height:1.5;">
+            Seluruh unit trafo untuk proyek PT yang ada telah berstatus selesai dan secara otomatis diarsipkan ke dalam <strong>Riwayat Produksi</strong>.
+          </div>
+          <button onclick="switchMonitoringSubTab('riwayat')" class="btn-primary" style="font-size:12px; padding:9px 20px; display:inline-flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-clock-rotate-left"></i> Lihat Arsip di Riwayat Produksi
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    activeGroups.forEach(pt => {
       const totalUnits = pt.units.length;
       const selesai    = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
       const proses     = pt.units.filter(u => u.status !== 'Selesai' && u.status !== 'Belum Mulai' && u.progress > 0).length;
@@ -1286,8 +1351,13 @@ function renderPTProjects() {
             <div style="background:#ffffff; color:${pt.ptColor || '#16a34a'}; font-weight:800; font-size:16px; padding:6px 14px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1); letter-spacing:0.5px;">
               ${pt.ptShort}
             </div>
-            <div style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:0.2px;">
-              ${pt.pt}
+            <div>
+              <div style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:0.2px;">
+                ${pt.pt}
+              </div>
+              <div style="font-size:11.5px; color:rgba(255,255,255,0.85); font-weight:600; margin-top:2px;">
+                ${pt.project} • ${pt.contract}
+              </div>
             </div>
           </div>
 
@@ -1309,6 +1379,10 @@ function renderPTProjects() {
               <div style="font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.85); text-transform:uppercase; letter-spacing:0.5px;">BELUM MULAI</div>
             </div>
 
+            <!-- Action: Complete all units (100%) to trigger archive -->
+            <button onclick="completeAllUnitsInPTProject('${pt.id}')" style="background:#10b981; border:1px solid #34d399; color:#ffffff; font-size:11px; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(16,185,129,0.25); transition:all 0.2s;" title="Tandai seluruh unit selesai (100%) dan otomatis simpan ke Riwayat Produksi">
+              <i class="fa-solid fa-flag-checkered"></i> Selesaikan Proyek (100%)
+            </button>
             <button onclick="openAddTrafoModal('${pt.id}')" style="background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.45); color:#ffffff; font-size:11px; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;">
               <i class="fa-solid fa-circle-plus"></i> Tambah Trafo
             </button>
@@ -1368,6 +1442,251 @@ function renderPTProjects() {
       container.appendChild(card);
     });
   });
+
+  // Render Completed PT Projects in Riwayat section
+  renderCompletedPTProjectsHistory(completedGroups);
+}
+
+// Render Completed (100%) PT Projects in Riwayat Produksi
+function renderCompletedPTProjectsHistory(completedGroupsParam = null) {
+  const containers = [
+    document.getElementById('completedPTProjectsContainer'),
+    document.getElementById('monCompletedPTProjectsContainer')
+  ].filter(Boolean);
+
+  if (containers.length === 0) return;
+
+  const completed = completedGroupsParam !== null ? completedGroupsParam : getPTProjectsFromUnitsData().filter(pt => {
+    const totalUnits = pt.units.length;
+    const selesai = pt.units.filter(u => u.status === 'Selesai' || u.progress === 100).length;
+    return totalUnits > 0 && selesai === totalUnits;
+  });
+
+  // Update badge counters if elements exist
+  const countEls = [
+    document.getElementById('completedPTCount'),
+    document.getElementById('monCompletedPTCount')
+  ].filter(Boolean);
+  countEls.forEach(el => el.innerText = `${completed.length} Proyek`);
+
+  containers.forEach(container => {
+    container.innerHTML = '';
+
+    if (completed.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:36px 20px; background:#f8fafc; border:1.5px dashed #cbd5e1; border-radius:14px; color:#64748b;">
+          <div style="width:48px; height:48px; border-radius:50%; background:#e2e8f0; color:#64748b; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; font-size:20px;">
+            <i class="fa-solid fa-box-archive"></i>
+          </div>
+          <div style="font-weight:700; font-size:14px; color:#334155; margin-bottom:4px;">Belum Ada Proyek PT yang 100% Selesai</div>
+          <div style="font-size:12px; color:#64748b; max-width:480px; margin:0 auto;">
+            Ketika semua unit trafo dalam suatu Proyek PT selesai seluruhnya (progress 100%), proyek tersebut otomatis tersimpan di sini dan tidak lagi muncul di monitoring aktif.
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    completed.forEach(pt => {
+      const totalUnits = pt.units.length;
+
+      const unitRows = pt.units.map((u, idx) => `
+        <tr style="border-bottom: 1px solid #f1f5f9; background:#ffffff;">
+          <td style="font-weight:700; color:#64748b; text-align:center; padding:10px 14px;">${idx + 1}</td>
+          <td style="padding:10px 14px;">
+            <button class="so-unit-badge" onclick="event.stopPropagation(); openFullDetailModal('${u.unitId}')" title="Buka Detail Unit">
+              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i> ${u.unitId}
+            </button>
+          </td>
+          <td style="font-weight:800; color:#0f172a; font-size:12px; padding:10px 14px;">${u.capacity}</td>
+          <td style="color:#64748b; font-size:11.5px; padding:10px 14px;">${u.orderDate || '01/05/2024'}</td>
+          <td style="padding:10px 14px;">
+            <span style="background:#ecfdf5; color:#059669; font-weight:800; font-size:11.5px; padding:4px 10px; border-radius:999px; border:1px solid #a7f3d0; display:inline-flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-circle-check"></i> 100% SELESAI
+            </span>
+          </td>
+          <td style="color:#10b981; font-weight:700; font-size:11.5px; padding:10px 14px;">${u.targetDate || '20/06/2024'}</td>
+          <td style="font-size:11.5px; color:#334155; font-weight:700; padding:10px 14px; text-transform:uppercase;">${u.pic || 'I WAYAN EVA VERDIANA'}</td>
+          <td style="text-align:center; padding:10px 14px;">
+            <button class="btn-detail-pill" onclick="event.stopPropagation(); openFullDetailModal('${u.unitId}')" title="Lihat Rekam Jejak Tahapan">
+              <i class="fa-regular fa-eye"></i> Detail
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      const card = document.createElement('div');
+      card.className = 'completed-pt-card';
+      card.style.cssText = 'background:#ffffff; border-radius:14px; border:1.5px solid #d1fae5; box-shadow:0 2px 8px rgba(16,185,129,0.06); overflow:hidden; margin-bottom:18px;';
+      card.innerHTML = `
+        <!-- Completed PT Header Bar -->
+        <div style="background: linear-gradient(135deg, ${pt.ptColor || '#059669'} 0%, #047857 100%); padding: 14px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:#ffffff; color:${pt.ptColor || '#059669'}; font-weight:800; font-size:14px; padding:5px 12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+              ${pt.ptShort}
+            </div>
+            <div>
+              <div style="font-size:17px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
+                ${pt.pt}
+                <span style="background:rgba(255,255,255,0.25); color:#ffffff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.5px;">
+                  <i class="fa-solid fa-box-archive"></i> TERSIMPAN DI RIWAYAT
+                </span>
+              </div>
+              <div style="font-size:11px; color:rgba(255,255,255,0.85); font-weight:600; margin-top:2px;">
+                ${pt.project} • ${pt.contract}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="background:rgba(255,255,255,0.2); border-radius:8px; padding:5px 12px; text-align:center;">
+              <div style="font-size:16px; font-weight:800; color:#86efac; line-height:1.1;">${totalUnits} / ${totalUnits}</div>
+              <div style="font-size:8px; font-weight:700; color:rgba(255,255,255,0.9); text-transform:uppercase;">UNIT TUNTAS</div>
+            </div>
+            <button onclick="reactivatePTProject('${pt.id}')" style="background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.4); color:#ffffff; font-size:11px; font-weight:700; padding:7px 12px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Kembalikan proyek ini ke monitoring aktif">
+              <i class="fa-solid fa-rotate-left"></i> Aktifkan Kembali
+            </button>
+          </div>
+        </div>
+
+        <!-- Green Completion Strip -->
+        <div style="background:#ecfdf5; padding:10px 20px; border-bottom:1px solid #d1fae5; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+            <span style="font-size:11.5px; font-weight:800; color:#065f46;">STATUS PROYEK: 100% SELESAI (DIARSIPKAN)</span>
+          </div>
+          <div style="font-size:11px; color:#047857; font-weight:600; display:flex; align-items:center; gap:6px;">
+            <i class="fa-regular fa-calendar-check"></i> Periode Kontrak: ${pt.startDate} — ${pt.endDate}
+          </div>
+        </div>
+
+        <!-- Trafo Units Table in Archive -->
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#64748b; font-size:10px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase;">
+                <th style="padding:10px 14px; text-align:center; width:45px;">NO</th>
+                <th style="padding:10px 14px;">NO. SO</th>
+                <th style="padding:10px 14px;">VARIANT</th>
+                <th style="padding:10px 14px;">TGL PESAN</th>
+                <th style="padding:10px 14px;">STATUS</th>
+                <th style="padding:10px 14px;">SELESAI QC</th>
+                <th style="padding:10px 14px;">SALES OFFICER</th>
+                <th style="padding:10px 14px; text-align:center; width:90px;">AKSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${unitRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+  });
+}
+
+// Action: Complete ALL units of a PT Project (100%), which triggers automatic archiving to Riwayat Produksi
+function completeAllUnitsInPTProject(ptId) {
+  const groups = getPTProjectsFromUnitsData();
+  const targetGroup = groups.find(g => g.id === ptId);
+  if (!targetGroup) return;
+
+  const confirmMsg = `Selesaikan seluruh ${targetGroup.units.length} unit trafo untuk ${targetGroup.pt} (100% Selesai)?\n\nSetelah seluruh unit selesai, proyek ini akan otomatis tersimpan di Riwayat Produksi dan tidak muncul lagi di monitoring aktif.`;
+  if (!confirm(confirmMsg)) return;
+
+  const units = getUnitsData();
+  const now = new Date();
+  const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  let updatedCount = 0;
+  targetGroup.units.forEach(targetU => {
+    const u = units.find(item => item.unitId === targetU.unitId);
+    if (!u) return;
+
+    u.progress = 100;
+    u.status = 'Selesai';
+
+    // Set all electrical stages to 100% Selesai
+    if (u.stages && u.stages.electrical) {
+      u.stages.electrical.forEach(st => {
+        st.status = 'Selesai';
+        st.progress = 100;
+      });
+    }
+
+    // Set all mechanical stages to 100% Selesai
+    if (u.stages && u.stages.mechanical) {
+      u.stages.mechanical.forEach(st => {
+        st.status = 'Selesai';
+        st.progress = 100;
+      });
+    }
+
+    // Log to global audit trail
+    addProductionHistoryLog({
+      timestamp: timeStr,
+      unitId: u.unitId,
+      soNumber: u.soNumber || targetGroup.contract,
+      customer: u.customer || targetGroup.pt,
+      category: 'Mechanical',
+      stageName: 'Final QC & Pengujian Rutin',
+      status: 'Selesai',
+      pic: u.pic || 'Supervisor Produksi',
+      note: `Proyek ${targetGroup.pt} tuntas 100% — Seluruh unit selesai dan otomatis tersimpan di Riwayat Produksi.`
+    });
+
+    updatedCount++;
+  });
+
+  saveUnitsData(units);
+
+  if (typeof showNotification === 'function') {
+    showNotification(`Seluruh unit ${targetGroup.pt} (${updatedCount} unit) telah 100% Selesai dan otomatis tersimpan di Riwayat Produksi!`, 'success');
+  } else {
+    alert(`Seluruh unit ${targetGroup.pt} (${updatedCount} unit) telah 100% Selesai dan otomatis tersimpan di Riwayat Produksi!`);
+  }
+
+  // Re-render UI
+  renderPTProjects();
+  if (typeof renderRiwayatProduksiView === 'function') {
+    renderRiwayatProduksiView();
+  }
+}
+
+// Action: Reactivate a Completed PT Project back to Active Monitoring
+function reactivatePTProject(ptId) {
+  const groups = getPTProjectsFromUnitsData();
+  const targetGroup = groups.find(g => g.id === ptId);
+  if (!targetGroup) return;
+
+  if (!confirm(`Aktifkan kembali proyek ${targetGroup.pt} ke monitoring aktif?`)) return;
+
+  const units = getUnitsData();
+  // Find the last unit in this PT group and set it back to "Dalam Proses" (90%)
+  const lastUnitId = targetGroup.units[targetGroup.units.length - 1]?.unitId;
+  const u = units.find(item => item.unitId === lastUnitId);
+  if (u) {
+    u.status = 'Dalam Proses';
+    u.progress = 90;
+    if (u.stages && u.stages.mechanical && u.stages.mechanical.length > 0) {
+      const lastStage = u.stages.mechanical[u.stages.mechanical.length - 1];
+      lastStage.status = 'Proses';
+      lastStage.progress = 80;
+    }
+  }
+
+  saveUnitsData(units);
+
+  if (typeof showNotification === 'function') {
+    showNotification(`Proyek ${targetGroup.pt} berhasil diaktifkan kembali ke monitoring aktif!`, 'info');
+  }
+
+  renderPTProjects();
+  if (typeof renderRiwayatProduksiView === 'function') {
+    renderRiwayatProduksiView();
+  }
 }
 
 // Helper to populate project dropdown in modals
@@ -4132,7 +4451,7 @@ const defaultUnitsData = [
     targetDate: '20/07/2024',
     pic: 'JHODY AIDO SAUT HUTAGALUNG',
     location: 'Pabrik Bontang, Kalimantan Timur',
-    notes: 'Trafo pabrik amoniak 30kV',
+    notes: 'Trafo pabrik amoniak 30kV unit 1',
     lastUpdate: '25 Mei 2024 11:00',
     progress: 25,
     status: 'Dalam Proses',
@@ -4156,6 +4475,154 @@ const defaultUnitsData = [
     ],
     activities: [],
     chatNotes: []
+  },
+  {
+    unitId: 'TRF-PKT-002',
+    soNumber: 'SO-PKT-2024-002',
+    customer: 'PT Pupuk Kaltim',
+    variant: 'Power',
+    capacity: '5000 kVA',
+    voltage: '30 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '18/05/2024',
+    targetDate: '25/07/2024',
+    pic: 'KEYSHA ZARA ALIFA PANJAITAN',
+    location: 'Pabrik Bontang, Kalimantan Timur',
+    notes: 'Trafo pabrik amoniak 30kV unit 2',
+    lastUpdate: '25 Mei 2024 11:00',
+    progress: 10,
+    status: 'Dalam Proses',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Proses', date: '2024-05-25', pic: 'Rizky', note: 'Gulung LV' },
+      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '-', pic: 'Shevira Indraswari', note: '-' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-22', pic: 'Dedi Kurniawan', note: 'Selesai' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' }
+    ],
+    activities: [],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-PKT-003',
+    soNumber: 'SO-PKT-2024-003',
+    customer: 'PT Pupuk Kaltim',
+    variant: 'Power',
+    capacity: '5000 kVA',
+    voltage: '30 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '20/05/2024',
+    targetDate: '30/07/2024',
+    pic: 'I WAYAN EVA VERDIANA',
+    location: 'Pabrik Bontang, Kalimantan Timur',
+    notes: 'Trafo unit 3 persiapan lini',
+    lastUpdate: '20 Mei 2024 09:00',
+    progress: 0,
+    status: 'Belum Mulai',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '-', pic: 'Shevira Indraswari', note: '-' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' }
+    ],
+    activities: [],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-PKT-004',
+    soNumber: 'SO-PKT-2024-004',
+    customer: 'PT Pupuk Kaltim',
+    variant: 'Power',
+    capacity: '7500 kVA',
+    voltage: '70 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '22/05/2024',
+    targetDate: '05/08/2024',
+    pic: 'SHEVIRA INDRASWARI',
+    location: 'Pabrik Bontang, Kalimantan Timur',
+    notes: 'Trafo unit 4 persiapan lini',
+    lastUpdate: '22 Mei 2024 09:00',
+    progress: 0,
+    status: 'Belum Mulai',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '-', pic: 'Shevira Indraswari', note: '-' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' }
+    ],
+    activities: [],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-PKT-005',
+    soNumber: 'SO-PKT-2024-005',
+    customer: 'PT Pupuk Kaltim',
+    variant: 'Power',
+    capacity: '10000 kVA',
+    voltage: '70 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '25/05/2024',
+    targetDate: '10/08/2024',
+    pic: 'WILLI SYUKRAN',
+    location: 'Pabrik Bontang, Kalimantan Timur',
+    notes: 'Trafo unit 5 kapasitas 10MVA',
+    lastUpdate: '25 Mei 2024 09:00',
+    progress: 0,
+    status: 'Belum Mulai',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '-', pic: 'Shevira Indraswari', note: '-' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' }
+    ],
+    activities: [],
+    chatNotes: []
   }
 ];
 
@@ -4170,6 +4637,13 @@ function getUnitsData() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(u => u.unitId === 'TRF-PTM-001')) {
+        // Ensure missing PKT units are backfilled if not present
+        const defaultPKTUnits = defaultUnitsData.filter(u => u.unitId.startsWith('TRF-PKT-'));
+        defaultPKTUnits.forEach(defU => {
+          if (!parsed.some(u => u.unitId === defU.unitId)) {
+            parsed.push(JSON.parse(JSON.stringify(defU)));
+          }
+        });
         parsed.forEach(u => recomputeUnitProgress(u));
         return parsed;
       }
@@ -5886,6 +6360,9 @@ function addProductionHistoryLog(log) {
 function renderRiwayatProduksiView() {
   renderRiwayatTable();
   renderRiwayatArsipTable();
+  if (typeof renderCompletedPTProjectsHistory === 'function') {
+    renderCompletedPTProjectsHistory();
+  }
 
   // Update KPI counters
   const logs = getProductionHistoryLogs();
