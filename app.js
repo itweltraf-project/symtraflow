@@ -1083,33 +1083,32 @@ function filterOrders() {
   });
 }
 
-// Switch between Table and Hierarchy views inside Monitoring Produksi
+// Switch between Hierarchy, Riwayat, and Table views inside Monitoring Produksi
 function switchMonitoringSubTab(tab) {
   const secTable = document.getElementById('monSectionTable');
   const secHier = document.getElementById('monSectionHierarchy');
+  const secRiw = document.getElementById('monSectionRiwayat');
   const btnTable = document.getElementById('btnMonSubTable');
   const btnHier = document.getElementById('btnMonSubHierarchy');
+  const btnRiw = document.getElementById('btnMonSubRiwayat');
 
-  if (tab === 'hierarchy') {
-    if (secTable) secTable.style.display = 'none';
-    if (secHier) secHier.style.display = 'block';
-    if (btnTable) {
-      btnTable.className = 'btn-secondary';
-    }
-    if (btnHier) {
-      btnHier.className = 'btn-primary';
-    }
-    renderPTProjects();
-  } else {
+  [secTable, secHier, secRiw].forEach(s => s && (s.style.display = 'none'));
+  [btnTable, btnHier, btnRiw].forEach(b => b && (b.className = 'btn-secondary'));
+
+  if (tab === 'riwayat') {
+    if (secRiw) secRiw.style.display = 'block';
+    if (btnRiw) btnRiw.className = 'btn-primary';
+    if (typeof renderRiwayatTable === 'function') renderRiwayatTable();
+    if (typeof renderRiwayatArsipTable === 'function') renderRiwayatArsipTable();
+  } else if (tab === 'table') {
     if (secTable) secTable.style.display = 'block';
-    if (secHier) secHier.style.display = 'none';
-    if (btnTable) {
-      btnTable.className = 'btn-primary';
-    }
-    if (btnHier) {
-      btnHier.className = 'btn-secondary';
-    }
+    if (btnTable) btnTable.className = 'btn-primary';
     renderOrdersTable();
+  } else {
+    // Default: hierarchy (PT cards matching reference image)
+    if (secHier) secHier.style.display = 'block';
+    if (btnHier) btnHier.className = 'btn-primary';
+    renderPTProjects();
   }
 }
 
@@ -1120,30 +1119,30 @@ function getPTProjectsFromUnitsData() {
 
   const groups = [
     {
-      id: 'PT-PLN-01',
-      pt: 'PT PLN (Persero)',
-      ptShort: 'PLN',
-      ptColor: '#2563eb',
-      ptBg: '#dbeafe',
-      project: 'PENGADAAN TRAFO DISTRIBUSI REGIONAL',
-      contract: 'SO/PLN/2026/007',
-      location: 'GI Jateng & Distribusi Jawa Bagian Barat',
-      startDate: '01/05/2026',
-      endDate: '30/08/2026',
-      units: units.filter(u => u.customer && u.customer.includes('PLN'))
-    },
-    {
       id: 'PT-PTM-01',
       pt: 'PT Pertamina Persero',
       ptShort: 'PTM',
       ptColor: '#16a34a',
       ptBg: '#dcfce7',
       project: 'TRAFO POWER REFINERY UNIT',
-      contract: 'SO/PTM/2026/001',
+      contract: 'SO/PTM/2024/001',
       location: 'Refinery Unit IV Cilacap, Jawa Tengah',
-      startDate: '10/05/2026',
-      endDate: '15/07/2026',
-      units: units.filter(u => u.customer && u.customer.includes('Pertamina'))
+      startDate: '01/05/2024',
+      endDate: '30/06/2024',
+      units: units.filter(u => u.customer && (u.customer.includes('Pertamina') || u.unitId.includes('PTM')))
+    },
+    {
+      id: 'PT-PLN-01',
+      pt: 'PT PLN (Persero)',
+      ptShort: 'PLN',
+      ptColor: '#2563eb',
+      ptBg: '#dbeafe',
+      project: 'PENGADAAN TRAFO DISTRIBUSI REGIONAL',
+      contract: 'SO/PLN/2024/007',
+      location: 'GI Jateng & Distribusi Jawa Bagian Barat',
+      startDate: '10/05/2024',
+      endDate: '25/07/2024',
+      units: units.filter(u => u.customer && (u.customer.includes('PLN') || u.unitId.includes('PLN')))
     },
     {
       id: 'PT-PKT-01',
@@ -1152,18 +1151,67 @@ function getPTProjectsFromUnitsData() {
       ptColor: '#d97706',
       ptBg: '#fef3c7',
       project: 'TRAFO POWER PABRIK AMONIAK',
-      contract: 'SO/PKT/2026/003',
+      contract: 'SO/PKT/2024/003',
       location: 'Pabrik Bontang, Kalimantan Timur',
-      startDate: '15/05/2026',
-      endDate: '20/08/2026',
+      startDate: '15/05/2024',
+      endDate: '15/08/2024',
       units: units.filter(u => u.customer && (u.customer.includes('Pupuk') || u.customer.includes('PKT')))
     }
   ];
 
+  // Dynamically group any other companies (e.g., PT INDOBARA)
+  const isDefaultCompany = (cust = '') => {
+    const c = cust.toUpperCase();
+    return c.includes('PERTAMINA') || c.includes('PTM') ||
+           c.includes('PLN') ||
+           c.includes('PUPUK') || c.includes('PKT');
+  };
+
+  const remainingUnits = units.filter(u => !isDefaultCompany(u.customer));
+  const dynamicMap = new Map();
+  remainingUnits.forEach(u => {
+    const cName = u.customer ? u.customer.trim() : 'Mitra Industri';
+    if (!dynamicMap.has(cName)) dynamicMap.set(cName, []);
+    dynamicMap.get(cName).push(u);
+  });
+
+  const palette = [
+    { color: '#0284c7', bg: '#e0f2fe' }, // Blue Sky
+    { color: '#7c3aed', bg: '#ede9fe' }, // Violet
+    { color: '#ea580c', bg: '#ffedd5' }, // Amber Orange
+    { color: '#059669', bg: '#d1fae5' }, // Emerald Green
+    { color: '#db2777', bg: '#fce7f3' }, // Rose Pink
+    { color: '#4f46e5', bg: '#e0e7ff' }  // Indigo
+  ];
+
+  let pIdx = 0;
+  dynamicMap.forEach((uList, cName) => {
+    const clean = cName.replace(/^(PT|CV|UD)\.?\s+/i, '').trim().toUpperCase();
+    const ptShort = clean.split(/\s+/)[0] || 'MITRA';
+    const slug = ptShort.replace(/[^A-Z0-9]/g, '') || 'PROYEK';
+    const theme = palette[pIdx % palette.length];
+    pIdx++;
+
+    const firstU = uList[0] || {};
+    groups.push({
+      id: `PT-${slug}-01`,
+      pt: cName,
+      ptShort: ptShort,
+      ptColor: theme.color,
+      ptBg: theme.bg,
+      project: `PENGADAAN TRAFO ${firstU.variant ? firstU.variant.toUpperCase() : 'DISTRIBUSI'}`,
+      contract: `SO/${slug}/${new Date().getFullYear()}/001`,
+      location: firstU.location || 'Site Pelanggan / Fabrikasi',
+      startDate: firstU.orderDate || '01/05/2026',
+      endDate: firstU.targetDate || '30/06/2026',
+      units: uList
+    });
+  });
+
   return groups;
 }
 
-// Render PT Projects View (In Monitoring Produksi & Project PT)
+// Render PT Projects View (In Monitoring Produksi & Project PT) - Exactly matching user reference image
 function renderPTProjects() {
   const containers = [
     document.getElementById('ptProjectsContainerInMonitoring'),
@@ -1186,115 +1234,128 @@ function renderPTProjects() {
 
       // Rows for each trafo unit (Using unified units data & openFullDetailModal in read-only mode)
       const unitRows = pt.units.map((u, idx) => {
-        const pctColor = u.progress === 100 ? '#10b981' : u.progress >= 50 ? '#f59e0b' : '#3b82f6';
-        let badgeClass = 'badge-assembly';
-        if (u.progress === 100) badgeClass = 'badge-selesai';
-        else if (u.progress === 0) badgeClass = 'badge-belum';
+        const barColor = u.progress === 100 ? '#10b981' : (u.progress >= 50 ? '#f59e0b' : (u.progress > 0 ? '#3b82f6' : '#cbd5e1'));
 
         return `
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="font-weight:700; color:#64748b; text-align:center; padding:10px 12px;">${idx + 1}</td>
-            <td style="font-weight:700; font-size:12px; padding:10px 12px;">
-              <span style="background:${pt.ptBg}; color:${pt.ptColor}; padding:4px 8px; border-radius:6px; border:1px solid ${pt.ptColor}44; display:inline-flex; align-items:center; gap:5px; font-weight:800;">
-                <i class="fa-solid fa-bolt" style="font-size:10px;"></i> ${u.unitId}
+          <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;">
+            <td style="font-weight:700; color:#64748b; text-align:center; padding:12px 16px;">${idx + 1}</td>
+            <td style="padding:12px 16px;">
+              <button class="so-unit-badge" onclick="event.stopPropagation(); openFullDetailModal('${u.unitId}')" title="Klik untuk membuka detail unit">
+                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px;"></i> ${u.unitId}
+              </button>
+            </td>
+            <td style="font-weight:800; color:#0f172a; font-size:12px; padding:12px 16px;">${u.capacity}</td>
+            <td style="padding:12px 16px;">
+              <span style="color:#334155; font-size:11.5px; display:inline-flex; align-items:center; gap:5px;">
+                <i class="fa-regular fa-calendar" style="color:#16a34a;"></i> ${u.orderDate || '01/05/2024'}
               </span>
             </td>
-            <td style="font-weight:700; color:#0f172a; padding:10px 12px;">${u.customer}</td>
-            <td style="font-weight:600; padding:10px 12px;">${u.capacity}</td>
-            <td style="color:#64748b; padding:10px 12px;">${u.voltage || '20 kV / 400 V'}</td>
-            <td style="padding:10px 12px;"><span class="badge-status ${badgeClass}">${u.status}</span></td>
-            <td style="padding:10px 12px;">
-              <div style="display:flex; align-items:center; gap:6px; min-width:110px;">
-                <div style="flex:1; background:#f1f5f9; border-radius:999px; height:6px; overflow:hidden;">
-                  <div style="height:100%; width:${u.progress}%; background:${pctColor}; border-radius:999px; transition:width 0.4s;"></div>
+            <td style="padding:12px 16px;">
+              <div style="display:flex; align-items:center; gap:8px; min-width:130px;">
+                <div style="flex:1; background:#f1f5f9; border-radius:999px; height:7px; overflow:hidden;">
+                  <div style="height:100%; width:${u.progress}%; background:${barColor}; border-radius:999px; transition:width 0.4s;"></div>
                 </div>
-                <span style="font-size:11px; font-weight:700; color:${pctColor}; min-width:32px;">${u.progress}%</span>
+                <span style="font-size:11.5px; font-weight:800; color:${barColor}; min-width:32px;">${u.progress}%</span>
               </div>
             </td>
-            <td style="font-size:11px; color:#64748b; padding:10px 12px;">${u.targetDate}</td>
-            <td style="font-size:11px; color:#0f172a; font-weight:600; padding:10px 12px;">${u.pic}</td>
-            <td style="text-align:center; white-space:nowrap; padding:10px 12px;">
-              <button class="btn-secondary" onclick="event.stopPropagation(); openFullDetailModal('${u.unitId}')" style="padding:4px 10px; font-size:11px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;" title="Lihat Detail Trafo (Mode Pantau: Electrical & Mechanical)">
-                <i class="fa-solid fa-eye"></i> Detail
-              </button>
+            <td style="color:#64748b; font-size:11.5px; padding:12px 16px;">${u.targetDate || '20/06/2024'}</td>
+            <td style="font-size:11.5px; color:#334155; font-weight:700; padding:12px 16px; text-transform:uppercase;">${u.pic || 'I WAYAN EVA VERDIANA'}</td>
+            <td style="text-align:center; white-space:nowrap; padding:12px 16px;">
+              <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                <button class="btn-detail-pill" onclick="event.stopPropagation(); openFullDetailModal('${u.unitId}')" title="Lihat Detail Trafo (Mode Pantau: Electrical & Mechanical)">
+                  <i class="fa-regular fa-eye"></i> Detail
+                </button>
+                <button class="btn-del-pill" onclick="event.stopPropagation(); deleteTrafoUnit('${pt.id}', '${u.unitId}')" title="Hapus Unit Trafo">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
 
       const card = document.createElement('div');
-      card.className = 'section-card';
-      card.style.marginBottom = '20px';
+      card.className = 'pt-project-card';
+      card.id = `ptCard_${pt.id}`;
+      card.setAttribute('data-customer', pt.pt);
+      card.style.marginBottom = '22px';
       card.innerHTML = `
-        <!-- PT Header Bar -->
-        <div style="background: linear-gradient(135deg, ${pt.ptColor} 0%, ${pt.ptColor}cc 100%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:16px;">
-            <div style="width:52px; height:52px; border-radius:12px; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900; color:#fff; letter-spacing:-1px; flex-shrink:0;">
+        <!-- PT Header Bar - Green matching reference image -->
+        <div style="background: ${pt.ptColor || '#16a34a'}; border-radius: 16px 16px 0 0; padding: 16px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <div style="background:#ffffff; color:${pt.ptColor || '#16a34a'}; font-weight:800; font-size:16px; padding:6px 14px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1); letter-spacing:0.5px;">
               ${pt.ptShort}
             </div>
-            <div>
-              <div style="font-size:18px; font-weight:800; color:#fff; letter-spacing:0.3px;">${pt.pt}</div>
-              <div style="font-size:11px; color:rgba(255,255,255,0.85); margin-top:2px;">
-                <i class="fa-regular fa-folder" style="margin-right:4px;"></i>${pt.project} &bull; <i class="fa-solid fa-location-dot" style="margin-left:4px; margin-right:3px;"></i>${pt.location}
-              </div>
+            <div style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:0.2px;">
+              ${pt.pt}
             </div>
           </div>
 
-          <div style="display:flex; gap:10px; flex-shrink:0; align-items:center; flex-wrap:wrap;">
-            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-              <div style="font-size:20px; font-weight:900; color:#fff;">${totalUnits}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Total Unit</div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div style="background:rgba(255,255,255,0.18); border-radius:10px; padding:6px 14px; text-align:center; min-width:62px;">
+              <div style="font-size:18px; font-weight:800; color:#ffffff; line-height:1.2;">${totalUnits}</div>
+              <div style="font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.85); text-transform:uppercase; letter-spacing:0.5px;">TOTAL UNIT</div>
             </div>
-            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-              <div style="font-size:20px; font-weight:900; color:#4ade80;">${selesai}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Selesai</div>
+            <div style="background:rgba(255,255,255,0.18); border-radius:10px; padding:6px 14px; text-align:center; min-width:62px;">
+              <div style="font-size:18px; font-weight:800; color:#86efac; line-height:1.2;">${selesai}</div>
+              <div style="font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.85); text-transform:uppercase; letter-spacing:0.5px;">SELESAI</div>
             </div>
-            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-              <div style="font-size:20px; font-weight:900; color:#fbbf24;">${proses}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">On Process</div>
+            <div style="background:rgba(255,255,255,0.18); border-radius:10px; padding:6px 14px; text-align:center; min-width:62px;">
+              <div style="font-size:18px; font-weight:800; color:#fde047; line-height:1.2;">${proses}</div>
+              <div style="font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.85); text-transform:uppercase; letter-spacing:0.5px;">ON PROCESS</div>
             </div>
-            <div style="background:rgba(255,255,255,0.15); border-radius:10px; padding:8px 14px; text-align:center; min-width:60px;">
-              <div style="font-size:20px; font-weight:900; color:rgba(255,255,255,0.7);">${belumMulai}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.5px;">Belum Mulai</div>
+            <div style="background:rgba(255,255,255,0.18); border-radius:10px; padding:6px 14px; text-align:center; min-width:62px;">
+              <div style="font-size:18px; font-weight:800; color:#ffffff; line-height:1.2;">${belumMulai}</div>
+              <div style="font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.85); text-transform:uppercase; letter-spacing:0.5px;">BELUM MULAI</div>
             </div>
-          </div>
-        </div>
 
-        <!-- Progress Overall Bar -->
-        <div style="background:${pt.ptBg}; padding:12px 22px; border-bottom:1px solid ${pt.ptColor}22; display:flex; align-items:center; gap:12px;">
-          <div style="font-size:11px; font-weight:700; color:${pt.ptColor}; min-width:80px;">PROGRESS TOTAL</div>
-          <div style="flex:1; background:#e2e8f0; border-radius:999px; height:10px; overflow:hidden;">
-            <div style="height:100%; width:${avgProgress}%; background:${pt.ptColor}; border-radius:999px; transition:width 0.6s;"></div>
-          </div>
-          <div style="font-size:15px; font-weight:800; color:${pt.ptColor}; min-width:40px;">${avgProgress}%</div>
-          <div style="font-size:10px; color:#64748b;">
-            <i class="fa-regular fa-calendar" style="margin-right:3px;"></i>${pt.startDate} — ${pt.endDate}
+            <button onclick="openAddTrafoModal('${pt.id}')" style="background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.45); color:#ffffff; font-size:11px; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;">
+              <i class="fa-solid fa-circle-plus"></i> Tambah Trafo
+            </button>
+            <button onclick="deletePTProject('${pt.id}')" style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.25); color:#fee2e2; font-size:11px; font-weight:700; padding:8px 14px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;">
+              <i class="fa-regular fa-trash-can"></i> Hapus Proyek PT
+            </button>
           </div>
         </div>
 
-        <!-- Trafo Units Table Header -->
-        <div style="background:#f8fafc; padding:8px 16px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:11px; font-weight:700; color:var(--text-muted);">
-            <i class="fa-solid fa-boxes-stacked" style="color:${pt.ptColor};"></i> DAFTAR UNIT TRAFO &bull; SINKRONISASI REALTIME
-          </span>
-          <span style="font-size:10px; color:#64748b; font-weight:600;">Mode Pantau (Hanya Bisa Melihat Saja)</span>
+        <!-- Progress Total Bar Strip -->
+        <div style="background:#eafaf1; padding:12px 24px; border-bottom:1px solid #d1fae5; display:flex; align-items:center; gap:16px;">
+          <div style="font-size:11px; font-weight:800; color:#15803d; letter-spacing:0.5px; min-width:110px;">PROGRESS TOTAL</div>
+          <div style="flex:1; background:#cbd5e1; border-radius:999px; height:8px; overflow:hidden;">
+            <div style="height:100%; width:${avgProgress}%; background:#16a34a; border-radius:999px; transition:width 0.6s;"></div>
+          </div>
+          <div style="font-size:15px; font-weight:900; color:#16a34a; min-width:40px;">${avgProgress}%</div>
+          <div style="font-size:11px; font-weight:600; color:#64748b; display:flex; align-items:center; gap:5px; margin-left:8px;">
+            <i class="fa-regular fa-calendar" style="color:#16a34a;"></i> ${pt.startDate} — ${pt.endDate}
+          </div>
         </div>
 
-        <!-- Trafo Units Table -->
+        <!-- Subheader: Daftar Unit Trafo + Tambah Trafo ke PTM Pill -->
+        <div style="background:#ffffff; padding:12px 24px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:0.5px;">
+            <i class="fa-solid fa-boxes-stacked" style="color:#16a34a; font-size:14px;"></i>
+            DAFTAR UNIT TRAFO (${totalUnits} UNIT)
+          </div>
+          <div>
+            <button onclick="openAddTrafoModal('${pt.id}')" style="background:#16a34a; color:#ffffff; border:none; padding:6px 16px; border-radius:9999px; font-size:11px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(22,163,74,0.25); transition:all 0.2s;">
+              <i class="fa-solid fa-plus"></i> Tambah Trafo ke ${pt.ptShort}
+            </button>
+          </div>
+        </div>
+
+        <!-- Trafo Units Table Matching Reference Screenshot -->
         <div style="padding:0; overflow-x:auto;">
-          <table style="width:100%; border-collapse:collapse; font-size:12px;">
+          <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
             <thead>
-              <tr style="background:#f8fafc; border-bottom:1px solid var(--border-color); color:#64748b; font-size:11px; text-transform:uppercase;">
-                <th style="padding:10px 12px; text-align:center; width:40px;">No</th>
-                <th style="padding:10px 12px; text-align:left;">No. Unit</th>
-                <th style="padding:10px 12px; text-align:left;">Pelanggan</th>
-                <th style="padding:10px 12px; text-align:left;">Kapasitas</th>
-                <th style="padding:10px 12px; text-align:left;">Tegangan</th>
-                <th style="padding:10px 12px; text-align:left;">Status</th>
-                <th style="padding:10px 12px; text-align:left;">Progress</th>
-                <th style="padding:10px 12px; text-align:left;">Target Selesai</th>
-                <th style="padding:10px 12px; text-align:left;">PIC / Officer</th>
-                <th style="padding:10px 12px; text-align:center; width:80px;">Aksi</th>
+              <tr style="border-bottom:1px solid #e2e8f0; color:#64748b; font-size:10.5px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase;">
+                <th style="padding:12px 16px; text-align:center; width:45px;">NO</th>
+                <th style="padding:12px 16px;">NO. SO</th>
+                <th style="padding:12px 16px;">VARIANT</th>
+                <th style="padding:12px 16px;">TANGGAL PESAN</th>
+                <th style="padding:12px 16px;">PROGRESS</th>
+                <th style="padding:12px 16px;">DEADLINE</th>
+                <th style="padding:12px 16px;">SALES OFFICER</th>
+                <th style="padding:12px 16px; text-align:center; width:120px;">AKSI</th>
               </tr>
             </thead>
             <tbody>
@@ -1427,21 +1488,76 @@ function handleAddTrafoSubmit(e) {
     const newUnit = {
       no: targetPT.units.length + 1,
       id: code,
+      unitId: code,
       nama: name || 'Trafo Power',
       cap: cap,
+      capacity: cap,
       volt: volt || '20 kV / 400 V',
+      voltage: volt || '20 kV / 400 V',
       status: status,
       orderDate: orderDateFormatted,
       badge: badge,
       progress: progress,
       stage: status,
       operator: operator,
+      pic: operator,
       dead: deadlineFormatted,
+      targetDate: deadlineFormatted,
       stageIdx: stageIdx
     };
     targetPT.units.push(newUnit);
     savePTProjects();
+
+    // Also persist to unified SYMTRAFLOW_UNITS_DATA with all 14 stages (7 Electrical + 7 Mechanical)
+    const allUnits = getUnitsData();
+    const existingIdx = allUnits.findIndex(u => u.unitId === code);
+    const newUnitUnified = {
+      unitId: code,
+      soNumber: code.replace('TRF-', 'SO-'),
+      customer: targetPT.pt,
+      variant: cap.includes('kVA') ? 'Distribusi' : 'Power',
+      capacity: cap,
+      voltage: volt || '20 kV / 400 V',
+      winding: 'CU - CU',
+      orderDate: orderDateFormatted,
+      targetDate: deadlineFormatted,
+      pic: operator,
+      location: targetPT.location || 'Workshop Fabrikasi',
+      notes: `Unit trafo ${code} untuk ${targetPT.pt}`,
+      lastUpdate: new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }),
+      progress: progress,
+      status: progress === 100 ? 'Selesai' : (progress === 0 ? 'Belum Mulai' : 'Dalam Proses'),
+      electricalStages: [
+        { name: 'LV (Low Voltage)', status: progress >= 20 ? 'Selesai' : (progress > 0 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'HV (High Voltage)', status: progress >= 35 ? 'Selesai' : (progress >= 20 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Susun Core', status: progress >= 50 ? 'Selesai' : (progress >= 35 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'CCA', status: progress >= 65 ? 'Selesai' : (progress >= 50 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Connect', status: progress >= 80 ? 'Selesai' : (progress >= 65 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Final', status: progress >= 95 ? 'Selesai' : (progress >= 80 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'QC', status: progress === 100 ? 'Selesai' : 'Belum Mulai', date: deadlineFormatted, pic: 'Shevira Indraswari', note: '-' }
+      ],
+      mechanicalStages: [
+        { name: 'Pemotongan & Bending Plat', status: progress >= 20 ? 'Selesai' : (progress > 0 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Pengelasan Tangki & Cover', status: progress >= 35 ? 'Selesai' : (progress >= 20 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Pemasangan Fin Radiator', status: progress >= 50 ? 'Selesai' : (progress >= 35 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Uji Tekan / Kebocoran (Leak Test)', status: progress >= 65 ? 'Selesai' : (progress >= 50 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Sandblasting & Shot Peening', status: progress >= 80 ? 'Selesai' : (progress >= 65 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Pengecatan Dasar & Finishing', status: progress >= 95 ? 'Selesai' : (progress >= 80 ? 'Proses' : 'Belum Mulai'), date: orderDateFormatted, pic: operator, note: '-' },
+        { name: 'Asesoris & Final Tangki', status: progress === 100 ? 'Selesai' : 'Belum Mulai', date: deadlineFormatted, pic: operator, note: '-' }
+      ],
+      activities: [
+        { time: new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }), icon: 'file', color: 'blue', title: 'Unit Dibuat', desc: `Unit ${code} ditambahkan ke sistem` }
+      ],
+      chatNotes: []
+    };
+    if (existingIdx >= 0) {
+      allUnits[existingIdx] = newUnitUnified;
+    } else {
+      allUnits.push(newUnitUnified);
+    }
+    saveUnitsData(allUnits);
     renderPTProjects();
+    renderDetailProduksiView();
   } else if (targetId === 'PRJ-240522-01') {
     projectTitle = 'PROYEK TRAFO 10 UNIT';
     const newUnit = {
@@ -1596,15 +1712,22 @@ function deletePTProject(ptId) {
 // Delete Trafo Unit from PT Project
 function deleteTrafoUnit(ptId, trafoId) {
   const pt = ptProjects.find(p => p.id === ptId);
-  if (!pt) return;
+  const targetPtName = pt ? pt.pt : 'proyek';
 
-  if (confirm(`Apakah Anda yakin ingin menghapus unit trafo ${trafoId} dari ${pt.pt}?`)) {
-    pt.units = pt.units.filter(u => u.id !== trafoId);
-    // Recalculate 'no' indexing
-    pt.units.forEach((u, i) => u.no = i + 1);
-    savePTProjects();
+  if (confirm(`Apakah Anda yakin ingin menghapus unit trafo ${trafoId} dari ${targetPtName}?`)) {
+    if (pt) {
+      pt.units = pt.units.filter(u => u.id !== trafoId && u.unitId !== trafoId);
+      pt.units.forEach((u, i) => u.no = i + 1);
+      savePTProjects();
+    }
+
+    // Also remove from unified units data
+    const allUnits = getUnitsData().filter(u => u.unitId !== trafoId);
+    saveUnitsData(allUnits);
+
     renderPTProjects();
-    showToast(`🗑️ Unit trafo ${trafoId} telah dihapus dari ${pt.ptShort}.`);
+    renderDetailProduksiView();
+    showToast(`🗑️ Unit trafo ${trafoId} berhasil dihapus.`);
   }
 }
 
@@ -2900,7 +3023,7 @@ function handleLogout() {
    ========================================================================== */
 
 // --- Global Data Stores for the ERP Modules ---
-let erpSalesOrders = [
+const defaultERPSalesOrders = [
   {
     no: 1,
     soNumber: '25-0563',
@@ -2944,14 +3067,56 @@ let erpSalesOrders = [
     qty: 2,
     orderDate: '10/05/2026',
     targetDate: '15/08/2026',
-    status: 'Belum Mulai',
+    status: 'Belum Proses',
     value: 'Rp 12,8 M',
     pic: 'Willi Syukran',
     units: [
-      { unitNo: 'TRF-005', kva: 250, stage: 'Belum Mulai', progress: 0, targetDate: '15/08/2026', status: 'Belum Mulai' }
+      { unitNo: 'TRF-005', kva: 250, stage: 'Belum Mulai', progress: 0, targetDate: '15/08/2026', status: 'Belum Proses' }
     ]
+  },
+  {
+    no: 4,
+    soNumber: '25-0810',
+    customer: 'PT INDOBARA',
+    variant: 'Distribusi',
+    kva: 500,
+    qty: 8,
+    orderDate: '12/10/2026',
+    targetDate: '20/12/2026',
+    status: 'Belum Proses',
+    value: 'Rp 18,2 M',
+    pic: 'I Wayan Eva Verdiana',
+    units: []
   }
 ];
+
+function getERPSalesOrders() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed.forEach(so => {
+          if (so.status === 'Belum Mulai') so.status = 'Belum Proses';
+        });
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error reading ERP Sales Orders:', e);
+  }
+  return JSON.parse(JSON.stringify(defaultERPSalesOrders));
+}
+
+function saveERPSalesOrders(data) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2', JSON.stringify(data));
+  } catch (e) {
+    console.error('Error saving ERP Sales Orders:', e);
+  }
+}
+
+let erpSalesOrders = getERPSalesOrders();
 
 let erpProduksiUnits = [
   {
@@ -3295,7 +3460,8 @@ function switchProduksiSubView(subview) {
   } else if (subview === 'jadwal' || subview === 'multi-project') {
     switchMainTab('multi-project');
   } else if (subview === 'riwayat') {
-    switchMainTab('riwayat');
+    switchMainTab('monitoring');
+    switchMonitoringSubTab('riwayat');
   } else if (subview === 'project-pt') {
     switchMainTab('monitoring');
     switchMonitoringSubTab('hierarchy');
@@ -3352,7 +3518,22 @@ function renderProyekTable(filteredList = null) {
   }
 
   data.forEach((so, idx) => {
-    const badgeClass = so.status === 'Dalam Proses' ? 'erp-badge-orange' : (so.status === 'Selesai' ? 'erp-badge-green' : 'erp-badge-gray');
+    let statusClass = 'status-belum';
+    if (so.status === 'Dalam Proses') statusClass = 'status-dalam';
+    else if (so.status === 'Proses Produksi') statusClass = 'status-produksi';
+
+    const statusSelectHtml = `
+      <select class="erp-status-select ${statusClass}" onchange="changeSOStatus('${so.soNumber}', this.value)" title="Klik untuk mengubah status SO">
+        <option value="Belum Proses" ${so.status === 'Belum Proses' ? 'selected' : ''}>Belum Proses</option>
+        <option value="Dalam Proses" ${so.status === 'Dalam Proses' ? 'selected' : ''}>Dalam Proses</option>
+        <option value="Proses Produksi" ${so.status === 'Proses Produksi' ? 'selected' : ''}>⚡ Proses Produksi</option>
+      </select>
+    `;
+
+    const actionBtnHtml = so.status === 'Proses Produksi'
+      ? `<button class="btn-erp-monitoring" onclick="goToMonitoringFromSO('${so.soNumber}')" title="Lihat alur di Monitoring Produksi"><i class="fa-solid fa-arrow-up-right-from-square"></i> Monitoring</button>`
+      : `<button class="btn-erp-send-prod" onclick="changeSOStatus('${so.soNumber}', 'Proses Produksi')" title="Klik untuk langsung memulai Proses Produksi dan masuk ke Monitoring Produksi"><i class="fa-solid fa-industry"></i> Produksi</button>`;
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="text-align: center; color: #64748b; font-weight: 700;">${idx + 1}</td>
@@ -3363,9 +3544,12 @@ function renderProyekTable(filteredList = null) {
       <td style="font-weight: 700; text-align: center;">${so.qty}</td>
       <td style="color: #64748b;">${so.orderDate}</td>
       <td style="color: #64748b;">${so.targetDate}</td>
-      <td><span class="erp-badge ${badgeClass}">${so.status}</span></td>
-      <td style="text-align: center;">
-        <button class="btn-erp-detail" onclick="openProyekDetail('${so.soNumber}')">Detail</button>
+      <td>${statusSelectHtml}</td>
+      <td style="text-align: center; white-space: nowrap;">
+        <div style="display:inline-flex; align-items:center; gap:6px;">
+          ${actionBtnHtml}
+          <button class="btn-erp-detail" onclick="openProyekDetail('${so.soNumber}')">Detail</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -3437,36 +3621,192 @@ function handleSaveNewSO(e) {
     units: []
   };
 
-  for (let i = 1; i <= qty; i++) {
-    const unitNo = `TRF-${String(erpProduksiUnits.length + i).padStart(3, '0')}`;
-    newSO.units.push({
-      unitNo,
-      kva,
-      stage: status === 'Belum Mulai' ? 'Belum Mulai' : 'Core Making',
-      progress: status === 'Belum Mulai' ? 0 : 15,
-      targetDate,
-      status
-    });
+  erpSalesOrders.unshift(newSO);
+  saveERPSalesOrders(erpSalesOrders);
 
-    erpProduksiUnits.push({
-      no: erpProduksiUnits.length + 1,
-      soNumber,
-      customer,
-      unitNo,
-      kva,
-      stage: status === 'Belum Mulai' ? 'Belum Mulai' : 'Core Making',
-      progress: status === 'Belum Mulai' ? 0 : 15,
-      targetDate,
-      status,
-      operator: 'Tim Perakitan ' + i
+  closeModal('modalAddSO');
+
+  if (status === 'Proses Produksi') {
+    processSOToProduction(newSO);
+    showToast(`🚀 Sales Order ${soNumber} (${customer} - ${qty} Unit) otomatis masuk ke Monitoring Produksi!`);
+    goToMonitoringFromSO(newSO.soNumber);
+  } else {
+    renderProyekTable();
+    showToast(`✅ Sales Order ${soNumber} berhasil ditambahkan (${status})!`);
+  }
+}
+
+// Function to change SO status & auto-forward to Monitoring Produksi if 'Proses Produksi'
+function changeSOStatus(soNumber, newStatus) {
+  const so = erpSalesOrders.find(item => item.soNumber === soNumber);
+  if (!so) return;
+
+  so.status = newStatus;
+  saveERPSalesOrders(erpSalesOrders);
+
+  if (newStatus === 'Proses Produksi') {
+    processSOToProduction(so);
+    showToast(`🚀 Sales Order ${so.soNumber} (${so.customer} - ${so.qty} Unit) otomatis masuk ke Monitoring Produksi!`);
+    goToMonitoringFromSO(so.soNumber);
+  } else {
+    renderProyekTable();
+    showToast(`Status Sales Order ${so.soNumber} diubah menjadi: ${newStatus}`);
+  }
+}
+
+// Automatically create units and dispatch into Monitoring Produksi (following production stages)
+function processSOToProduction(so) {
+  if (!so) return;
+  const allUnits = getUnitsData();
+  const existingUnits = allUnits.filter(u => u.soNumber === so.soNumber);
+
+  // If units haven't been completely generated for this SO
+  if (existingUnits.length < so.qty) {
+    const cleanName = so.customer.replace(/^(PT|CV|UD)\.?\s+/i, '').trim().toUpperCase();
+    const shortCode = cleanName.split(/\s+/)[0].slice(0, 4) || 'TRF';
+    const existingIds = new Set(allUnits.map(u => u.unitId));
+
+    if (!so.units) so.units = [];
+
+    const neededQty = so.qty - existingUnits.length;
+    const startIndex = existingUnits.length;
+
+    for (let i = 1; i <= neededQty; i++) {
+      const idx = startIndex + i;
+      let unitCode = `TRF-${shortCode}-${String(idx).padStart(3, '0')}`;
+      let c = idx;
+      while (existingIds.has(unitCode)) {
+        c++;
+        unitCode = `TRF-${shortCode}-${String(c).padStart(3, '0')}`;
+      }
+      existingIds.add(unitCode);
+
+      // Unit stage initialization: Unit 1 & 2 start in Stage 1 active, others in line queue
+      const isInitialActive = idx <= 2;
+      const elecStatus = isInitialActive ? 'Proses' : 'Belum Mulai';
+      const mechStatus = isInitialActive ? 'Proses' : 'Belum Mulai';
+      const initialProgress = isInitialActive ? (idx === 1 ? 15 : 10) : 0;
+
+      const newUnitUnified = {
+        unitId: unitCode,
+        soNumber: so.soNumber,
+        customer: so.customer,
+        variant: so.variant || 'Distribusi',
+        capacity: so.kva ? `${so.kva} kVA` : '500 kVA',
+        voltage: '20 kV / 400 V',
+        winding: 'CU - CU',
+        orderDate: so.orderDate,
+        targetDate: so.targetDate,
+        pic: so.pic || 'I WAYAN EVA VERDIANA',
+        location: 'Lini Fabrikasi & Perakitan Trafo',
+        notes: `Pesanan ${so.qty} Unit (${so.customer}) - Alur Fabrikasi Aktif`,
+        lastUpdate: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+        progress: initialProgress,
+        status: 'Dalam Proses',
+        currentStageName: isInitialActive ? 'LV (Low Voltage) / Pemotongan Plat' : 'Persiapan Lini Perakitan',
+        electricalStages: [
+          { name: 'LV (Low Voltage)', status: elecStatus, date: so.orderDate, pic: so.pic || 'Rizky', note: isInitialActive ? 'Winding kawat tembaga LV sedang digulung' : '-' },
+          { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+          { name: 'Susun Core', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+          { name: 'CCA', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' },
+          { name: 'Connect', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+          { name: 'Final', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
+          { name: 'QC', status: 'Belum Mulai', date: so.targetDate, pic: 'Shevira Indraswari', note: '-' }
+        ],
+        mechanicalStages: [
+          { name: 'Pemotongan & Bending Plat', status: mechStatus, date: so.orderDate, pic: 'Dedi Kurniawan', note: isInitialActive ? 'Bodi tangki sedang dipotong & di-bending' : '-' },
+          { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+          { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+          { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
+          { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
+          { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
+          { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: so.targetDate, pic: 'Budi Santoso', note: '-' }
+        ],
+        activities: [
+          {
+            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            icon: 'industry',
+            color: 'blue',
+            title: 'Masuk Monitoring Produksi',
+            desc: `Unit ${unitCode} terdaftar dalam pesanan ${so.customer} (${so.qty} Unit)`
+          }
+        ],
+        chatNotes: []
+      };
+
+      recomputeUnitProgress(newUnitUnified);
+      allUnits.push(newUnitUnified);
+
+      // Track in SO units
+      so.units.push({
+        unitNo: unitCode,
+        kva: so.kva,
+        stage: isInitialActive ? 'LV / Potong Plat' : 'Persiapan Lini',
+        progress: initialProgress,
+        targetDate: so.targetDate,
+        status: 'Dalam Proses'
+      });
+
+      // Also track in ERP Produksi units table
+      if (!erpProduksiUnits.some(u => u.unitNo === unitCode)) {
+        erpProduksiUnits.push({
+          no: erpProduksiUnits.length + 1,
+          soNumber: so.soNumber,
+          customer: so.customer,
+          unitNo: unitCode,
+          kva: so.kva,
+          stage: isInitialActive ? 'LV' : 'Belum Mulai',
+          progress: initialProgress,
+          targetDate: so.targetDate,
+          status: 'Dalam Proses',
+          operator: so.pic || 'Tim Fabrikasi'
+        });
+      }
+    }
+
+    saveUnitsData(allUnits);
+    saveERPSalesOrders(erpSalesOrders);
+  } else {
+    // If units already generated, ensure they're active
+    existingUnits.forEach(u => {
+      if (u.status === 'Belum Mulai') u.status = 'Dalam Proses';
+      recomputeUnitProgress(u);
     });
+    saveUnitsData(allUnits);
   }
 
-  erpSalesOrders.unshift(newSO);
-  renderProyekTable();
+  // Synchronize and re-render all dependent modules
+  renderPTProjects();
+  renderOrdersTable();
+  renderDetailProduksiView();
   renderProduksiTable();
-  closeModal('modalAddSO');
-  showToast(`✅ Sales Order ${soNumber} berhasil ditambahkan!`);
+  renderProyekTable();
+}
+
+// Navigate smoothly from SO into Monitoring Produksi view and highlight the company card
+function goToMonitoringFromSO(soNumber) {
+  const so = erpSalesOrders.find(item => item.soNumber === soNumber);
+  switchMainTab('monitoring');
+  switchMonitoringSubTab('hierarchy');
+
+  setTimeout(() => {
+    if (!so) return;
+    const clean = so.customer.replace(/^(PT|CV|UD)\.?\s+/i, '').trim().toUpperCase();
+    const ptShort = clean.split(/\s+/)[0];
+    const slug = ptShort.replace(/[^A-Z0-9]/g, '');
+
+    const targetCard = document.getElementById(`ptCard_PT-${slug}-01`) ||
+                       document.querySelector(`[data-customer*="${so.customer}"]`) ||
+                       document.querySelector(`[data-customer*="${ptShort}"]`);
+
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetCard.classList.remove('pt-highlight-active');
+      void targetCard.offsetWidth; // trigger reflow
+      targetCard.classList.add('pt-highlight-active');
+      setTimeout(() => targetCard.classList.remove('pt-highlight-active'), 5000);
+    }
+  }, 250);
 }
 
 function openProyekDetail(soNumber) {
@@ -3503,7 +3843,7 @@ function openProyekDetail(soNumber) {
                   <td>${u.stage}</td>
                   <td>${u.progress}%</td>
                   <td>${u.targetDate}</td>
-                  <td><span class="erp-badge ${u.status === 'Dalam Proses' ? 'erp-badge-orange' : 'erp-badge-gray'}">${u.status}</span></td>
+                  <td><span class="erp-badge ${u.status === 'Dalam Proses' ? 'erp-badge-orange' : (u.status === 'Proses Produksi' ? 'erp-badge-produksi' : 'erp-badge-gray')}">${u.status}</span></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -3511,6 +3851,12 @@ function openProyekDetail(soNumber) {
         </div>
       `;
     }
+
+    const badgeClass = so.status === 'Proses Produksi' ? 'erp-badge-produksi' : (so.status === 'Dalam Proses' ? 'erp-badge-orange' : 'erp-badge-gray');
+
+    const actionFooterHtml = so.status === 'Proses Produksi'
+      ? `<button type="button" class="btn-primary" onclick="goToMonitoringFromSO('${so.soNumber}'); closeModal('modalDetailSO');" style="background:#16a34a; border-color:#16a34a; font-size:12px; padding:8px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka di Monitoring Produksi</button>`
+      : `<button type="button" class="btn-primary" onclick="changeSOStatus('${so.soNumber}', 'Proses Produksi'); closeModal('modalDetailSO');" style="background:#16a34a; border-color:#16a34a; font-size:12px; padding:8px 16px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"><i class="fa-solid fa-industry"></i> Alihkan ke Proses Produksi & Masuk Monitoring</button>`;
 
     dtlBody.innerHTML = `
       <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; background:#f8fafc; padding:16px; border-radius:10px; border:1px solid #e2e8f0; font-size:12px;">
@@ -3522,10 +3868,13 @@ function openProyekDetail(soNumber) {
         <div><span style="color:#64748b;">Nilai Proyek:</span> <strong style="color:#d97706;">${so.value || 'Rp 10 M'}</strong></div>
         <div><span style="color:#64748b;">Tanggal Pesan:</span> <strong>${so.orderDate}</strong></div>
         <div><span style="color:#64748b;">Target Selesai:</span> <strong>${so.targetDate}</strong></div>
-        <div><span style="color:#64748b;">Status Proyek:</span> <span class="erp-badge erp-badge-orange">${so.status}</span></div>
+        <div><span style="color:#64748b;">Status Proyek:</span> <span class="erp-badge ${badgeClass}">${so.status}</span></div>
         <div><span style="color:#64748b;">PIC Officer:</span> <strong>${so.pic || 'I Wayan Eva Verdiana'}</strong></div>
       </div>
       ${unitsTableHtml}
+      <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+        ${actionFooterHtml}
+      </div>
     `;
   }
 
@@ -3535,207 +3884,292 @@ function openProyekDetail(soNumber) {
 // ================= UNIFIED UNITS DATA STORE (SINGLE SOURCE OF TRUTH) =================
 
 const defaultUnitsData = [
+  // PT Pertamina Persero Units (Matching Reference Screenshot)
   {
-    unitId: 'TRF-001',
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
+    unitId: 'TRF-PTM-001',
+    soNumber: 'SO-PTM-2024-001',
+    customer: 'PT Pertamina Persero',
     variant: 'Distribusi',
-    capacity: '500 KVA',
+    capacity: '500 kVA',
     voltage: '20 kV / 400 V',
     winding: 'CU - CU',
-    orderDate: '01/05/2026',
-    targetDate: '30/06/2026',
-    pic: 'Budi Santoso',
-    location: 'UP3 Jateng',
-    notes: 'Prioritas suplai gardu distribusi Jawa Tengah',
-    lastUpdate: '29 Sep 2026 10:30',
+    orderDate: '01/05/2024',
+    targetDate: '20/06/2024',
+    pic: 'I WAYAN EVA VERDIANA',
+    location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+    notes: 'Prioritas suplai RU IV Cilacap',
+    lastUpdate: '01 Mei 2024 14:00',
+    progress: 60,
+    status: 'Dalam Proses',
     electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-10', pic: 'Rizky', note: 'Winding LV tembaga selesai diuji', doc: 'Drawing-LV.pdf' },
-      { name: 'HV (High Voltage)', status: 'Proses', date: '2026-06-12', pic: 'Rizky', note: 'Dalam pengerjaan layer isolasi', doc: '' },
-      { name: 'Susun Core', status: 'Belum Mulai', date: '2026-06-15', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'CCA', status: 'Belum Mulai', date: '2026-06-18', pic: 'Budi Santoso', note: '-', doc: '' },
-      { name: 'Connect', status: 'Belum Mulai', date: '2026-06-24', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Final', status: 'Belum Mulai', date: '2026-06-28', pic: 'Rizky', note: '-', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2026-06-30', pic: 'Shevira Indraswari', note: '-', doc: '' }
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-10', pic: 'I WAYAN EVA VERDIANA', note: 'Winding LV tembaga selesai diuji', doc: 'Drawing-LV-PTM001.pdf' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-18', pic: 'I WAYAN EVA VERDIANA', note: 'Coil HV lulus isolasi tegangan', doc: '' },
+      { name: 'Susun Core', status: 'Selesai', date: '2024-05-25', pic: 'Andi Pratama', note: 'Penyusunan laminasi silikon baja CRGO', doc: '' },
+      { name: 'CCA', status: 'Selesai', date: '2024-06-01', pic: 'Budi Santoso', note: 'Core Coil Assembly selesai', doc: '' },
+      { name: 'Connect', status: 'Proses', date: '2024-06-08', pic: 'Wahyu Hidayat', note: 'Sedang terminasi lead & tap changer', doc: '' },
+      { name: 'Final', status: 'Belum Mulai', date: '2024-06-15', pic: 'Rizky', note: '-', doc: '' },
+      { name: 'QC', status: 'Belum Mulai', date: '2024-06-20', pic: 'Shevira Indraswari', note: '-', doc: '' }
     ],
     mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-06-08', pic: 'Dedi Kurniawan', note: 'Plat baja tebal 4mm sesuai dimensi GA', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Proses', date: '2026-06-11', pic: 'Dedi Kurniawan', note: 'Welding cover dan kupingan lifting lug', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2026-06-14', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2026-06-17', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2026-06-21', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-06-25', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-06-29', pic: 'Budi Santoso', note: '-', doc: '' }
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-08', pic: 'Dedi Kurniawan', note: 'Plat baja tebal 4mm sesuai dimensi GA', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-15', pic: 'Dedi Kurniawan', note: 'Welding cover dan kupingan lifting lug', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-22', pic: 'Wahyu Hidayat', note: 'Pemasangan panel fin radiator selesai', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2024-05-29', pic: 'Andi Pratama', note: 'Leak test 0.5 bar PASS', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-05', pic: 'Dedi Kurniawan', note: '-', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-12', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-18', pic: 'Budi Santoso', note: '-', doc: '' }
     ],
     activities: [
-      { time: '29 Sep 2026 10:30', icon: 'gear', color: 'blue', title: 'Proses HV & Las Tangki Berjalan', desc: 'Pengerjaan HV dan pengelasan cover berjalan bersamaan' },
-      { time: '29 Sep 2026 09:15', icon: 'check', color: 'green', title: 'LV & Potong Plat Selesai', desc: 'Proses LV dan bending plat telah rampung' }
+      { time: '08 Jun 2024 10:30', icon: 'gear', color: 'blue', title: 'Connect Dalam Proses', desc: 'Terminasi kabel dan lead assembly sedang berjalan' }
     ],
     chatNotes: [
-      { time: '29 Sep 2026 10:30', text: 'Proses HV dan tangki berjalan sesuai jadwal target.', author: 'Rizky' }
+      { time: '08 Jun 2024 10:30', text: 'Progres perakitan mencapai 60% sesuai target jadwal.', author: 'I WAYAN EVA VERDIANA' }
     ]
   },
   {
-    unitId: 'TRF-002',
-    soNumber: '25-0564',
-    customer: 'PT PLN Distribusi Jatim',
-    variant: 'Distribusi',
-    capacity: '1000 KVA',
+    unitId: 'TRF-PTM-002',
+    soNumber: 'SO-PTM-2024-002',
+    customer: 'PT Pertamina Persero',
+    variant: 'Power',
+    capacity: '1000 kVA',
     voltage: '20 kV / 400 V',
     winding: 'CU - CU',
-    orderDate: '05/05/2026',
-    targetDate: '10/07/2026',
-    pic: 'Rizky',
-    location: 'Surabaya, Jatim',
-    notes: 'Pesanan tier-2 low loss',
-    lastUpdate: '30 Sep 2026 14:00',
+    orderDate: '03/05/2024',
+    targetDate: '18/06/2024',
+    pic: 'SHEVIRA INDRASWARI',
+    location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+    notes: 'Power transformer medium voltage',
+    lastUpdate: '05 Jun 2024 16:00',
+    progress: 80,
+    status: 'Dalam Proses',
     electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-15', pic: 'Rizky', note: 'Coil LV selesai digulung', doc: '' },
-      { name: 'HV (High Voltage)', status: 'Selesai', date: '2026-06-18', pic: 'Rizky', note: 'Coil HV lulus isolasi tegangan', doc: '' },
-      { name: 'Susun Core', status: 'Proses', date: '2026-06-20', pic: 'Andi Pratama', note: 'Penyusunan laminasi silikon baja CRGO', doc: '' },
-      { name: 'CCA', status: 'Belum Mulai', date: '2026-06-25', pic: 'Budi Santoso', note: '-', doc: '' },
-      { name: 'Connect', status: 'Belum Mulai', date: '2026-06-28', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Final', status: 'Belum Mulai', date: '2026-07-02', pic: 'Rizky', note: '-', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2026-07-05', pic: 'Shevira Indraswari', note: '-', doc: '' }
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-12', pic: 'Rizky', note: 'LV OK', doc: '' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-18', pic: 'Rizky', note: 'HV OK', doc: '' },
+      { name: 'Susun Core', status: 'Selesai', date: '2024-05-24', pic: 'Andi Pratama', note: 'Core OK', doc: '' },
+      { name: 'CCA', status: 'Selesai', date: '2024-05-30', pic: 'Budi Santoso', note: 'CCA OK', doc: '' },
+      { name: 'Connect', status: 'Selesai', date: '2024-06-05', pic: 'Wahyu Hidayat', note: 'Wiring tap changer selesai', doc: '' },
+      { name: 'Final', status: 'Proses', date: '2024-06-11', pic: 'Rizky', note: 'Proses oven vacuum & tanking', doc: '' },
+      { name: 'QC', status: 'Belum Mulai', date: '2024-06-18', pic: 'SHEVIRA INDRASWARI', note: '-', doc: '' }
     ],
     mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-06-12', pic: 'Dedi Kurniawan', note: 'Plat tangki selesai potong', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2026-06-16', pic: 'Dedi Kurniawan', note: 'Welding bodi tangki selesai', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Proses', date: '2026-06-19', pic: 'Wahyu Hidayat', note: 'Pemasangan 6 panel fin radiator', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2026-06-23', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2026-06-27', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-07-01', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-07-06', pic: 'Budi Santoso', note: '-', doc: '' }
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-10', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-16', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-22', pic: 'Wahyu Hidayat', note: 'Selesai', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2024-05-28', pic: 'Andi Pratama', note: 'Selesai', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Selesai', date: '2024-06-03', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Selesai', date: '2024-06-08', pic: 'Wahyu Hidayat', note: 'Cat epoxy selesai', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-16', pic: 'Budi Santoso', note: '-', doc: '' }
     ],
     activities: [
-      { time: '30 Sep 2026 14:00', icon: 'gear', color: 'blue', title: 'Susun Core & Fin Radiator', desc: 'Perakitan inti & fin radiator tangki berlangsung' }
+      { time: '11 Jun 2024 14:00', icon: 'gear', color: 'blue', title: 'Final Assembly Berjalan (80%)', desc: 'Oven vacuum dan persiapan tangki utama' }
     ],
     chatNotes: []
   },
   {
-    unitId: 'TRF-003',
-    soNumber: '25-0565',
-    customer: 'PT PLN UID Jawa Barat',
+    unitId: 'TRF-PTM-003',
+    soNumber: 'SO-PTM-2024-003',
+    customer: 'PT Pertamina Persero',
     variant: 'Power',
-    capacity: '1500 KVA',
+    capacity: '1500 kVA',
     voltage: '20 kV / 6300 V',
     winding: 'CU - CU',
-    orderDate: '10/05/2026',
-    targetDate: '20/07/2026',
-    pic: 'Andi Pratama',
-    location: 'Bandung, Jabar',
-    notes: 'Spesifikasi gardu induk transmisi',
-    lastUpdate: '01 Okt 2026 09:00',
+    orderDate: '05/05/2024',
+    targetDate: '22/06/2024',
+    pic: 'WILLI SYUKRAN',
+    location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+    notes: 'Trafo step-up unit refinery',
+    lastUpdate: '28 Mei 2024 09:30',
+    progress: 40,
+    status: 'Dalam Proses',
     electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-06-10', pic: 'Rizky', note: 'LV OK', doc: '' },
-      { name: 'HV (High Voltage)', status: 'Selesai', date: '2026-06-15', pic: 'Rizky', note: 'HV OK', doc: '' },
-      { name: 'Susun Core', status: 'Selesai', date: '2026-06-20', pic: 'Andi Pratama', note: 'Core OK', doc: '' },
-      { name: 'CCA', status: 'Selesai', date: '2026-06-25', pic: 'Budi Santoso', note: 'Core Coil Assembly OK', doc: '' },
-      { name: 'Connect', status: 'Proses', date: '2026-06-29', pic: 'Wahyu Hidayat', note: 'Wiring tap changer & terminal lead', doc: '' },
-      { name: 'Final', status: 'Belum Mulai', date: '2026-07-05', pic: 'Rizky', note: '-', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2026-07-10', pic: 'Shevira Indraswari', note: '-', doc: '' }
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-15', pic: 'Rizky', note: 'LV OK', doc: '' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-22', pic: 'Rizky', note: 'HV OK', doc: '' },
+      { name: 'Susun Core', status: 'Proses', date: '2024-05-29', pic: 'Andi Pratama', note: 'Penyusunan laminasi inti besi', doc: '' },
+      { name: 'CCA', status: 'Belum Mulai', date: '2024-06-06', pic: 'Budi Santoso', note: '-', doc: '' },
+      { name: 'Connect', status: 'Belum Mulai', date: '2024-06-12', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Final', status: 'Belum Mulai', date: '2024-06-17', pic: 'Rizky', note: '-', doc: '' },
+      { name: 'QC', status: 'Belum Mulai', date: '2024-06-22', pic: 'Shevira Indraswari', note: '-', doc: '' }
     ],
     mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-06-08', pic: 'Dedi Kurniawan', note: 'Plat tangki selesai potong', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2026-06-14', pic: 'Dedi Kurniawan', note: 'Welding selesai', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2026-06-19', pic: 'Wahyu Hidayat', note: 'Fin terpasang rapi', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2026-06-24', pic: 'Andi Pratama', note: 'Leak test 0.5 bar PASS', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Proses', date: '2026-06-28', pic: 'Dedi Kurniawan', note: 'Pembersihan profil permukaan baja', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-07-03', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-07-08', pic: 'Budi Santoso', note: '-', doc: '' }
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-12', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-20', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-27', pic: 'Wahyu Hidayat', note: 'Selesai', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2024-06-04', pic: 'Andi Pratama', note: '-', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-10', pic: 'Dedi Kurniawan', note: '-', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-15', pic: 'Wahyu Hidayat', note: '-', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-20', pic: 'Budi Santoso', note: '-', doc: '' }
     ],
     activities: [
-      { time: '01 Okt 2026 09:00', icon: 'gear', color: 'blue', title: 'Connection & Sandblasting', desc: 'Wiring tap changer dan sandblasting tangki' }
+      { time: '29 Mei 2024 11:00', icon: 'gear', color: 'blue', title: 'Susun Core Sedang Dikerjakan', desc: 'Proses laminasi silikon CRGO berlangsung' }
     ],
     chatNotes: []
   },
   {
-    unitId: 'TRF-004',
-    soNumber: '25-0566',
+    unitId: 'TRF-PTM-004',
+    soNumber: 'SO-PTM-2024-004',
     customer: 'PT Pertamina Persero',
-    variant: 'Distribusi',
-    capacity: '250 KVA',
-    voltage: '20 kV / 400 V',
-    winding: 'CU - AL',
-    orderDate: '15/05/2026',
-    targetDate: '25/06/2026',
-    pic: 'Dedi Kurniawan',
-    location: 'RU IV Cilacap',
-    notes: 'Kilang Pertamina Cilacap - Siap kirim',
-    lastUpdate: '02 Okt 2026 11:30',
-    electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2026-05-25', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
-      { name: 'HV (High Voltage)', status: 'Selesai', date: '2026-05-28', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
-      { name: 'Susun Core', status: 'Selesai', date: '2026-06-02', pic: 'Andi Pratama', note: 'Selesai 100%', doc: '' },
-      { name: 'CCA', status: 'Selesai', date: '2026-06-06', pic: 'Budi Santoso', note: 'Selesai 100%', doc: '' },
-      { name: 'Connect', status: 'Selesai', date: '2026-06-10', pic: 'Wahyu Hidayat', note: 'Selesai 100%', doc: '' },
-      { name: 'Final', status: 'Selesai', date: '2026-06-15', pic: 'Rizky', note: 'Selesai tanking & oven vacuum', doc: '' },
-      { name: 'QC', status: 'Selesai', date: '2026-06-18', pic: 'Shevira Indraswari', note: 'Sertifikat QC terbit - PASS', doc: '' }
-    ],
-    mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2026-05-22', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2026-05-26', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2026-05-30', pic: 'Wahyu Hidayat', note: 'Selesai', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2026-06-04', pic: 'Andi Pratama', note: 'Selesai', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Selesai', date: '2026-06-08', pic: 'Dedi Kurniawan', note: 'Selesai', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Selesai', date: '2026-06-12', pic: 'Wahyu Hidayat', note: 'Selesai', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Selesai', date: '2026-06-16', pic: 'Budi Santoso', note: 'Selesai', doc: '' }
-    ],
-    activities: [
-      { time: '18 Jun 2026 15:30', icon: 'check', color: 'green', title: 'Semua Tahapan Selesai (100%)', desc: 'Unit TRF-004 lulus QC dan siap pengiriman' }
-    ],
-    chatNotes: []
-  },
-  {
-    unitId: 'TRF-005',
-    soNumber: '25-0567',
-    customer: 'PT Indofood CBP',
     variant: 'Power',
-    capacity: '2000 KVA',
+    capacity: '2000 kVA',
     voltage: '30 kV / 6300 V',
     winding: 'CU - CU',
-    orderDate: '20/05/2026',
-    targetDate: '15/08/2026',
-    pic: 'Wahyu Hidayat',
-    location: 'Semarang, Jateng',
-    notes: 'Industri consumer goods',
-    lastUpdate: '25 Sep 2026 08:00',
+    orderDate: '08/05/2024',
+    targetDate: '28/06/2024',
+    pic: 'CASSA VITA SARI',
+    location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+    notes: 'Menunggu antrian pemotongan plat',
+    lastUpdate: '08 Mei 2024 08:00',
+    progress: 0,
+    status: 'Belum Mulai',
     electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '2026-06-25', pic: 'Rizky', note: '-' },
-      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '2026-07-02', pic: 'Rizky', note: '-' },
-      { name: 'Susun Core', status: 'Belum Mulai', date: '2026-07-10', pic: 'Andi Pratama', note: '-' },
-      { name: 'CCA', status: 'Belum Mulai', date: '2026-07-18', pic: 'Budi Santoso', note: '-' },
-      { name: 'Connect', status: 'Belum Mulai', date: '2026-07-28', pic: 'Wahyu Hidayat', note: '-' },
-      { name: 'Final', status: 'Belum Mulai', date: '2026-08-05', pic: 'Rizky', note: '-' },
-      { name: 'QC', status: 'Belum Mulai', date: '2026-08-10', pic: 'Shevira Indraswari', note: '-' }
+      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '2024-06-01', pic: 'Rizky', note: '-' },
+      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '2024-06-08', pic: 'Rizky', note: '-' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '2024-06-14', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '2024-06-19', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '2024-06-23', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '2024-06-26', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '2024-06-28', pic: 'Shevira Indraswari', note: '-' }
     ],
     mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '2026-06-20', pic: 'Dedi Kurniawan', note: '-' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '2026-06-30', pic: 'Dedi Kurniawan', note: '-' },
-      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2026-07-08', pic: 'Wahyu Hidayat', note: '-' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2026-07-16', pic: 'Andi Pratama', note: '-' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2026-07-25', pic: 'Dedi Kurniawan', note: '-' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2026-08-02', pic: 'Wahyu Hidayat', note: '-' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2026-08-08', pic: 'Budi Santoso', note: '-' }
+      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '2024-05-28', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '2024-06-05', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2024-06-12', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2024-06-18', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-22', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-25', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-28', pic: 'Budi Santoso', note: '-' }
     ],
     activities: [
-      { time: '20 Mei 2026 10:00', icon: 'file', color: 'blue', title: 'Order Diterbitkan', desc: 'Antrian produksi disiapkan' }
+      { time: '08 Mei 2024 08:00', icon: 'file', color: 'blue', title: 'SO Terdaftar', desc: 'Order masuk antrian produksi fabrikasi' }
     ],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-PTM-005',
+    soNumber: 'SO-PTM-2024-005',
+    customer: 'PT Pertamina Persero',
+    variant: 'Power',
+    capacity: '2500 kVA',
+    voltage: '30 kV / 11000 V',
+    winding: 'CU - CU',
+    orderDate: '10/05/2024',
+    targetDate: '15/06/2024',
+    pic: 'KRESNA BUDI PRASETYA',
+    location: 'Refinery Unit IV Cilacap, Jawa Tengah',
+    notes: 'Unit selesai 100% dan lulus verifikasi QC',
+    lastUpdate: '15 Jun 2024 15:30',
+    progress: 100,
+    status: 'Selesai',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-18', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-24', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
+      { name: 'Susun Core', status: 'Selesai', date: '2024-05-30', pic: 'Andi Pratama', note: 'Selesai 100%', doc: '' },
+      { name: 'CCA', status: 'Selesai', date: '2024-06-03', pic: 'Budi Santoso', note: 'Selesai 100%', doc: '' },
+      { name: 'Connect', status: 'Selesai', date: '2024-06-07', pic: 'Wahyu Hidayat', note: 'Selesai 100%', doc: '' },
+      { name: 'Final', status: 'Selesai', date: '2024-06-11', pic: 'Rizky', note: 'Selesai 100%', doc: '' },
+      { name: 'QC', status: 'Selesai', date: '2024-06-15', pic: 'Shevira Indraswari', note: 'Sertifikat QC terbit - PASS', doc: '' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-15', pic: 'Dedi Kurniawan', note: 'Selesai 100%', doc: '' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-21', pic: 'Dedi Kurniawan', note: 'Selesai 100%', doc: '' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-27', pic: 'Wahyu Hidayat', note: 'Selesai 100%', doc: '' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2024-06-01', pic: 'Andi Pratama', note: 'Selesai 100%', doc: '' },
+      { name: 'Sandblasting & Shot Peening', status: 'Selesai', date: '2024-06-06', pic: 'Dedi Kurniawan', note: 'Selesai 100%', doc: '' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Selesai', date: '2024-06-10', pic: 'Wahyu Hidayat', note: 'Selesai 100%', doc: '' },
+      { name: 'Asesoris & Final Tangki', status: 'Selesai', date: '2024-06-14', pic: 'Budi Santoso', note: 'Selesai 100%', doc: '' }
+    ],
+    activities: [
+      { time: '15 Jun 2024 15:30', icon: 'check', color: 'green', title: 'Unit Selesai Fabrikasi (100%)', desc: 'Lulus uji QC dan siap dikirim ke Refinery Unit IV' }
+    ],
+    chatNotes: []
+  },
+  // Additional PLN & PKT Units
+  {
+    unitId: 'TRF-PLN-001',
+    soNumber: 'SO-PLN-2024-001',
+    customer: 'PT PLN (Persero)',
+    variant: 'Distribusi',
+    capacity: '100 kVA',
+    voltage: '20 kV / 400 V',
+    winding: 'CU - CU',
+    orderDate: '10/05/2024',
+    targetDate: '02/06/2024',
+    pic: 'ELNIRA AINUNNISA',
+    location: 'GI Kembangan, Jakarta Barat',
+    notes: 'Gardu distribusi perkotaan',
+    lastUpdate: '02 Jun 2024 10:00',
+    progress: 100,
+    status: 'Selesai',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-15', pic: 'Rizky', note: 'OK' },
+      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-18', pic: 'Rizky', note: 'OK' },
+      { name: 'Susun Core', status: 'Selesai', date: '2024-05-22', pic: 'Andi Pratama', note: 'OK' },
+      { name: 'CCA', status: 'Selesai', date: '2024-05-25', pic: 'Budi Santoso', note: 'OK' },
+      { name: 'Connect', status: 'Selesai', date: '2024-05-28', pic: 'Wahyu Hidayat', note: 'OK' },
+      { name: 'Final', status: 'Selesai', date: '2024-05-31', pic: 'Rizky', note: 'OK' },
+      { name: 'QC', status: 'Selesai', date: '2024-06-02', pic: 'Shevira Indraswari', note: 'Lulus' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-14', pic: 'Dedi Kurniawan', note: 'OK' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-17', pic: 'Dedi Kurniawan', note: 'OK' },
+      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-20', pic: 'Wahyu Hidayat', note: 'OK' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2024-05-24', pic: 'Andi Pratama', note: 'OK' },
+      { name: 'Sandblasting & Shot Peening', status: 'Selesai', date: '2024-05-27', pic: 'Dedi Kurniawan', note: 'OK' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Selesai', date: '2024-05-29', pic: 'Wahyu Hidayat', note: 'OK' },
+      { name: 'Asesoris & Final Tangki', status: 'Selesai', date: '2024-06-01', pic: 'Budi Santoso', note: 'OK' }
+    ],
+    activities: [],
+    chatNotes: []
+  },
+  {
+    unitId: 'TRF-PKT-001',
+    soNumber: 'SO-PKT-2024-001',
+    customer: 'PT Pupuk Kaltim',
+    variant: 'Power',
+    capacity: '3000 kVA',
+    voltage: '30 kV / 6300 V',
+    winding: 'CU - CU',
+    orderDate: '15/05/2024',
+    targetDate: '20/07/2024',
+    pic: 'JHODY AIDO SAUT HUTAGALUNG',
+    location: 'Pabrik Bontang, Kalimantan Timur',
+    notes: 'Trafo pabrik amoniak 30kV',
+    lastUpdate: '25 Mei 2024 11:00',
+    progress: 25,
+    status: 'Dalam Proses',
+    electricalStages: [
+      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-22', pic: 'Rizky', note: 'LV OK' },
+      { name: 'HV (High Voltage)', status: 'Proses', date: '2024-05-28', pic: 'Rizky', note: 'Coil HV' },
+      { name: 'Susun Core', status: 'Belum Mulai', date: '2024-06-05', pic: 'Andi Pratama', note: '-' },
+      { name: 'CCA', status: 'Belum Mulai', date: '2024-06-12', pic: 'Budi Santoso', note: '-' },
+      { name: 'Connect', status: 'Belum Mulai', date: '2024-06-20', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Final', status: 'Belum Mulai', date: '2024-06-28', pic: 'Rizky', note: '-' },
+      { name: 'QC', status: 'Belum Mulai', date: '2024-07-05', pic: 'Shevira Indraswari', note: '-' }
+    ],
+    mechanicalStages: [
+      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-20', pic: 'Dedi Kurniawan', note: 'Selesai' },
+      { name: 'Pengelasan Tangki & Cover', status: 'Proses', date: '2024-05-27', pic: 'Dedi Kurniawan', note: 'Las tangki' },
+      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2024-06-04', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2024-06-11', pic: 'Andi Pratama', note: '-' },
+      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-18', pic: 'Dedi Kurniawan', note: '-' },
+      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-25', pic: 'Wahyu Hidayat', note: '-' },
+      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-07-02', pic: 'Budi Santoso', note: '-' }
+    ],
+    activities: [],
     chatNotes: []
   }
 ];
 
-let activeDPUnitId = 'TRF-001';
-let activeMonitoringUnitId = 'TRF-001';
+let activeDPUnitId = 'TRF-PTM-001';
+let activeMonitoringUnitId = 'TRF-PTM-001';
 let activeEditingCategory = 'electrical';
 let activeEditingStageIndex = 0;
 
 function getUnitsData() {
   try {
-    const raw = localStorage.getItem('SYMTRAFLOW_UNITS_DATA');
+    const raw = localStorage.getItem('SYMTRAFLOW_UNITS_DATA_V7');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(u => u.unitId === 'TRF-PTM-001')) {
         parsed.forEach(u => recomputeUnitProgress(u));
         return parsed;
       }
@@ -3745,11 +4179,16 @@ function getUnitsData() {
   }
   const cloned = JSON.parse(JSON.stringify(defaultUnitsData));
   cloned.forEach(u => recomputeUnitProgress(u));
+  try {
+    localStorage.setItem('SYMTRAFLOW_UNITS_DATA_V7', JSON.stringify(cloned));
+    localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(cloned));
+  } catch(e){}
   return cloned;
 }
 
 function saveUnitsData(data) {
   try {
+    localStorage.setItem('SYMTRAFLOW_UNITS_DATA_V7', JSON.stringify(data));
     localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(data));
   } catch (err) {
     console.error('Error saving units data to storage:', err);

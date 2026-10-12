@@ -2982,12 +2982,55 @@ body {
   border: 1px solid #bfdbfe;
 }
 
+.erp-badge-produksi {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.erp-status-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.erp-status-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.erp-status-select.status-belum {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.erp-status-select.status-dalam {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.erp-status-select.status-produksi {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #86efac;
+  font-weight: 800;
+}
+
 .btn-erp-detail {
   background: #ffffff;
   color: #2563eb;
   border: 1px solid #bfdbfe;
   border-radius: 6px;
-  padding: 4px 14px;
+  padding: 4px 12px;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -2998,6 +3041,59 @@ body {
   background: #eff6ff;
   border-color: #2563eb;
   color: #1d4ed8;
+}
+
+.btn-erp-send-prod {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-erp-send-prod:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(22, 163, 74, 0.3);
+}
+
+.btn-erp-monitoring {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-erp-monitoring:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+@keyframes ptHighlightGlow {
+  0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(22, 163, 74, 0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+.pt-highlight-active {
+  animation: ptHighlightGlow 1.6s ease-in-out 3;
+  border: 2px solid #16a34a !important;
 }
 
 /* Table Progress Bar */
@@ -4455,6 +4551,86 @@ body {
   .dp-main-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ================= MONITORING PRODUKSI PT PROJECT CARD (PIXEL-PERFECT MATCH) ================= */
+.pt-project-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  margin-bottom: 24px;
+  transition: all 0.25s ease;
+}
+
+.pt-project-card:hover {
+  box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.08), 0 4px 8px -4px rgba(0, 0, 0, 0.04);
+}
+
+.so-unit-badge {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.so-unit-badge:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.15);
+}
+
+.btn-detail-pill {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.btn-detail-pill:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.btn-del-pill {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-del-pill:hover {
+  background: #fecaca;
+  color: #dc2626;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2);
 }
 
 
