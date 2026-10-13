@@ -4633,5 +4633,26 @@ body {
   box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2);
 }
 
+/* Modal Tambah SO Unit Detail Table */
+.so-unit-table th {
+  letter-spacing: 0.01em;
+  font-size: 12px;
+}
+
+.so-unit-table td {
+  vertical-align: middle;
+}
+
+.btn-add-so-unit:hover {
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
+  color: #1d4ed8 !important;
+}
+
+.btn-trash-so-unit:hover {
+  color: #ef4444 !important;
+  background-color: #fee2e2 !important;
+}
+
 
 

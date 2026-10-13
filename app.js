@@ -1098,9 +1098,8 @@ function switchMonitoringSubTab(tab) {
   if (tab === 'riwayat') {
     if (secRiw) secRiw.style.display = 'block';
     if (btnRiw) btnRiw.className = 'btn-primary';
-    if (typeof renderRiwayatTable === 'function') renderRiwayatTable();
-    if (typeof renderRiwayatArsipTable === 'function') renderRiwayatArsipTable();
     if (typeof renderCompletedPTProjectsHistory === 'function') renderCompletedPTProjectsHistory();
+    if (typeof updateRiwayatKPICounters === 'function') updateRiwayatKPICounters();
   } else if (tab === 'table') {
     if (secTable) secTable.style.display = 'block';
     if (btnTable) btnTable.className = 'btn-primary';
@@ -1480,6 +1479,7 @@ function renderCompletedPTProjectsHistory(completedGroupsParam = null) {
     document.getElementById('monCompletedPTCount')
   ].filter(Boolean);
   countEls.forEach(el => el.innerText = `${completed.length} Proyek`);
+  if (typeof updateRiwayatKPICounters === 'function') updateRiwayatKPICounters();
 
   containers.forEach(container => {
     container.innerHTML = '';
@@ -3379,7 +3379,6 @@ const defaultERPSalesOrders = [
     orderDate: '01/05/2026',
     targetDate: '30/06/2026',
     status: 'Dalam Proses',
-    value: 'Rp 14,5 M',
     pic: 'I Wayan Eva Verdiana',
     units: [
       { unitNo: 'TRF-001', kva: 500, stage: 'HV', progress: 60, targetDate: '20/06/2026', status: 'Dalam Proses' },
@@ -3396,7 +3395,6 @@ const defaultERPSalesOrders = [
     orderDate: '03/05/2026',
     targetDate: '25/07/2026',
     status: 'Dalam Proses',
-    value: 'Rp 21,3 M',
     pic: 'Shevira Indraswari',
     units: [
       { unitNo: 'TRF-003', kva: 1000, stage: 'CCA', progress: 30, targetDate: '10/07/2026', status: 'Dalam Proses' },
@@ -3413,7 +3411,6 @@ const defaultERPSalesOrders = [
     orderDate: '10/05/2026',
     targetDate: '15/08/2026',
     status: 'Belum Proses',
-    value: 'Rp 12,8 M',
     pic: 'Willi Syukran',
     units: [
       { unitNo: 'TRF-005', kva: 250, stage: 'Belum Mulai', progress: 0, targetDate: '15/08/2026', status: 'Belum Proses' }
@@ -3429,7 +3426,6 @@ const defaultERPSalesOrders = [
     orderDate: '12/10/2026',
     targetDate: '20/12/2026',
     status: 'Belum Proses',
-    value: 'Rp 18,2 M',
     pic: 'I Wayan Eva Verdiana',
     units: []
   }
@@ -3724,7 +3720,7 @@ function switchMainTab(tabName) {
     'multi-project': 'Linimasa jadwal multi-proyek transformator',
     'jadwal': 'Linimasa jadwal multi-proyek transformator',
     'project-pt': 'Hierarki dan pemantauan pengerjaan proyek trafo per perusahaan',
-    'riwayat': 'Rekapitulasi log perubahan tahapan, riwayat pengujian QC, dan arsip unit selesai',
+    'riwayat': 'Rekapitulasi arsip proyek perusahaan (PT) transformator yang telah selesai 100% fabrikasi',
     'document-control': 'Kelola dan akses dokumen proyek, gambar teknik, sertifikat, dan dokumen terkait.',
     'proyek': 'Daftar seluruh pesanan sales order dan status pengerjaan',
     'pengiriman': 'Pelacakan ekspedisi dan status pengiriman trafo ke pelanggan',
@@ -3931,6 +3927,113 @@ function filterProyekTable() {
   renderProyekTable(filtered);
 }
 
+// State for Detail Unit Trafo in Modal Tambah SO
+let currentSOUnitRows = [
+  { kva: '500', qty: 1 },
+  { kva: '1.000', qty: 1 },
+  { kva: '1.600', qty: 1 },
+  { kva: '2.500', qty: 1 }
+];
+
+function renderSOUnitRows() {
+  const tbody = document.getElementById('soUnitTableBody');
+  const countEl = document.getElementById('soDetailQtyCount');
+  const soNumberInput = document.getElementById('inpSONumber');
+  const baseSoNumber = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0079';
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  currentSOUnitRows.forEach((row, idx) => {
+    const unitNo = `${baseSoNumber}-${String(idx + 1).padStart(2, '0')}`;
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+    tr.innerHTML = `
+      <td style="text-align: center; font-weight: 600; color: #1d4ed8; padding: 8px 12px;">${idx + 1}</td>
+      <td style="padding: 8px 12px;">
+        <input type="text" class="form-input so-row-sonumber" value="${unitNo}" readonly style="background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+      </td>
+      <td style="padding: 8px 12px;">
+        <input type="text" class="form-input so-row-kva" value="${row.kva}" placeholder="500" required oninput="updateSOUnitRowKva(${idx}, this.value)" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+      </td>
+      <td style="padding: 8px 12px;">
+        <input type="number" min="1" class="form-input so-row-qty" value="${row.qty || 1}" required oninput="updateSOUnitRowQty(${idx}, this.value)" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+      </td>
+      <td style="text-align: center; padding: 8px 12px;">
+        <button type="button" class="btn-trash-so-unit" onclick="removeSOUnitRow(${idx})" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 6px 8px; font-size: 14px; border-radius: 4px; transition: all 0.15s;" title="Hapus Unit">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const totalQty = currentSOUnitRows.reduce((sum, r) => sum + (parseInt(r.qty) || 1), 0);
+  if (countEl) countEl.innerText = totalQty;
+  const qtyInput = document.getElementById('inpSOQty');
+  if (qtyInput && parseInt(qtyInput.value) !== totalQty) {
+    qtyInput.value = totalQty;
+  }
+}
+
+function handleSONumberChange(val) {
+  const baseSoNumber = val.trim() || '26-0079';
+  const tbody = document.getElementById('soUnitTableBody');
+  if (!tbody) return;
+  const rows = tbody.querySelectorAll('.so-row-sonumber');
+  rows.forEach((input, idx) => {
+    input.value = `${baseSoNumber}-${String(idx + 1).padStart(2, '0')}`;
+  });
+}
+
+function handleSOQtyChange(val) {
+  const targetCount = parseInt(val) || 1;
+  if (targetCount <= 0) return;
+
+  if (targetCount > currentSOUnitRows.length) {
+    const diff = targetCount - currentSOUnitRows.length;
+    for (let i = 0; i < diff; i++) {
+      const lastKva = currentSOUnitRows.length > 0 ? currentSOUnitRows[currentSOUnitRows.length - 1].kva : '500';
+      currentSOUnitRows.push({ kva: lastKva, qty: 1 });
+    }
+  } else if (targetCount < currentSOUnitRows.length) {
+    currentSOUnitRows = currentSOUnitRows.slice(0, targetCount);
+  }
+  renderSOUnitRows();
+}
+
+function addSOUnitRow() {
+  const lastKva = currentSOUnitRows.length > 0 ? currentSOUnitRows[currentSOUnitRows.length - 1].kva : '500';
+  currentSOUnitRows.push({ kva: lastKva, qty: 1 });
+  renderSOUnitRows();
+}
+
+function removeSOUnitRow(idx) {
+  if (currentSOUnitRows.length <= 1) {
+    showToast('⚠️ Minimal harus memiliki 1 unit trafo dalam Sales Order.');
+    return;
+  }
+  currentSOUnitRows.splice(idx, 1);
+  renderSOUnitRows();
+}
+
+function updateSOUnitRowKva(idx, val) {
+  if (currentSOUnitRows[idx]) {
+    currentSOUnitRows[idx].kva = val;
+  }
+}
+
+function updateSOUnitRowQty(idx, val) {
+  if (currentSOUnitRows[idx]) {
+    currentSOUnitRows[idx].qty = parseInt(val) || 1;
+    const totalQty = currentSOUnitRows.reduce((sum, r) => sum + (parseInt(r.qty) || 1), 0);
+    const countEl = document.getElementById('soDetailQtyCount');
+    if (countEl) countEl.innerText = totalQty;
+    const qtyInput = document.getElementById('inpSOQty');
+    if (qtyInput) qtyInput.value = totalQty;
+  }
+}
+
 function openAddSOModal() {
   const modal = document.getElementById('modalAddSO');
   if (modal) {
@@ -3940,6 +4043,28 @@ function openAddSOModal() {
     const inpTarget = document.getElementById('inpSOTargetDate');
     if (inpOrder) inpOrder.value = today;
     if (inpTarget) inpTarget.value = today;
+
+    // Set initial values matching reference screenshot
+    const inpNumber = document.getElementById('inpSONumber');
+    const inpCust = document.getElementById('inpSOCustomer');
+    const inpVariant = document.getElementById('inpSOVariant');
+    const inpQty = document.getElementById('inpSOQty');
+    const inpStatus = document.getElementById('inpSOStatus');
+
+    if (inpNumber && !inpNumber.value) inpNumber.value = '26-0079';
+    if (inpCust && !inpCust.value) inpCust.value = 'PT ABC';
+    if (inpVariant) inpVariant.value = 'Daya (Power)';
+    if (inpQty) inpQty.value = 4;
+    if (inpStatus) inpStatus.value = 'Dalam Proses';
+
+    currentSOUnitRows = [
+      { kva: '500', qty: 1 },
+      { kva: '1.000', qty: 1 },
+      { kva: '1.600', qty: 1 },
+      { kva: '2.500', qty: 1 }
+    ];
+
+    renderSOUnitRows();
   }
 }
 
@@ -3948,26 +4073,42 @@ function handleSaveNewSO(e) {
   const soNumber = document.getElementById('inpSONumber').value.trim();
   const customer = document.getElementById('inpSOCustomer').value.trim();
   const variant = document.getElementById('inpSOVariant').value;
-  const kva = parseInt(document.getElementById('inpSOKVA').value) || 500;
-  const qty = parseInt(document.getElementById('inpSOQty').value) || 1;
-  const value = document.getElementById('inpSOValue').value.trim() || 'Rp 10 M';
+  const qty = currentSOUnitRows.reduce((sum, r) => sum + (parseInt(r.qty) || 1), 0);
   const orderDate = document.getElementById('inpSOOrderDate').value.split('-').reverse().join('/');
   const targetDate = document.getElementById('inpSOTargetDate').value.split('-').reverse().join('/');
   const status = document.getElementById('inpSOStatus').value;
+
+  // Build units list from table rows
+  const units = currentSOUnitRows.map((r, i) => {
+    const unitNo = `${soNumber}-${String(i + 1).padStart(2, '0')}`;
+    const kvaNum = parseInt(String(r.kva).replace(/[^0-9]/g, '')) || 500;
+    return {
+      unitNo: unitNo,
+      kva: kvaNum,
+      stage: status === 'Proses Produksi' ? 'LV' : 'Belum Mulai',
+      progress: status === 'Proses Produksi' ? (i === 0 ? 15 : (i === 1 ? 10 : 0)) : 0,
+      targetDate: targetDate,
+      status: status
+    };
+  });
+
+  // Calculate representative KVA display
+  const kvaList = currentSOUnitRows.map(r => r.kva);
+  const uniqueKva = [...new Set(kvaList)];
+  const kvaDisplay = uniqueKva.length === 1 ? uniqueKva[0] : `${uniqueKva[0]} - ${uniqueKva[uniqueKva.length - 1]}`;
 
   const newSO = {
     no: erpSalesOrders.length + 1,
     soNumber,
     customer,
     variant,
-    kva,
+    kva: kvaDisplay,
     qty,
     orderDate,
     targetDate,
     status,
-    value,
     pic: 'Administrator Produksi',
-    units: []
+    units: units
   };
 
   erpSalesOrders.unshift(newSO);
@@ -4068,11 +4209,12 @@ function processSOToProduction(so) {
 
     for (let i = 1; i <= neededQty; i++) {
       const idx = startIndex + i;
-      let unitCode = `TRF-${shortCode}-${String(idx).padStart(3, '0')}`;
+      const definedUnit = (so.units && so.units[idx - 1]) ? so.units[idx - 1] : null;
+      let unitCode = (definedUnit && definedUnit.unitNo) ? definedUnit.unitNo : `TRF-${shortCode}-${String(idx).padStart(3, '0')}`;
       let c = idx;
       while (existingIds.has(unitCode)) {
         c++;
-        unitCode = `TRF-${shortCode}-${String(c).padStart(3, '0')}`;
+        unitCode = (definedUnit && definedUnit.unitNo) ? `${definedUnit.unitNo}-${c}` : `TRF-${shortCode}-${String(c).padStart(3, '0')}`;
       }
       existingIds.add(unitCode);
 
@@ -4081,13 +4223,14 @@ function processSOToProduction(so) {
       const elecStatus = isInitialActive ? 'Proses' : 'Belum Mulai';
       const mechStatus = isInitialActive ? 'Proses' : 'Belum Mulai';
       const initialProgress = isInitialActive ? (idx === 1 ? 15 : 10) : 0;
+      const unitCapacity = (definedUnit && definedUnit.kva) ? `${definedUnit.kva} kVA` : (so.kva ? `${so.kva} kVA` : '500 kVA');
 
       const newUnitUnified = {
         unitId: unitCode,
         soNumber: so.soNumber,
         customer: so.customer,
         variant: so.variant || 'Distribusi',
-        capacity: so.kva ? `${so.kva} kVA` : '500 kVA',
+        capacity: unitCapacity,
         voltage: '20 kV / 400 V',
         winding: 'CU - CU',
         orderDate: so.orderDate,
@@ -4133,14 +4276,20 @@ function processSOToProduction(so) {
       allUnits.push(newUnitUnified);
 
       // Track in SO units
-      so.units.push({
-        unitNo: unitCode,
-        kva: so.kva,
-        stage: isInitialActive ? 'LV / Potong Plat' : 'Persiapan Lini',
-        progress: initialProgress,
-        targetDate: so.targetDate,
-        status: 'Dalam Proses'
-      });
+      if (!definedUnit) {
+        so.units.push({
+          unitNo: unitCode,
+          kva: so.kva,
+          stage: isInitialActive ? 'LV / Potong Plat' : 'Persiapan Lini',
+          progress: initialProgress,
+          targetDate: so.targetDate,
+          status: 'Dalam Proses'
+        });
+      } else {
+        definedUnit.stage = isInitialActive ? 'LV / Potong Plat' : 'Persiapan Lini';
+        definedUnit.progress = initialProgress;
+        definedUnit.status = 'Dalam Proses';
+      }
 
       // Also track in ERP Produksi units table
       if (!erpProduksiUnits.some(u => u.unitNo === unitCode)) {
@@ -4149,7 +4298,7 @@ function processSOToProduction(so) {
           soNumber: so.soNumber,
           customer: so.customer,
           unitNo: unitCode,
-          kva: so.kva,
+          kva: (definedUnit && definedUnit.kva) ? definedUnit.kva : so.kva,
           stage: isInitialActive ? 'LV' : 'Belum Mulai',
           progress: initialProgress,
           targetDate: so.targetDate,
@@ -4260,7 +4409,6 @@ function openProyekDetail(soNumber) {
         <div><span style="color:#64748b;">Varian Trafo:</span> <strong>${so.variant}</strong></div>
         <div><span style="color:#64748b;">Kapasitas:</span> <strong>${so.kva} kVA</strong></div>
         <div><span style="color:#64748b;">Total Kuantitas:</span> <strong>${so.qty} Unit</strong></div>
-        <div><span style="color:#64748b;">Nilai Proyek:</span> <strong style="color:#d97706;">${so.value || 'Rp 10 M'}</strong></div>
         <div><span style="color:#64748b;">Tanggal Pesan:</span> <strong>${so.orderDate}</strong></div>
         <div><span style="color:#64748b;">Target Selesai:</span> <strong>${so.targetDate}</strong></div>
         <div><span style="color:#64748b;">Status Proyek:</span> <span class="erp-badge ${badgeClass}">${so.status}</span></div>
@@ -6497,162 +6645,143 @@ function addProductionHistoryLog(log) {
   saveProductionHistoryLogs(logs);
 }
 
-// Render dedicated Riwayat Produksi View
+// Render dedicated Riwayat Produksi View (Hanya Arsip Proyek PT Fabrikasi)
 function renderRiwayatProduksiView() {
-  renderRiwayatTable();
-  renderRiwayatArsipTable();
   if (typeof renderCompletedPTProjectsHistory === 'function') {
     renderCompletedPTProjectsHistory();
   }
-
-  // Update KPI counters
-  const logs = getProductionHistoryLogs();
-  const units = getUnitsData();
-  const selesaiCount = units.filter(u => u.progress === 100 || u.status === 'Selesai').length;
-
-  const elTotal = document.getElementById('kpiRiwayatTotalLogs');
-  const elSelesai = document.getElementById('kpiRiwayatSelesai');
-  if (elTotal) elTotal.innerText = logs.length;
-  if (elSelesai) elSelesai.innerText = selesaiCount;
+  updateRiwayatKPICounters();
 }
 
-// Render Riwayat Audit Trail Table
+// Update KPI Counters for Riwayat Produksi
+function updateRiwayatKPICounters() {
+  const completed = getPTProjectsFromUnitsData().filter(pt => {
+    const totalUnits = pt.units.length;
+    const selesai = pt.units.filter(isUnitDone).length;
+    return totalUnits > 0 && selesai === totalUnits;
+  });
+
+  const totalUnitsSelesai = completed.reduce((acc, pt) => acc + pt.units.length, 0);
+
+  // Update PT count in all relevant elements
+  document.querySelectorAll('.kpi-riwayat-pt-count').forEach(el => {
+    el.innerText = completed.length;
+  });
+  const elMonPT = document.getElementById('monKpiRiwayatTotalPT');
+  const elViewPT = document.getElementById('kpiRiwayatTotalProjects');
+  if (elMonPT) elMonPT.innerText = completed.length;
+  if (elViewPT) elViewPT.innerText = completed.length;
+
+  // Update completed unit count in all relevant elements
+  document.querySelectorAll('.kpi-riwayat-unit-count').forEach(el => {
+    el.innerText = totalUnitsSelesai;
+  });
+  const elMonUnit = document.getElementById('monKpiRiwayatSelesai');
+  const elViewUnit = document.getElementById('kpiRiwayatSelesai');
+  if (elMonUnit) elMonUnit.innerText = totalUnitsSelesai;
+  if (elViewUnit) elViewUnit.innerText = totalUnitsSelesai;
+}
+
+// Filter Archived PT Projects in Riwayat Produksi
+function filterArchivedPTProjects(scope = 'all') {
+  let query = '';
+  if (scope === 'mon') {
+    query = (document.getElementById('monSearchArchivedPT')?.value || '').toLowerCase().trim();
+  } else if (scope === 'view') {
+    query = (document.getElementById('viewSearchArchivedPT')?.value || '').toLowerCase().trim();
+  } else {
+    query = (document.getElementById('monSearchArchivedPT')?.value || document.getElementById('viewSearchArchivedPT')?.value || '').toLowerCase().trim();
+  }
+
+  const allCompleted = getPTProjectsFromUnitsData().filter(pt => {
+    const totalUnits = pt.units.length;
+    const selesai = pt.units.filter(isUnitDone).length;
+    return totalUnits > 0 && selesai === totalUnits;
+  });
+
+  if (!query) {
+    renderCompletedPTProjectsHistory(allCompleted);
+    return;
+  }
+
+  const filtered = allCompleted.filter(pt => {
+    const matchPT = (pt.pt && pt.pt.toLowerCase().includes(query)) ||
+                    (pt.ptShort && pt.ptShort.toLowerCase().includes(query)) ||
+                    (pt.project && pt.project.toLowerCase().includes(query)) ||
+                    (pt.contract && pt.contract.toLowerCase().includes(query));
+    const matchUnits = pt.units && pt.units.some(u =>
+      (u.unitId && u.unitId.toLowerCase().includes(query)) ||
+      (u.capacity && u.capacity.toLowerCase().includes(query)) ||
+      (u.soNumber && u.soNumber.toLowerCase().includes(query)) ||
+      (u.pic && u.pic.toLowerCase().includes(query))
+    );
+    return matchPT || matchUnits;
+  });
+
+  renderCompletedPTProjectsHistory(filtered);
+}
+
+// Render Riwayat Audit Trail Table (Stub for backward compatibility)
 function renderRiwayatTable(filteredLogs = null) {
   const tbody = document.getElementById('riwayatTableBody');
   if (!tbody) return;
-
-  const logs = filteredLogs || getProductionHistoryLogs();
   tbody.innerHTML = '';
-
-  if (logs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Belum ada catatan riwayat perubahan.</td></tr>`;
-    return;
-  }
-
-  logs.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #f1f5f9';
-
-    let catBadge = item.category === 'Electrical'
-      ? `<span class="dp-badge" style="background:#eff6ff; color:#2563eb;"><i class="fa-solid fa-bolt"></i> Electrical</span>`
-      : `<span class="dp-badge" style="background:#fef3c7; color:#d97706;"><i class="fa-solid fa-wrench"></i> Mechanical</span>`;
-
-    let statusBadge = item.status === 'Selesai'
-      ? `<span class="dp-badge selesai"><i class="fa-solid fa-check"></i> Selesai</span>`
-      : (item.status === 'Proses'
-        ? `<span class="dp-badge proses"><i class="fa-solid fa-circle" style="font-size:7px;"></i> Proses</span>`
-        : `<span class="dp-badge belum">Belum Mulai</span>`);
-
-    tr.innerHTML = `
-      <td style="color:#64748b; font-size:11px; white-space:nowrap; padding:10px 12px;">
-        <i class="fa-regular fa-clock" style="margin-right:4px;"></i> ${item.timestamp}
-      </td>
-      <td style="font-weight:800; color:#2563eb; padding:10px 12px;">${item.unitId}</td>
-      <td style="font-weight:600; color:#475569; padding:10px 12px;">${item.soNumber}</td>
-      <td style="font-weight:700; color:#0f172a; padding:10px 12px;">${item.customer}</td>
-      <td style="padding:10px 12px;">${catBadge}</td>
-      <td style="font-weight:600; color:#1e293b; padding:10px 12px;">${item.stageName}</td>
-      <td style="padding:10px 12px;">${statusBadge}</td>
-      <td style="font-weight:600; color:#334155; padding:10px 12px;">${item.pic}</td>
-      <td style="color:#64748b; font-size:12px; padding:10px 12px;">${item.note || '-'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
 }
 
-// Render Arsip Unit Selesai Table
+// Render Arsip Unit Selesai Table (Stub for backward compatibility)
 function renderRiwayatArsipTable() {
   const tbody = document.getElementById('riwayatArsipTableBody');
   if (!tbody) return;
-
-  const units = getUnitsData();
-  const completed = units.filter(u => u.progress === 100 || u.status === 'Selesai');
   tbody.innerHTML = '';
-
-  if (completed.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Belum ada unit trafo yang berstatus selesai 100%. Update semua tahapan di Detail Produksi untuk mengarsipkan unit.</td></tr>`;
-    return;
-  }
-
-  completed.forEach(u => {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #f1f5f9';
-    tr.innerHTML = `
-      <td style="font-weight:800; color:#10b981; padding:10px 12px;">
-        <span style="background:#ecfdf5; color:#059669; padding:4px 8px; border-radius:6px; border:1px solid #a7f3d0; font-weight:800;">
-          <i class="fa-solid fa-circle-check"></i> ${u.unitId}
-        </span>
-      </td>
-      <td style="font-weight:700; color:#334155; padding:10px 12px;">${u.soNumber}</td>
-      <td style="font-weight:700; color:#0f172a; padding:10px 12px;">${u.customer}</td>
-      <td style="color:#475569; padding:10px 12px;">${u.capacity} • ${u.voltage || '20 kV / 400 V'}</td>
-      <td style="color:#64748b; font-size:11px; padding:10px 12px;">${u.orderDate}</td>
-      <td style="color:#10b981; font-weight:700; font-size:11px; padding:10px 12px;">${u.targetDate}</td>
-      <td style="padding:10px 12px;">
-        <span class="dp-badge selesai"><i class="fa-solid fa-certificate"></i> PASS QC / SPLN</span>
-      </td>
-      <td style="font-weight:600; color:#334155; padding:10px 12px;">${u.pic}</td>
-      <td style="text-align:center; padding:10px 12px;">
-        <button class="btn-secondary" onclick="openFullDetailModal('${u.unitId}')" style="padding:4px 10px; font-size:11px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-          <i class="fa-solid fa-eye"></i> Detail
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
 }
 
-// Filter Riwayat Logs by Search input
+// Filter Riwayat Logs by Search input (Stub for backward compatibility)
 function filterRiwayatLogs() {
-  const query = (document.getElementById('riwayatSearchInput')?.value || '').toLowerCase().trim();
-  const logs = getProductionHistoryLogs();
-  if (!query) {
-    renderRiwayatTable(logs);
-    return;
-  }
-  const filtered = logs.filter(l =>
-    (l.unitId && l.unitId.toLowerCase().includes(query)) ||
-    (l.soNumber && l.soNumber.toLowerCase().includes(query)) ||
-    (l.customer && l.customer.toLowerCase().includes(query)) ||
-    (l.pic && l.pic.toLowerCase().includes(query)) ||
-    (l.stageName && l.stageName.toLowerCase().includes(query)) ||
-    (l.note && l.note.toLowerCase().includes(query))
-  );
-  renderRiwayatTable(filtered);
+  // Audit trail log section has been removed; query routed to filterArchivedPTProjects if applicable
+  filterArchivedPTProjects();
 }
 
-// Export Riwayat Produksi (CSV / PDF)
+// Export Riwayat Produksi (CSV / PDF) - Exports Archived PT Projects
 function exportRiwayatProduksi(type) {
   if (type === 'pdf') {
     window.print();
     return;
   }
 
-  const logs = getProductionHistoryLogs();
-  const csvRows = [
-    ['Waktu', 'No Unit', 'No SO', 'Pelanggan', 'Kategori', 'Tahapan', 'Status', 'PIC', 'Catatan']
-  ];
-  logs.forEach(l => {
-    csvRows.push([
-      `"${l.timestamp}"`,
-      `"${l.unitId}"`,
-      `"${l.soNumber}"`,
-      `"${l.customer}"`,
-      `"${l.category}"`,
-      `"${l.stageName}"`,
-      `"${l.status}"`,
-      `"${l.pic}"`,
-      `"${(l.note || '').replace(/"/g, '""')}"`
-    ]);
+  const completed = getPTProjectsFromUnitsData().filter(pt => {
+    const totalUnits = pt.units.length;
+    const selesai = pt.units.filter(isUnitDone).length;
+    return totalUnits > 0 && selesai === totalUnits;
   });
+
+  const csvRows = [
+    ['Perusahaan PT', 'Proyek', 'No Kontrak', 'No Unit', 'Kapasitas', 'Tgl Pesan', 'Target Selesai', 'PIC / Operator', 'Status']
+  ];
+
+  completed.forEach(pt => {
+    pt.units.forEach(u => {
+      csvRows.push([
+        `"${(pt.pt || '').replace(/"/g, '""')}"`,
+        `"${(pt.project || '').replace(/"/g, '""')}"`,
+        `"${(pt.contract || '').replace(/"/g, '""')}"`,
+        `"${(u.unitId || '').replace(/"/g, '""')}"`,
+        `"${(u.capacity || '').replace(/"/g, '""')}"`,
+        `"${u.orderDate || ''}"`,
+        `"${u.targetDate || ''}"`,
+        `"${(u.pic || '').replace(/"/g, '""')}"`,
+        `"100% Selesai"`
+      ]);
+    });
+  });
+
   const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.map(e => e.join(',')).join('\n');
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `Riwayat_Produksi_Symtraflow_${new Date().toISOString().slice(0, 10)}.csv`);
+  link.setAttribute('download', `Arsip_Proyek_PT_Symtraflow_${new Date().toISOString().slice(0, 10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToast('📊 Berhasil mengekspor Riwayat Produksi ke CSV!');
+  showToast('📊 Berhasil mengekspor Arsip Proyek PT ke CSV!');
 }
 
