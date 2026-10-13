@@ -3894,6 +3894,9 @@ function renderProyekTable(filteredList = null) {
         <div style="display:inline-flex; align-items:center; gap:6px;">
           ${actionBtnHtml}
           <button class="btn-erp-detail" onclick="openProyekDetail('${so.soNumber}')">Detail</button>
+          <button class="btn-del-pill" onclick="deleteSalesOrder('${so.soNumber}')" title="Hapus Sales Order ${so.soNumber} dan unitnya di Monitoring Produksi" style="padding: 5px 9px; font-size: 11px;">
+            <i class="fa-regular fa-trash-can"></i> Hapus
+          </button>
         </div>
       </td>
     `;
@@ -3927,12 +3930,23 @@ function filterProyekTable() {
   renderProyekTable(filtered);
 }
 
-// State for Detail Unit Trafo in Modal Tambah SO
+// Helper: Generate alphabetical unit suffix (0 -> A, 1 -> B, 2 -> C, ..., 26 -> AA)
+function getUnitSuffix(idx) {
+  let s = '';
+  let n = idx;
+  while (n >= 0) {
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+// State for Detail Unit Trafo in Modal Tambah SO (Using A, B, C, D suffixes)
 let currentSOUnitRows = [
-  { kva: '500', qty: 1 },
-  { kva: '1.000', qty: 1 },
-  { kva: '1.600', qty: 1 },
-  { kva: '2.500', qty: 1 }
+  { unitNo: '26-0079A', kva: '500', qty: 1 },
+  { unitNo: '26-0079B', kva: '1.000', qty: 1 },
+  { unitNo: '26-0079C', kva: '1.600', qty: 1 },
+  { unitNo: '26-0079D', kva: '2.500', qty: 1 }
 ];
 
 function renderSOUnitRows() {
@@ -3945,13 +3959,14 @@ function renderSOUnitRows() {
   tbody.innerHTML = '';
 
   currentSOUnitRows.forEach((row, idx) => {
-    const unitNo = `${baseSoNumber}-${String(idx + 1).padStart(2, '0')}`;
+    const unitNo = row.unitNo || `${baseSoNumber}${getUnitSuffix(idx)}`;
+    row.unitNo = unitNo;
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #f1f5f9';
     tr.innerHTML = `
       <td style="text-align: center; font-weight: 600; color: #1d4ed8; padding: 8px 12px;">${idx + 1}</td>
       <td style="padding: 8px 12px;">
-        <input type="text" class="form-input so-row-sonumber" value="${unitNo}" readonly style="background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+        <input type="text" class="form-input so-row-sonumber" value="${unitNo}" oninput="updateSOUnitRowNumber(${idx}, this.value)" style="background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
       </td>
       <td style="padding: 8px 12px;">
         <input type="text" class="form-input so-row-kva" value="${row.kva}" placeholder="500" required oninput="updateSOUnitRowKva(${idx}, this.value)" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
@@ -3976,25 +3991,42 @@ function renderSOUnitRows() {
   }
 }
 
+function updateSOUnitRowNumber(idx, val) {
+  if (currentSOUnitRows[idx]) {
+    currentSOUnitRows[idx].unitNo = val;
+  }
+}
+
 function handleSONumberChange(val) {
   const baseSoNumber = val.trim() || '26-0079';
   const tbody = document.getElementById('soUnitTableBody');
   if (!tbody) return;
   const rows = tbody.querySelectorAll('.so-row-sonumber');
   rows.forEach((input, idx) => {
-    input.value = `${baseSoNumber}-${String(idx + 1).padStart(2, '0')}`;
+    const newUnitNo = `${baseSoNumber}${getUnitSuffix(idx)}`;
+    input.value = newUnitNo;
+    if (currentSOUnitRows[idx]) {
+      currentSOUnitRows[idx].unitNo = newUnitNo;
+    }
   });
 }
 
 function handleSOQtyChange(val) {
   const targetCount = parseInt(val) || 1;
   if (targetCount <= 0) return;
+  const soNumberInput = document.getElementById('inpSONumber');
+  const baseSoNumber = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0079';
 
   if (targetCount > currentSOUnitRows.length) {
     const diff = targetCount - currentSOUnitRows.length;
     for (let i = 0; i < diff; i++) {
+      const idx = currentSOUnitRows.length;
       const lastKva = currentSOUnitRows.length > 0 ? currentSOUnitRows[currentSOUnitRows.length - 1].kva : '500';
-      currentSOUnitRows.push({ kva: lastKva, qty: 1 });
+      currentSOUnitRows.push({
+        unitNo: `${baseSoNumber}${getUnitSuffix(idx)}`,
+        kva: lastKva,
+        qty: 1
+      });
     }
   } else if (targetCount < currentSOUnitRows.length) {
     currentSOUnitRows = currentSOUnitRows.slice(0, targetCount);
@@ -4004,7 +4036,14 @@ function handleSOQtyChange(val) {
 
 function addSOUnitRow() {
   const lastKva = currentSOUnitRows.length > 0 ? currentSOUnitRows[currentSOUnitRows.length - 1].kva : '500';
-  currentSOUnitRows.push({ kva: lastKva, qty: 1 });
+  const soNumberInput = document.getElementById('inpSONumber');
+  const baseSoNumber = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0079';
+  const newIdx = currentSOUnitRows.length;
+  currentSOUnitRows.push({
+    unitNo: `${baseSoNumber}${getUnitSuffix(newIdx)}`,
+    kva: lastKva,
+    qty: 1
+  });
   renderSOUnitRows();
 }
 
@@ -4014,6 +4053,11 @@ function removeSOUnitRow(idx) {
     return;
   }
   currentSOUnitRows.splice(idx, 1);
+  const soNumberInput = document.getElementById('inpSONumber');
+  const baseSoNumber = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0079';
+  currentSOUnitRows.forEach((r, i) => {
+    r.unitNo = `${baseSoNumber}${getUnitSuffix(i)}`;
+  });
   renderSOUnitRows();
 }
 
@@ -4044,7 +4088,7 @@ function openAddSOModal() {
     if (inpOrder) inpOrder.value = today;
     if (inpTarget) inpTarget.value = today;
 
-    // Set initial values matching reference screenshot
+    // Set initial values matching reference screenshot with A, B, C, D unit codes
     const inpNumber = document.getElementById('inpSONumber');
     const inpCust = document.getElementById('inpSOCustomer');
     const inpVariant = document.getElementById('inpSOVariant');
@@ -4058,10 +4102,10 @@ function openAddSOModal() {
     if (inpStatus) inpStatus.value = 'Dalam Proses';
 
     currentSOUnitRows = [
-      { kva: '500', qty: 1 },
-      { kva: '1.000', qty: 1 },
-      { kva: '1.600', qty: 1 },
-      { kva: '2.500', qty: 1 }
+      { unitNo: '26-0079A', kva: '500', qty: 1 },
+      { unitNo: '26-0079B', kva: '1.000', qty: 1 },
+      { unitNo: '26-0079C', kva: '1.600', qty: 1 },
+      { unitNo: '26-0079D', kva: '2.500', qty: 1 }
     ];
 
     renderSOUnitRows();
@@ -4078,9 +4122,9 @@ function handleSaveNewSO(e) {
   const targetDate = document.getElementById('inpSOTargetDate').value.split('-').reverse().join('/');
   const status = document.getElementById('inpSOStatus').value;
 
-  // Build units list from table rows
+  // Build units list from table rows using letter suffixes (A, B, C, D...)
   const units = currentSOUnitRows.map((r, i) => {
-    const unitNo = `${soNumber}-${String(i + 1).padStart(2, '0')}`;
+    const unitNo = r.unitNo || `${soNumber}${getUnitSuffix(i)}`;
     const kvaNum = parseInt(String(r.kva).replace(/[^0-9]/g, '')) || 500;
     return {
       unitNo: unitNo,
@@ -4188,6 +4232,61 @@ function changeSOStatus(soNumber, newStatus) {
     renderProyekTable();
     showToast(`Status Sales Order ${so.soNumber} diubah menjadi: ${newStatus}`);
   }
+}
+
+// Function to delete Sales Order and automatically remove all related units from Monitoring Produksi
+function deleteSalesOrder(soNumber) {
+  const so = erpSalesOrders.find(item => item.soNumber === soNumber);
+  const customerName = so ? so.customer : '';
+  const confirmMsg = `Apakah Anda yakin ingin menghapus Sales Order ${soNumber} (${customerName})?\n\nPerhatian: Seluruh unit trafo terkait di Monitoring Produksi juga akan otomatis dihapus secara permanen.`;
+
+  if (!confirm(confirmMsg)) return;
+
+  // 1. Collect all unit IDs to delete
+  const definedUnitNos = (so && so.units && Array.isArray(so.units)) ? so.units.map(u => u.unitNo) : [];
+
+  // 2. Remove from erpSalesOrders
+  erpSalesOrders = erpSalesOrders.filter(item => item.soNumber !== soNumber);
+  saveERPSalesOrders(erpSalesOrders);
+
+  // 3. Remove from Unified Units Data (Monitoring Produksi)
+  let allUnits = getUnitsData();
+  const unitsCountBefore = allUnits.length;
+  allUnits = allUnits.filter(u => {
+    if (u.soNumber === soNumber) return false;
+    if (definedUnitNos.includes(u.unitId)) return false;
+    if (u.unitId && (u.unitId.startsWith(soNumber) || u.unitId.includes(soNumber))) return false;
+    return true;
+  });
+  saveUnitsData(allUnits);
+
+  // 4. Remove from erpProduksiUnits
+  if (typeof erpProduksiUnits !== 'undefined' && Array.isArray(erpProduksiUnits)) {
+    erpProduksiUnits = erpProduksiUnits.filter(u => u.soNumber !== soNumber && !definedUnitNos.includes(u.unitNo));
+  }
+
+  // 5. Remove from ptProjects if applicable
+  if (typeof ptProjects !== 'undefined' && Array.isArray(ptProjects)) {
+    ptProjects.forEach(pt => {
+      if (pt.units && Array.isArray(pt.units)) {
+        pt.units = pt.units.filter(u => u.soNumber !== soNumber && !definedUnitNos.includes(u.unitId) && !definedUnitNos.includes(u.id));
+        pt.units.forEach((u, i) => u.no = i + 1);
+      }
+    });
+  }
+
+  // 6. Refresh and re-render all dependent tables and views
+  renderProyekTable();
+  renderPTProjects();
+  renderOrdersTable();
+  renderDetailProduksiView();
+  renderProduksiTable();
+  if (typeof renderRiwayatProduksiView === 'function') {
+    renderRiwayatProduksiView();
+  }
+
+  const deletedUnitsCount = unitsCountBefore - allUnits.length;
+  showToast(`🗑️ Sales Order ${soNumber} (${customerName}) berhasil dihapus! ${deletedUnitsCount > 0 ? `${deletedUnitsCount} unit terkait di Monitoring Produksi otomatis terhapus.` : ''}`);
 }
 
 // Automatically create units and dispatch into Monitoring Produksi (following production stages)
@@ -4415,8 +4514,13 @@ function openProyekDetail(soNumber) {
         <div><span style="color:#64748b;">PIC Officer:</span> <strong>${so.pic || 'I Wayan Eva Verdiana'}</strong></div>
       </div>
       ${unitsTableHtml}
-      <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
-        ${actionFooterHtml}
+      <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn-del-pill" onclick="deleteSalesOrder('${so.soNumber}'); closeModal('modalDetailSO');" style="padding: 8px 14px; font-size: 12px; font-weight: 600;">
+          <i class="fa-regular fa-trash-can"></i> Hapus Sales Order
+        </button>
+        <div style="display:flex; gap:10px;">
+          ${actionFooterHtml}
+        </div>
       </div>
     `;
   }
