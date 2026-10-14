@@ -365,6 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Render PT Projects View
   renderPTProjects();
+  if (typeof renderProyekTable === 'function') renderProyekTable();
+  if (typeof renderMaterialMonitoringTable === 'function') renderMaterialMonitoringTable();
 
   // Force-clear login input fields to override browser autofill / saved credentials
   const clearLoginFields = () => {
@@ -3584,12 +3586,10 @@ let erpShipments = [
     ]
   }
 ];
-
 let activeTrackingShipmentIndex = 0;
 
 // --- Main Tab Switcher Function ---
 function switchMainTab(tabName) {
-  // Update sidebar active buttons
   const tabButtonMap = {
     'dashboard': 'menuDashboard',
     'proyek': 'menuProyek',
@@ -3597,6 +3597,8 @@ function switchMainTab(tabName) {
     'master-data': 'menuMasterData',
     'monitoring': 'menuSubMonitoring',
     'single-flow': 'menuSubMonitoring',
+    'material': 'menuSubDetail',
+    'monitoring-material': 'menuSubDetail',
     'produksi': 'menuSubDetail',
     'detail': 'menuSubDetail',
     'multi-project': 'menuSubJadwal',
@@ -3619,7 +3621,7 @@ function switchMainTab(tabName) {
   }
 
   // Handle Produksi parent & submenu state
-  const isProduksiView = ['monitoring', 'single-flow', 'produksi', 'detail', 'multi-project', 'jadwal', 'project-pt', 'riwayat'].includes(tabName);
+  const isProduksiView = ['monitoring', 'single-flow', 'material', 'monitoring-material', 'produksi', 'detail', 'multi-project', 'jadwal', 'project-pt', 'riwayat'].includes(tabName);
   const parentProduksi = document.getElementById('menuProduksiParent');
   const submenuProduksi = document.getElementById('submenuProduksi');
   const arrowProduksi = document.getElementById('arrowProduksi');
@@ -3639,6 +3641,8 @@ function switchMainTab(tabName) {
     'dashboard': 'viewDashboardPortal',
     'monitoring': 'viewSingleFlow',
     'single-flow': 'viewSingleFlow',
+    'material': 'viewProduksi',
+    'monitoring-material': 'viewProduksi',
     'produksi': 'viewProduksi',
     'detail': 'viewProduksi',
     'multi-project': 'viewMultiProject',
@@ -3677,6 +3681,13 @@ function switchMainTab(tabName) {
   const targetView = document.getElementById(targetViewId);
   if (targetView) targetView.classList.add('active');
 
+  // Trigger Monitoring Material render if accessing material view
+  if (['material', 'monitoring-material', 'produksi', 'detail'].includes(tabName)) {
+    if (typeof renderMaterialMonitoringTable === 'function') {
+      renderMaterialMonitoringTable();
+    }
+  }
+
   // Toggle dashboard sub-action bar (visible for monitoring, gantt, project pt)
   const dashBar = document.getElementById('dashboardActionBar');
   if (dashBar) {
@@ -3700,8 +3711,10 @@ function switchMainTab(tabName) {
     'dashboard': 'Dashboard',
     'monitoring': 'Monitoring Produksi',
     'single-flow': 'Monitoring Produksi',
-    'produksi': 'Detail Produksi',
-    'detail': 'Detail Produksi',
+    'material': 'Monitoring Material',
+    'monitoring-material': 'Monitoring Material',
+    'produksi': 'Monitoring Material',
+    'detail': 'Monitoring Material',
     'multi-project': 'Jadwal Produksi (Gantt Chart)',
     'jadwal': 'Jadwal Produksi (Gantt Chart)',
     'project-pt': 'Monitoring Produksi (Hierarki PT)',
@@ -3718,8 +3731,10 @@ function switchMainTab(tabName) {
     'dashboard': 'Pilih modul yang ingin diakses',
     'monitoring': 'Pantau alur dan status proses produksi trafo secara real-time',
     'single-flow': 'Pantau alur dan status proses produksi trafo secara real-time',
-    'produksi': 'Alur dan tahapan lini fabrikasi transformator',
-    'detail': 'Alur dan tahapan lini fabrikasi transformator',
+    'material': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
+    'monitoring-material': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
+    'produksi': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
+    'detail': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
     'multi-project': 'Linimasa jadwal multi-proyek transformator',
     'jadwal': 'Linimasa jadwal multi-proyek transformator',
     'project-pt': 'Hierarki dan pemantauan pengerjaan proyek trafo per perusahaan',
@@ -3783,7 +3798,7 @@ function toggleProduksiMenu(e) {
     if (parentBtn) parentBtn.classList.add('open');
     const activeSub = submenu.querySelector('.submenu-item.active');
     if (!activeSub) {
-      switchProduksiSubView('detail');
+      switchProduksiSubView('material');
     }
   }
 }
@@ -3799,8 +3814,8 @@ function switchProduksiSubView(subview) {
 
   if (subview === 'monitoring' || subview === 'single-flow') {
     switchMainTab('monitoring');
-  } else if (subview === 'detail' || subview === 'produksi') {
-    switchMainTab('produksi');
+  } else if (subview === 'material' || subview === 'monitoring-material' || subview === 'detail' || subview === 'produksi') {
+    switchMainTab('material');
   } else if (subview === 'jadwal' || subview === 'multi-project') {
     switchMainTab('multi-project');
   } else if (subview === 'riwayat') {
@@ -3896,6 +3911,7 @@ function renderProyekTable(filteredList = null) {
       <td style="text-align: center; white-space: nowrap;">
         <div style="display:inline-flex; align-items:center; gap:6px;">
           ${actionBtnHtml}
+          <button class="btn-erp-edit" onclick="openEditSOModal('${so.soNumber}')" title="Edit Sales Order dan sinkronkan ke Monitoring Produksi"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
           <button class="btn-erp-detail" onclick="openProyekDetail('${so.soNumber}')">Detail</button>
           <button class="btn-del-pill" onclick="deleteSalesOrder('${so.soNumber}')" title="Hapus Sales Order ${so.soNumber} dan unitnya di Monitoring Produksi" style="padding: 5px 9px; font-size: 11px;">
             <i class="fa-regular fa-trash-can"></i> Hapus
@@ -4163,7 +4179,7 @@ function handleSaveNewSO(e) {
 
   closeModal('modalAddSO');
 
-  if (status === 'Proses Produksi' || status === 'Dalam Proses') {
+  if (status === 'Proses Produksi') {
     processSOToProduction(newSO);
     showToast(`🚀 Sales Order ${soNumber} (${customer} - ${qty} Unit) otomatis masuk ke Monitoring Produksi!`);
     goToMonitoringFromSO(newSO.soNumber);
@@ -4181,7 +4197,7 @@ function changeSOStatus(soNumber, newStatus) {
   so.status = newStatus;
   saveERPSalesOrders(erpSalesOrders);
 
-  if (newStatus === 'Proses Produksi' || newStatus === 'Dalam Proses') {
+  if (newStatus === 'Proses Produksi') {
     processSOToProduction(so);
     showToast(`🚀 Sales Order ${so.soNumber} (${so.customer} - ${so.qty} Unit) otomatis masuk ke Monitoring Produksi!`);
     goToMonitoringFromSO(so.soNumber);
@@ -4235,6 +4251,287 @@ function changeSOStatus(soNumber, newStatus) {
     renderProyekTable();
     showToast(`Status Sales Order ${so.soNumber} diubah menjadi: ${newStatus}`);
   }
+}
+
+// ================= MODAL EDIT SALES ORDER (SO) & SYNC CONTROLLER =================
+let currentEditSOUnitRows = [];
+
+function openEditSOModal(soNumber) {
+  const so = erpSalesOrders.find(item => item.soNumber === soNumber);
+  if (!so) return;
+
+  const modal = document.getElementById('modalEditSO');
+  if (!modal) return;
+
+  const titleCode = document.getElementById('editSOTitleCode');
+  const origNumber = document.getElementById('editSOOriginalNumber');
+  const inpNumber = document.getElementById('editSONumber');
+  const inpCust = document.getElementById('editSOCustomer');
+  const inpVariant = document.getElementById('editSOVariant');
+  const inpQty = document.getElementById('editSOQty');
+  const inpOrder = document.getElementById('editSOOrderDate');
+  const inpTarget = document.getElementById('editSOTargetDate');
+  const inpStatus = document.getElementById('editSOStatus');
+
+  if (titleCode) titleCode.innerText = so.soNumber;
+  if (origNumber) origNumber.value = so.soNumber;
+  if (inpNumber) inpNumber.value = so.soNumber;
+  if (inpCust) inpCust.value = so.customer;
+  if (inpVariant) inpVariant.value = so.variant || 'Distribusi';
+  if (inpQty) inpQty.value = so.qty || 1;
+  if (inpStatus) inpStatus.value = so.status || 'Dalam Proses';
+
+  const toDateInputVal = (dStr) => {
+    if (!dStr) return new Date().toISOString().split('T')[0];
+    if (dStr.includes('/')) {
+      const parts = dStr.split('/');
+      if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+    return dStr;
+  };
+
+  if (inpOrder) inpOrder.value = toDateInputVal(so.orderDate);
+  if (inpTarget) inpTarget.value = toDateInputVal(so.targetDate);
+
+  currentEditSOUnitRows = [];
+  if (so.units && Array.isArray(so.units) && so.units.length > 0) {
+    currentEditSOUnitRows = so.units.map(u => ({
+      unitNo: u.unitNo || u.unitId || '',
+      kva: String(u.kva || so.kva || '500'),
+      qty: 1
+    }));
+  } else {
+    const qtyVal = parseInt(so.qty) || 1;
+    for (let i = 0; i < qtyVal; i++) {
+      currentEditSOUnitRows.push({
+        unitNo: `${so.soNumber}${getUnitSuffix(i)}`,
+        kva: String(so.kva || '500'),
+        qty: 1
+      });
+    }
+  }
+
+  renderEditSOUnitRows();
+  modal.classList.add('active');
+}
+
+function renderEditSOUnitRows() {
+  const tbody = document.getElementById('editSOUnitTableBody');
+  const countEl = document.getElementById('editSODetailQtyCount');
+  const soNumberInput = document.getElementById('editSONumber');
+  const baseSoNumber = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0001';
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  currentEditSOUnitRows.forEach((row, idx) => {
+    const unitNo = row.unitNo || `${baseSoNumber}${getUnitSuffix(idx)}`;
+    row.unitNo = unitNo;
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+    tr.innerHTML = `
+      <td style="text-align: center; font-weight: 600; color: #1d4ed8; padding: 8px 12px;">${idx + 1}</td>
+      <td style="padding: 8px 12px;">
+        <input type="text" class="form-input" value="${unitNo}" oninput="currentEditSOUnitRows[${idx}].unitNo = this.value" style="background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+      </td>
+      <td style="padding: 8px 12px;">
+        <input type="text" class="form-input" value="${row.kva}" placeholder="500" required oninput="currentEditSOUnitRows[${idx}].kva = this.value" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+      </td>
+      <td style="padding: 8px 12px;">
+        <input type="number" min="1" class="form-input" value="${row.qty || 1}" required oninput="currentEditSOUnitRows[${idx}].qty = parseInt(this.value) || 1; updateEditSOQtyTotal();" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; width: 100%; font-size: 12px;">
+      </td>
+      <td style="text-align: center; padding: 8px 12px;">
+        <button type="button" class="btn-trash-so-unit" onclick="removeEditSOUnitRow(${idx})" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 6px 8px; font-size: 14px; border-radius: 4px; transition: all 0.15s;" title="Hapus Baris Unit">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const totalQty = currentEditSOUnitRows.reduce((sum, r) => sum + (parseInt(r.qty) || 1), 0);
+  if (countEl) countEl.innerText = totalQty;
+  const qtyInput = document.getElementById('editSOQty');
+  if (qtyInput && parseInt(qtyInput.value) !== totalQty) {
+    qtyInput.value = totalQty;
+  }
+}
+
+function updateEditSOQtyTotal() {
+  const totalQty = currentEditSOUnitRows.reduce((sum, r) => sum + (parseInt(r.qty) || 1), 0);
+  const countEl = document.getElementById('editSODetailQtyCount');
+  if (countEl) countEl.innerText = totalQty;
+  const qtyInput = document.getElementById('editSOQty');
+  if (qtyInput) qtyInput.value = totalQty;
+}
+
+function handleEditSONumberChange(val) {
+  const base = val.trim() || '26-0001';
+  currentEditSOUnitRows.forEach((r, i) => {
+    r.unitNo = `${base}${getUnitSuffix(i)}`;
+  });
+  renderEditSOUnitRows();
+}
+
+function handleEditSOQtyChange(val) {
+  const targetCount = parseInt(val) || 1;
+  if (targetCount <= 0) return;
+  const soNumberInput = document.getElementById('editSONumber');
+  const base = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0001';
+
+  if (targetCount > currentEditSOUnitRows.length) {
+    const diff = targetCount - currentEditSOUnitRows.length;
+    for (let i = 0; i < diff; i++) {
+      const idx = currentEditSOUnitRows.length;
+      const lastKva = currentEditSOUnitRows.length > 0 ? currentEditSOUnitRows[currentEditSOUnitRows.length - 1].kva : '500';
+      currentEditSOUnitRows.push({
+        unitNo: `${base}${getUnitSuffix(idx)}`,
+        kva: lastKva,
+        qty: 1
+      });
+    }
+  } else if (targetCount < currentEditSOUnitRows.length) {
+    currentEditSOUnitRows = currentEditSOUnitRows.slice(0, targetCount);
+  }
+  renderEditSOUnitRows();
+}
+
+function addEditSOUnitRow() {
+  const soNumberInput = document.getElementById('editSONumber');
+  const base = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0001';
+  const lastKva = currentEditSOUnitRows.length > 0 ? currentEditSOUnitRows[currentEditSOUnitRows.length - 1].kva : '500';
+  const newIdx = currentEditSOUnitRows.length;
+  currentEditSOUnitRows.push({
+    unitNo: `${base}${getUnitSuffix(newIdx)}`,
+    kva: lastKva,
+    qty: 1
+  });
+  renderEditSOUnitRows();
+}
+
+function removeEditSOUnitRow(idx) {
+  if (currentEditSOUnitRows.length <= 1) {
+    showToast('⚠️ Minimal harus memiliki 1 unit trafo dalam Sales Order.');
+    return;
+  }
+  currentEditSOUnitRows.splice(idx, 1);
+  const soNumberInput = document.getElementById('editSONumber');
+  const base = (soNumberInput && soNumberInput.value.trim()) ? soNumberInput.value.trim() : '26-0001';
+  currentEditSOUnitRows.forEach((r, i) => {
+    r.unitNo = `${base}${getUnitSuffix(i)}`;
+  });
+  renderEditSOUnitRows();
+}
+
+function handleSaveEditSO(e) {
+  e.preventDefault();
+  const origNumber = document.getElementById('editSOOriginalNumber').value;
+  const newNumber = document.getElementById('editSONumber').value.trim();
+  const newCustomer = document.getElementById('editSOCustomer').value.trim();
+  const newVariant = document.getElementById('editSOVariant').value;
+  const newQty = currentEditSOUnitRows.reduce((sum, r) => sum + (parseInt(r.qty) || 1), 0);
+  const newOrderDate = document.getElementById('editSOOrderDate').value.split('-').reverse().join('/');
+  const newTargetDate = document.getElementById('editSOTargetDate').value.split('-').reverse().join('/');
+  const newStatus = document.getElementById('editSOStatus').value;
+
+  const soIndex = erpSalesOrders.findIndex(item => item.soNumber === origNumber);
+  if (soIndex === -1) return;
+
+  const oldSO = erpSalesOrders[soIndex];
+
+  // Build updated units list
+  const updatedUnits = currentEditSOUnitRows.map((r, i) => {
+    const kvaNum = parseInt(String(r.kva).replace(/[^0-9]/g, '')) || 500;
+    const existingUnit = (oldSO.units && oldSO.units[i]) ? oldSO.units[i] : null;
+    return {
+      unitNo: r.unitNo || `${newNumber}${getUnitSuffix(i)}`,
+      kva: kvaNum,
+      stage: existingUnit ? existingUnit.stage : (newStatus === 'Proses Produksi' ? 'LV' : 'Belum Mulai'),
+      progress: existingUnit ? existingUnit.progress : (newStatus === 'Proses Produksi' ? 10 : 0),
+      targetDate: newTargetDate,
+      status: newStatus === 'Proses Produksi' ? 'Dalam Proses' : newStatus
+    };
+  });
+
+  const kvaList = currentEditSOUnitRows.map(r => r.kva);
+  const uniqueKva = [...new Set(kvaList)];
+  const kvaDisplay = uniqueKva.length === 1 ? uniqueKva[0] : `${uniqueKva[0]} - ${uniqueKva[uniqueKva.length - 1]}`;
+
+  // Update SO
+  erpSalesOrders[soIndex] = {
+    ...oldSO,
+    soNumber: newNumber,
+    customer: newCustomer,
+    variant: newVariant,
+    kva: kvaDisplay,
+    qty: newQty,
+    orderDate: newOrderDate,
+    targetDate: newTargetDate,
+    status: newStatus,
+    units: updatedUnits
+  };
+  saveERPSalesOrders(erpSalesOrders);
+
+  // SINKRONISASI KE allUnits (Monitoring Produksi Data Store)
+  let allUnits = getUnitsData();
+  const definedUnitNos = updatedUnits.map(u => u.unitNo);
+
+  // 1. Remove units from allUnits that were deleted from this SO
+  if (oldSO.units && Array.isArray(oldSO.units)) {
+    const oldUnitNos = oldSO.units.map(u => u.unitNo);
+    const removedUnitNos = oldUnitNos.filter(no => !definedUnitNos.includes(no));
+    if (removedUnitNos.length > 0) {
+      allUnits = allUnits.filter(u => !removedUnitNos.includes(u.unitId));
+    }
+  }
+
+  // 2. Update existing units matching old SO number or old customer
+  allUnits.forEach(u => {
+    const isMatchingUnit = (u.soNumber === origNumber) || (u.soNumber === newNumber) ||
+                          (oldSO.units && oldSO.units.some(ou => ou.unitNo === u.unitId));
+    if (isMatchingUnit) {
+      u.soNumber = newNumber;
+      u.customer = newCustomer;
+      u.variant = newVariant;
+      u.orderDate = newOrderDate;
+      u.targetDate = newTargetDate;
+
+      const matchingUnitRow = updatedUnits.find(ru => ru.unitNo === u.unitId);
+      if (matchingUnitRow) {
+        u.capacity = `${matchingUnitRow.kva} kVA`;
+      }
+    }
+  });
+
+  saveUnitsData(allUnits);
+
+  // 3. Handle Status Transitions
+  if (newStatus === 'Proses Produksi') {
+    processSOToProduction(erpSalesOrders[soIndex]);
+    closeModal('modalEditSO');
+    showToast(`🚀 Sales Order ${newNumber} (${newCustomer}) berhasil diperbarui & otomatis masuk ke Monitoring Produksi!`);
+    goToMonitoringFromSO(newNumber);
+    return;
+  } else if (newStatus === 'Selesai') {
+    closeModal('modalEditSO');
+    changeSOStatus(newNumber, 'Selesai');
+    return;
+  }
+
+  // Refresh all tables and views
+  renderProyekTable();
+  renderPTProjects();
+  renderOrdersTable();
+  renderProduksiTable();
+  if (typeof renderMaterialMonitoringTable === 'function') {
+    renderMaterialMonitoringTable();
+  }
+  if (typeof updateMonitoringKPICards === 'function') {
+    updateMonitoringKPICards();
+  }
+
+  closeModal('modalEditSO');
+  showToast(`✅ Sales Order ${newNumber} (${newCustomer}) berhasil diperbarui & disinkronkan ke Monitoring Produksi!`);
 }
 
 // Function to delete Sales Order and automatically remove all related customer and units from Monitoring Produksi
@@ -4583,6 +4880,9 @@ function openProyekDetail(soNumber) {
           <i class="fa-regular fa-trash-can"></i> Hapus Sales Order
         </button>
         <div style="display:flex; gap:10px;">
+          <button type="button" class="btn-erp-edit" onclick="openEditSOModal('${so.soNumber}'); closeModal('modalDetailSO');" style="padding: 8px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Sales Order
+          </button>
           ${actionFooterHtml}
         </div>
       </div>
@@ -5117,63 +5417,557 @@ function recomputeUnitProgress(unit) {
   return unit;
 }
 
-// Switch Active Unit in Detail Produksi view
-function switchDPActiveUnit(unitId) {
-  activeDPUnitId = unitId;
-  renderDetailProduksiView();
+// ================= MONITORING MATERIAL (BILL OF MATERIALS) DATA & CONTROLLER =================
+
+const defaultMaterialsData = [
+  {
+    id: 'MAT-001',
+    code: 'MAT-CU-01',
+    name: 'Kawat Tembaga Enamel (Cu-ETP 99.9% Rectangular)',
+    category: 'Konduktor',
+    stock: 1450,
+    requirement: 1200,
+    unit: 'kg',
+    supplier: 'PT Supreme Cable Tbk',
+    allocatedTo: 'TRF-001 (PT PLN), TRF-PTM-001 (Pertamina)',
+    leadTime: '5 Hari'
+  },
+  {
+    id: 'MAT-002',
+    code: 'MAT-CU-02',
+    name: 'Kawat Tembaga CTC (Continuously Transposed Cable)',
+    category: 'Konduktor',
+    stock: 820,
+    requirement: 950,
+    unit: 'kg',
+    supplier: 'PT Jembo Cable Company',
+    allocatedTo: 'TRF-PTM-002 (Power 1000 kVA)',
+    leadTime: '10 Hari'
+  },
+  {
+    id: 'MAT-003',
+    code: 'MAT-CRGO-01',
+    name: 'Silicon Steel Core CRGO M4 0.27mm Laser Treated',
+    category: 'Inti Besi (CRGO)',
+    stock: 2800,
+    requirement: 2400,
+    unit: 'kg',
+    supplier: 'Nippon Steel Corp',
+    allocatedTo: 'Lini Core Slitting & Stacking',
+    leadTime: '14 Hari'
+  },
+  {
+    id: 'MAT-004',
+    code: 'MAT-OIL-01',
+    name: 'Minyak Trafo Uninhibited Mineral Oil Grade 1',
+    category: 'Minyak & Isolasi',
+    stock: 4200,
+    requirement: 3600,
+    unit: 'liter',
+    supplier: 'Nynas Nitro Indonesia',
+    allocatedTo: 'Tangki Penyimpanan & Oven Vacuum',
+    leadTime: '3 Hari'
+  },
+  {
+    id: 'MAT-005',
+    code: 'MAT-ISO-01',
+    name: 'Kertas Isolasi Pressboard (Weidmann Grade T-IV)',
+    category: 'Minyak & Isolasi',
+    stock: 350,
+    requirement: 320,
+    unit: 'lembar',
+    supplier: 'Weidmann Electrical',
+    allocatedTo: 'Spacer Coil & Barrier LV/HV',
+    leadTime: '7 Hari'
+  },
+  {
+    id: 'MAT-006',
+    code: 'MAT-TNK-01',
+    name: 'Tangki Trafo Baja Corrugated Fin Plat SS400 4mm',
+    category: 'Mekanikal & Tangki',
+    stock: 12,
+    requirement: 10,
+    unit: 'set',
+    supplier: 'Workshop Fabrikasi Internal',
+    allocatedTo: 'TRF-001, TRF-002, TRF-PTM-001',
+    leadTime: 'Ready'
+  },
+  {
+    id: 'MAT-007',
+    code: 'MAT-RAD-01',
+    name: 'Radiator Fin Assembly Cold-rolled Steel 1.2mm',
+    category: 'Mekanikal & Tangki',
+    stock: 24,
+    requirement: 28,
+    unit: 'set',
+    supplier: 'PT Weltraf Radiator Division',
+    allocatedTo: 'Lini Perakitan Tangki Trafo',
+    leadTime: '4 Hari'
+  },
+  {
+    id: 'MAT-008',
+    code: 'MAT-BSH-01',
+    name: 'High Voltage Porcelain Bushing 24 kV / 250A',
+    category: 'Bushing & Asesoris',
+    stock: 36,
+    requirement: 30,
+    unit: 'pcs',
+    supplier: 'Sediver / NGK Insulators',
+    allocatedTo: 'Unit Distribusi 20 kV (PLN & Mitra)',
+    leadTime: '6 Hari'
+  },
+  {
+    id: 'MAT-009',
+    code: 'MAT-BSH-02',
+    name: 'Low Voltage Porcelain Bushing 1 kV / 1000A',
+    category: 'Bushing & Asesoris',
+    stock: 48,
+    requirement: 40,
+    unit: 'pcs',
+    supplier: 'Sediver Insulators',
+    allocatedTo: 'Semua Lini Perakitan Trafo',
+    leadTime: '4 Hari'
+  },
+  {
+    id: 'MAT-010',
+    code: 'MAT-TC-01',
+    name: 'Off-Circuit Tap Changer (OCTC 5-Position ±2x2.5%)',
+    category: 'Bushing & Asesoris',
+    stock: 15,
+    requirement: 12,
+    unit: 'set',
+    supplier: 'Maschinenfabrik Reinhausen (MR)',
+    allocatedTo: 'Trafo Distribusi 500-1000 kVA',
+    leadTime: '8 Hari'
+  },
+  {
+    id: 'MAT-011',
+    code: 'MAT-PRD-01',
+    name: 'Pressure Relief Device (PRD 50 kPa with Microswitch)',
+    category: 'Bushing & Asesoris',
+    stock: 2,
+    requirement: 10,
+    unit: 'pcs',
+    supplier: 'Qualitrol Instruments',
+    allocatedTo: 'Menunggu Pengadaan PO Vendor',
+    leadTime: '12 Hari'
+  },
+  {
+    id: 'MAT-012',
+    code: 'MAT-BCH-01',
+    name: 'Buchholz Relay (Double Float Type with Gas Valve)',
+    category: 'Bushing & Asesoris',
+    stock: 8,
+    requirement: 8,
+    unit: 'set',
+    supplier: 'EMB Elektromotoren und Geratebau',
+    allocatedTo: 'Trafo Power Pertamina RU IV',
+    leadTime: 'Ready'
+  },
+  {
+    id: 'MAT-013',
+    code: 'MAT-GSK-01',
+    name: 'Gasket NBR Cork Oil-Resistant (Nitrile Rubber)',
+    category: 'Minyak & Isolasi',
+    stock: 65,
+    requirement: 50,
+    unit: 'meter',
+    supplier: 'Amorim Cork Composites',
+    allocatedTo: 'Seal Cover Tangki & Flange',
+    leadTime: '3 Hari'
+  },
+  {
+    id: 'MAT-014',
+    code: 'MAT-CAT-01',
+    name: 'Cat Epoxy Primer & Polyurethane Finish RAL 7035',
+    category: 'Mekanikal & Tangki',
+    stock: 180,
+    requirement: 150,
+    unit: 'liter',
+    supplier: 'Jotun Indonesia',
+    allocatedTo: 'Lini Sandblasting & Pengecatan',
+    leadTime: '2 Hari'
+  },
+  {
+    id: 'MAT-015',
+    code: 'MAT-SIL-01',
+    name: 'Dehydrating Breather with Cobalt-Free Silica Gel 1.0kg',
+    category: 'Bushing & Asesoris',
+    stock: 20,
+    requirement: 16,
+    unit: 'set',
+    supplier: 'Comem Group',
+    allocatedTo: 'Konservator Minyak Trafo',
+    leadTime: '5 Hari'
+  },
+  {
+    id: 'MAT-016',
+    code: 'MAT-BAR-01',
+    name: 'Copper Busbar Flat Bar Cu-ETP 50x5mm',
+    category: 'Konduktor',
+    stock: 450,
+    requirement: 380,
+    unit: 'kg',
+    supplier: 'PT Supreme Cable Tbk',
+    allocatedTo: 'Terminasi LV Trafo Power',
+    leadTime: '4 Hari'
+  },
+  {
+    id: 'MAT-017',
+    code: 'MAT-WTI-01',
+    name: 'Winding & Oil Temperature Indicator (Dial WTI/OTI)',
+    category: 'Bushing & Asesoris',
+    stock: 14,
+    requirement: 12,
+    unit: 'set',
+    supplier: 'Messko / Reinhausen',
+    allocatedTo: 'Panel Monitoring Suhu Trafo',
+    leadTime: '7 Hari'
+  },
+  {
+    id: 'MAT-018',
+    code: 'MAT-VLV-01',
+    name: 'Oil Drain & Sampling Valve DN50 Flanged',
+    category: 'Mekanikal & Tangki',
+    stock: 22,
+    requirement: 18,
+    unit: 'pcs',
+    supplier: 'Kitz Valve Indonesia',
+    allocatedTo: 'Pipa Bawah Tangki Trafo',
+    leadTime: '5 Hari'
+  }
+];
+
+function getMaterialsData() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_MONITORING_MATERIALS_V1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading Materials data:', e);
+  }
+  return JSON.parse(JSON.stringify(defaultMaterialsData));
 }
 
-// Complete the currently selected unit in Detail Produksi (100% Selesai)
-function completeCurrentDPUnit() {
-  const units = getUnitsData();
-  const unit = units.find(u => u.unitId === activeDPUnitId);
-  if (!unit) return;
-
-  unit.progress = 100;
-  unit.status = 'Selesai';
-  unit.currentStageName = 'Selesai (QC & Tangki OK)';
-
-  if (unit.electricalStages) {
-    unit.electricalStages.forEach(s => {
-      s.status = 'Selesai';
-      s.date = s.date && s.date !== '-' ? s.date : new Date().toISOString().split('T')[0];
-      s.note = 'Selesai 100%';
-    });
+function saveMaterialsData(data) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_MONITORING_MATERIALS_V1', JSON.stringify(data));
+  } catch (e) {
+    console.error('Error saving Materials data:', e);
   }
+}
 
-  if (unit.mechanicalStages) {
-    unit.mechanicalStages.forEach(s => {
-      s.status = 'Selesai';
-      s.date = s.date && s.date !== '-' ? s.date : new Date().toISOString().split('T')[0];
-      s.note = 'Selesai 100%';
-    });
-  }
+function renderMaterialMonitoringTable(filteredList = null) {
+  const materials = filteredList || getMaterialsData();
+  const tbody = document.getElementById('matTableBody');
+  if (!tbody) return;
 
-  const now = new Date();
-  const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  tbody.innerHTML = '';
 
-  addProductionHistoryLog({
-    timestamp: timeStr,
-    unitId: unit.unitId,
-    soNumber: unit.soNumber,
-    customer: unit.customer,
-    category: 'Mechanical',
-    stageName: 'Final QC & Pengujian Rutin',
-    status: 'Selesai',
-    pic: unit.pic || 'Supervisor Produksi',
-    note: `Unit ${unit.unitId} dinyatakan 100% Selesai dan lulus uji QC.`
+  // Calculate KPIs
+  const allMaterials = getMaterialsData();
+  const totalCount = allMaterials.length;
+  let amanCount = 0;
+  let menipisCount = 0;
+  let kritisCount = 0;
+
+  allMaterials.forEach(m => {
+    const pct = m.requirement > 0 ? (m.stock / m.requirement) * 100 : 100;
+    if (m.stock === 0 || pct < 50) kritisCount++;
+    else if (pct < 100) menipisCount++;
+    else amanCount++;
   });
 
-  saveUnitsData(units);
+  const elTot = document.getElementById('matKpiTotal');
+  const elAman = document.getElementById('matKpiAman');
+  const elMen = document.getElementById('matKpiMenipis');
+  const elKrit = document.getElementById('matKpiKritis');
+  const elCount = document.getElementById('matItemCount');
 
-  renderDetailProduksiView();
-  renderOrdersTable();
-  renderPTProjects();
-  if (typeof renderRiwayatProduksiView === 'function') {
-    renderRiwayatProduksiView();
+  if (elTot) elTot.innerText = `${totalCount} Item`;
+  if (elAman) elAman.innerText = `${amanCount} Item`;
+  if (elMen) elMen.innerText = `${menipisCount} Item`;
+  if (elKrit) elKrit.innerText = `${kritisCount} Item`;
+  if (elCount) elCount.innerText = materials.length;
+
+  // Render Project Readiness Grid
+  renderProjectBOMReadiness();
+
+  if (materials.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#94a3b8;">Tidak ada item material yang sesuai pencarian / filter.</td></tr>`;
+    return;
   }
 
-  showToast(`✅ Unit ${unit.unitId} (${unit.customer}) berhasil diselesaikan 100%!`);
+  materials.forEach((m, idx) => {
+    const pct = m.requirement > 0 ? Math.round((m.stock / m.requirement) * 100) : 100;
+    const clampedPct = Math.min(pct, 100);
+
+    let statusBadge = '';
+    let barColor = '#10b981';
+
+    if (m.stock === 0 || pct < 50) {
+      statusBadge = '<span class="mat-badge-danger"><i class="fa-solid fa-circle-xmark"></i> Kritis</span>';
+      barColor = '#ef4444';
+    } else if (pct < 100) {
+      statusBadge = '<span class="mat-badge-warning"><i class="fa-solid fa-triangle-exclamation"></i> Menipis</span>';
+      barColor = '#f59e0b';
+    } else {
+      statusBadge = '<span class="mat-badge-ready"><i class="fa-solid fa-circle-check"></i> Tersedia</span>';
+      barColor = '#10b981';
+    }
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+    tr.innerHTML = `
+      <td style="text-align: center; color: #64748b; font-weight: 700; padding: 12px 10px;">${idx + 1}</td>
+      <td style="font-weight: 800; color: #2563eb; padding: 12px 10px;">${m.code}</td>
+      <td style="padding: 12px 10px;">
+        <div style="font-weight: 700; color: #0f172a;">${m.name}</div>
+        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Supplier: ${m.supplier || '-'} • Lead Time: ${m.leadTime || 'Ready'}</div>
+      </td>
+      <td style="padding: 12px 10px;">
+        <span style="background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">${m.category}</span>
+      </td>
+      <td style="text-align: right; font-weight: 800; color: #0f172a; padding: 12px 10px;">${Number(m.stock).toLocaleString('id-ID')}</td>
+      <td style="text-align: right; font-weight: 600; color: #64748b; padding: 12px 10px;">${Number(m.requirement).toLocaleString('id-ID')}</td>
+      <td style="text-align: center; color: #64748b; padding: 12px 10px; font-weight: 600;">${m.unit}</td>
+      <td style="padding: 12px 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 3px;">
+          <span>${pct}%</span>
+        </div>
+        <div class="mat-progress-bar-wrap" style="height: 6px;">
+          <div class="mat-progress-fill" style="width: ${clampedPct}%; background: ${barColor};"></div>
+        </div>
+      </td>
+      <td style="text-align: center; padding: 12px 10px;">${statusBadge}</td>
+      <td style="padding: 12px 10px; font-size: 11.5px; color: #334155;">
+        <span class="mat-badge-allocated">${m.allocatedTo || 'Stok Umum Fabrikasi'}</span>
+      </td>
+      <td style="text-align: center; padding: 12px 10px; white-space: nowrap;">
+        <div style="display: inline-flex; align-items: center; gap: 4px;">
+          <button type="button" class="btn-erp-edit" onclick="openEditMaterialModal('${m.id}')" title="Edit Stok &amp; Kebutuhan">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button type="button" class="btn-del-pill" onclick="deleteMaterialItem('${m.id}')" title="Hapus Material" style="padding: 5px 8px;">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderProjectBOMReadiness() {
+  const container = document.getElementById('matProjectReadinessGrid');
+  if (!container) return;
+
+  const activeSOs = erpSalesOrders.filter(so => so.status !== 'Selesai');
+
+  if (activeSOs.length === 0) {
+    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 16px; color: #94a3b8; font-size: 12px;">Tidak ada Sales Order aktif yang memerlukan alokasi material saat ini.</div>`;
+    return;
+  }
+
+  container.innerHTML = activeSOs.map((so, i) => {
+    let readiness = 95;
+    if (so.status === 'Belum Proses') readiness = 70;
+    else if (so.status === 'Dalam Proses') readiness = 85;
+    else if (so.status === 'Proses Produksi') readiness = 92 + (i % 8);
+
+    const barColor = readiness >= 90 ? '#10b981' : (readiness >= 75 ? '#3b82f6' : '#f59e0b');
+
+    return `
+      <div class="mat-project-card">
+        <div class="mat-project-header">
+          <div>
+            <div class="mat-project-pt">${so.customer}</div>
+            <div class="mat-project-so">SO: <strong>${so.soNumber}</strong> • ${so.qty} Unit (${so.kva} kVA)</div>
+          </div>
+          <span class="erp-badge ${so.status === 'Proses Produksi' ? 'erp-badge-produksi' : 'erp-badge-orange'}" style="font-size: 10.5px;">${so.status}</span>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+            <span>Kesiapan Bill of Materials</span>
+            <span style="color: ${barColor};">${readiness}% Ready</span>
+          </div>
+          <div class="mat-progress-bar-wrap">
+            <div class="mat-progress-fill" style="width: ${readiness}%; background: ${barColor};"></div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #64748b; display: flex; justify-content: space-between; margin-top: 2px;">
+          <span>Varian: <strong>${so.variant}</strong></span>
+          <span>Target: <strong>${so.targetDate}</strong></span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterMaterialTable() {
+  const searchInput = document.getElementById('matSearchInput') ? document.getElementById('matSearchInput').value.toLowerCase().trim() : '';
+  const categoryFilter = document.getElementById('matCategoryFilter') ? document.getElementById('matCategoryFilter').value : 'all';
+  const statusFilter = document.getElementById('matStatusFilter') ? document.getElementById('matStatusFilter').value : 'all';
+
+  const materials = getMaterialsData();
+  const filtered = materials.filter(m => {
+    const matchSearch = !searchInput || 
+      m.name.toLowerCase().includes(searchInput) || 
+      m.code.toLowerCase().includes(searchInput) || 
+      (m.supplier && m.supplier.toLowerCase().includes(searchInput)) ||
+      (m.allocatedTo && m.allocatedTo.toLowerCase().includes(searchInput));
+
+    const matchCategory = (categoryFilter === 'all') || (m.category === categoryFilter);
+
+    const pct = m.requirement > 0 ? (m.stock / m.requirement) * 100 : 100;
+    let st = 'Tersedia';
+    if (m.stock === 0 || pct < 50) st = 'Kritis';
+    else if (pct < 100) st = 'Menipis';
+
+    const matchStatus = (statusFilter === 'all') || (st === statusFilter);
+
+    return matchSearch && matchCategory && matchStatus;
+  });
+
+  renderMaterialMonitoringTable(filtered);
+}
+
+function openAddMaterialModal() {
+  const modal = document.getElementById('modalMaterial');
+  if (!modal) return;
+
+  const title = document.getElementById('matModalTitle');
+  if (title) title.innerText = 'Tambah Item Material Baru';
+
+  const form = document.getElementById('formMaterial');
+  if (form) form.reset();
+
+  document.getElementById('matId').value = '';
+  document.getElementById('inpMatCode').value = `MAT-TRF-${String(getMaterialsData().length + 1).padStart(2, '0')}`;
+  modal.classList.add('active');
+}
+
+function openEditMaterialModal(matId) {
+  const materials = getMaterialsData();
+  const item = materials.find(m => m.id === matId);
+  if (!item) return;
+
+  const modal = document.getElementById('modalMaterial');
+  if (!modal) return;
+
+  const title = document.getElementById('matModalTitle');
+  if (title) title.innerText = `Edit Material: ${item.code}`;
+
+  document.getElementById('matId').value = item.id;
+  document.getElementById('inpMatCode').value = item.code;
+  document.getElementById('inpMatCategory').value = item.category;
+  document.getElementById('inpMatName').value = item.name;
+  document.getElementById('inpMatStock').value = item.stock;
+  document.getElementById('inpMatRequirement').value = item.requirement;
+  document.getElementById('inpMatUnit').value = item.unit;
+  document.getElementById('inpMatSupplier').value = item.supplier || '';
+  document.getElementById('inpMatAllocation').value = item.allocatedTo || '';
+
+  modal.classList.add('active');
+}
+
+function handleSaveMaterial(e) {
+  e.preventDefault();
+  const matId = document.getElementById('matId').value;
+  const code = document.getElementById('inpMatCode').value.trim();
+  const category = document.getElementById('inpMatCategory').value;
+  const name = document.getElementById('inpMatName').value.trim();
+  const stock = parseFloat(document.getElementById('inpMatStock').value) || 0;
+  const requirement = parseFloat(document.getElementById('inpMatRequirement').value) || 0;
+  const unit = document.getElementById('inpMatUnit').value;
+  const supplier = document.getElementById('inpMatSupplier').value.trim();
+  const allocatedTo = document.getElementById('inpMatAllocation').value.trim();
+
+  let materials = getMaterialsData();
+
+  if (matId) {
+    const idx = materials.findIndex(m => m.id === matId);
+    if (idx !== -1) {
+      materials[idx] = {
+        ...materials[idx],
+        code,
+        category,
+        name,
+        stock,
+        requirement,
+        unit,
+        supplier,
+        allocatedTo
+      };
+      showToast(`✅ Material ${code} berhasil diperbarui!`);
+    }
+  } else {
+    const newId = `MAT-${String(Date.now()).slice(-4)}`;
+    materials.push({
+      id: newId,
+      code,
+      category,
+      name,
+      stock,
+      requirement,
+      unit,
+      supplier,
+      allocatedTo,
+      leadTime: '5 Hari'
+    });
+    showToast(`✅ Material baru ${code} (${name}) berhasil ditambahkan!`);
+  }
+
+  saveMaterialsData(materials);
+  renderMaterialMonitoringTable();
+  closeModal('modalMaterial');
+}
+
+function deleteMaterialItem(matId) {
+  let materials = getMaterialsData();
+  const item = materials.find(m => m.id === matId);
+  if (!item) return;
+
+  if (!confirm(`Apakah Anda yakin ingin menghapus material "${item.name}" (${item.code}) dari katalog monitoring?`)) {
+    return;
+  }
+
+  materials = materials.filter(m => m.id !== matId);
+  saveMaterialsData(materials);
+  renderMaterialMonitoringTable();
+  showToast(`🗑️ Material ${item.code} berhasil dihapus.`);
+}
+
+function exportMaterialBOMReport() {
+  const materials = getMaterialsData();
+  let csv = 'No,Kode Material,Nama Material,Kategori,Stok Gudang,Kebutuhan,Satuan,Kesiapan %,Supplier,Alokasi Proyek\n';
+  materials.forEach((m, i) => {
+    const pct = m.requirement > 0 ? Math.round((m.stock / m.requirement) * 100) : 100;
+    csv += `"${i + 1}","${m.code}","${m.name}","${m.category}","${m.stock}","${m.requirement}","${m.unit}","${pct}%","${m.supplier || '-'}","${m.allocatedTo || '-'}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Monitoring_Material_BOM_Symtraflow_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('📊 Laporan Monitoring Material (BOM) berhasil diunduh dalam format CSV!');
+}
+
+// Backward-compatibility shims
+function switchDPActiveUnit(unitId) {
+  if (typeof openTrafoDetailModal === 'function') openTrafoDetailModal(unitId);
+}
+function completeCurrentDPUnit() {
+  showToast('ℹ️ Kelola progres dan penyelesaian unit dilakukan melalui modal detail unit.');
 }
 
 // Render Detail Produksi View (Populates Header, Unit Selector, Electrical & Mechanical tables)
@@ -5727,15 +6521,13 @@ function openFullDetailModal(unitId) {
   modal.classList.add('active');
 }
 
-// Jump from Monitoring Read-Only modal to Detail Produksi (where changes can be managed)
+// Jump to Unit Detail Modal
 function goToDetailProduksiFromModal(unitId) {
   closeModal('fullDetailModal');
   const targetId = unitId || activeMonitoringUnitId || 'TRF-001';
-  activeDPUnitId = targetId;
-  switchMainTab('produksi');
-  switchDPTab('progress');
-  renderDetailProduksiView();
-  showToast(`📋 Membuka Detail Produksi untuk unit ${targetId}...`);
+  if (typeof openTrafoDetailModal === 'function') {
+    openTrafoDetailModal(targetId);
+  }
 }
 
 // --- PRODUKSI FUNCTIONS ---
