@@ -1208,7 +1208,8 @@ function getPTProjectsFromUnitsData() {
     });
   });
 
-  return groups;
+  // Only return groups that have at least 1 unit in active/production pipeline
+  return groups.filter(pt => pt.units && pt.units.length > 0);
 }
 
 // Helper: Check if a unit is 100% completed
@@ -1237,15 +1238,17 @@ function renderPTProjects() {
 
   // Filter Active vs Completed (100% finished units)
   const activeGroups = allProjectGroups.filter(pt => {
-    const totalUnits = pt.units.length;
+    const totalUnits = pt.units ? pt.units.length : 0;
+    if (totalUnits === 0) return false;
     const selesai = pt.units.filter(isUnitDone).length;
-    return !(totalUnits > 0 && selesai === totalUnits);
+    return !(selesai === totalUnits);
   });
 
   const completedGroups = allProjectGroups.filter(pt => {
-    const totalUnits = pt.units.length;
+    const totalUnits = pt.units ? pt.units.length : 0;
+    if (totalUnits === 0) return false;
     const selesai = pt.units.filter(isUnitDone).length;
-    return totalUnits > 0 && selesai === totalUnits;
+    return (selesai === totalUnits);
   });
 
   // Update notification banner in Monitoring if there are archived completed projects
@@ -4160,7 +4163,7 @@ function handleSaveNewSO(e) {
 
   closeModal('modalAddSO');
 
-  if (status === 'Proses Produksi') {
+  if (status === 'Proses Produksi' || status === 'Dalam Proses') {
     processSOToProduction(newSO);
     showToast(`🚀 Sales Order ${soNumber} (${customer} - ${qty} Unit) otomatis masuk ke Monitoring Produksi!`);
     goToMonitoringFromSO(newSO.soNumber);
@@ -4178,7 +4181,7 @@ function changeSOStatus(soNumber, newStatus) {
   so.status = newStatus;
   saveERPSalesOrders(erpSalesOrders);
 
-  if (newStatus === 'Proses Produksi') {
+  if (newStatus === 'Proses Produksi' || newStatus === 'Dalam Proses') {
     processSOToProduction(so);
     showToast(`🚀 Sales Order ${so.soNumber} (${so.customer} - ${so.qty} Unit) otomatis masuk ke Monitoring Produksi!`);
     goToMonitoringFromSO(so.soNumber);
@@ -4234,44 +4237,102 @@ function changeSOStatus(soNumber, newStatus) {
   }
 }
 
-// Function to delete Sales Order and automatically remove all related units from Monitoring Produksi
+// Function to delete Sales Order and automatically remove all related customer and units from Monitoring Produksi
 function deleteSalesOrder(soNumber) {
   const so = erpSalesOrders.find(item => item.soNumber === soNumber);
   const customerName = so ? so.customer : '';
-  const confirmMsg = `Apakah Anda yakin ingin menghapus Sales Order ${soNumber} (${customerName})?\n\nPerhatian: Seluruh unit trafo terkait di Monitoring Produksi juga akan otomatis dihapus secara permanen.`;
+  const confirmMsg = `Apakah Anda yakin ingin menghapus Sales Order ${soNumber} (${customerName})?\n\nPerhatian: Proyek SO beserta customer dan seluruh unitnya di Monitoring Produksi juga akan otomatis ikut terhapus secara permanen.`;
 
   if (!confirm(confirmMsg)) return;
 
-  // 1. Collect all unit IDs to delete
+  // 1. Collect all unit IDs explicitly defined in this SO
   const definedUnitNos = (so && so.units && Array.isArray(so.units)) ? so.units.map(u => u.unitNo) : [];
 
   // 2. Remove from erpSalesOrders
   erpSalesOrders = erpSalesOrders.filter(item => item.soNumber !== soNumber);
   saveERPSalesOrders(erpSalesOrders);
 
+  // Helper keyword extractor for matching customer names robustly
+  const extractCustTokens = (name = '') => {
+    return name.toUpperCase()
+      .replace(/^(PT|CV|UD|PERSERO)\.?\s+/gi, '')
+      .replace(/[^A-Z0-9\s]/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(t => t.length >= 2 && !['PERSERO', 'INDONESIA', 'UP3', 'UNIT', 'REGIONAL', 'DAYA', 'AREA', 'JATENG', 'TIMUR', 'BARAT', 'SELATAN', 'UTARA'].includes(t));
+  };
+
+  const targetTokens = extractCustTokens(customerName);
+
+  // Check if remaining active SOs still have this customer
+  const hasOtherSOForCust = erpSalesOrders.some(item => {
+    const otherTokens = extractCustTokens(item.customer);
+    return targetTokens.some(t => otherTokens.includes(t));
+  });
+
+  // Check matching customer on a unit or group
+  const isCustomerMatch = (custStr = '', unitIdStr = '') => {
+    if (!custStr && !unitIdStr) return false;
+    const cTokens = extractCustTokens(custStr);
+    if (targetTokens.length > 0 && targetTokens.some(t => cTokens.includes(t))) return true;
+    if (unitIdStr && targetTokens.length > 0 && targetTokens.some(t => unitIdStr.toUpperCase().includes(t))) return true;
+    return false;
+  };
+
   // 3. Remove from Unified Units Data (Monitoring Produksi)
   let allUnits = getUnitsData();
   const unitsCountBefore = allUnits.length;
   allUnits = allUnits.filter(u => {
+    // Check if directly tied to this SO
     if (u.soNumber === soNumber) return false;
     if (definedUnitNos.includes(u.unitId)) return false;
     if (u.unitId && (u.unitId.startsWith(soNumber) || u.unitId.includes(soNumber))) return false;
+
+    // If customer matches and there are no other SOs for this customer in Proyek SO, remove customer units completely
+    if (isCustomerMatch(u.customer, u.unitId) && !hasOtherSOForCust) {
+      return false;
+    }
+
+    // If customer matches and unit doesn't have an explicit other soNumber
+    if (isCustomerMatch(u.customer, u.unitId) && (!u.soNumber || u.soNumber === soNumber)) {
+      return false;
+    }
+
     return true;
   });
   saveUnitsData(allUnits);
 
-  // 4. Remove from erpProduksiUnits
-  if (typeof erpProduksiUnits !== 'undefined' && Array.isArray(erpProduksiUnits)) {
-    erpProduksiUnits = erpProduksiUnits.filter(u => u.soNumber !== soNumber && !definedUnitNos.includes(u.unitNo));
+  // 4. Remove from ptProjects
+  if (typeof ptProjects !== 'undefined' && Array.isArray(ptProjects)) {
+    ptProjects = ptProjects.filter(pt => {
+      const isPtMatch = isCustomerMatch(pt.pt, pt.id);
+      if (isPtMatch && !hasOtherSOForCust) {
+        return false; // Remove PT customer card entirely
+      }
+      if (pt.units && Array.isArray(pt.units)) {
+        pt.units = pt.units.filter(u => {
+          if (u.soNumber === soNumber) return false;
+          if (definedUnitNos.includes(u.unitId) || definedUnitNos.includes(u.id)) return false;
+          if (u.id && (u.id.startsWith(soNumber) || u.id.includes(soNumber))) return false;
+          if (u.unitId && (u.unitId.startsWith(soNumber) || u.unitId.includes(soNumber))) return false;
+          if (isPtMatch && !hasOtherSOForCust) return false;
+          return true;
+        });
+        pt.units.forEach((u, i) => u.no = i + 1);
+        return pt.units.length > 0;
+      }
+      return true;
+    });
+    savePTProjects();
   }
 
-  // 5. Remove from ptProjects if applicable
-  if (typeof ptProjects !== 'undefined' && Array.isArray(ptProjects)) {
-    ptProjects.forEach(pt => {
-      if (pt.units && Array.isArray(pt.units)) {
-        pt.units = pt.units.filter(u => u.soNumber !== soNumber && !definedUnitNos.includes(u.unitId) && !definedUnitNos.includes(u.id));
-        pt.units.forEach((u, i) => u.no = i + 1);
-      }
+  // 5. Remove from erpProduksiUnits
+  if (typeof erpProduksiUnits !== 'undefined' && Array.isArray(erpProduksiUnits)) {
+    erpProduksiUnits = erpProduksiUnits.filter(u => {
+      if (u.soNumber === soNumber) return false;
+      if (definedUnitNos.includes(u.unitNo)) return false;
+      if (isCustomerMatch(u.customer, u.unitNo) && !hasOtherSOForCust) return false;
+      return true;
     });
   }
 
@@ -4284,9 +4345,12 @@ function deleteSalesOrder(soNumber) {
   if (typeof renderRiwayatProduksiView === 'function') {
     renderRiwayatProduksiView();
   }
+  if (typeof updateMonitoringKPICards === 'function') {
+    updateMonitoringKPICards();
+  }
 
   const deletedUnitsCount = unitsCountBefore - allUnits.length;
-  showToast(`🗑️ Sales Order ${soNumber} (${customerName}) berhasil dihapus! ${deletedUnitsCount > 0 ? `${deletedUnitsCount} unit terkait di Monitoring Produksi otomatis terhapus.` : ''}`);
+  showToast(`🗑️ Sales Order ${soNumber} (${customerName}) berhasil dihapus! Customer dan ${deletedUnitsCount > 0 ? `${deletedUnitsCount} ` : ''}unit terkait di Monitoring Produksi otomatis terhapus.`);
 }
 
 // Automatically create units and dispatch into Monitoring Produksi (following production stages)
@@ -4962,16 +5026,9 @@ let activeEditingStageIndex = 0;
 function getUnitsData() {
   try {
     const raw = localStorage.getItem('SYMTRAFLOW_UNITS_DATA_V7');
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(u => u.unitId === 'TRF-PTM-001')) {
-        // Ensure missing PKT units are backfilled if not present
-        const defaultPKTUnits = defaultUnitsData.filter(u => u.unitId.startsWith('TRF-PKT-'));
-        defaultPKTUnits.forEach(defU => {
-          if (!parsed.some(u => u.unitId === defU.unitId)) {
-            parsed.push(JSON.parse(JSON.stringify(defU)));
-          }
-        });
+      if (Array.isArray(parsed)) {
         parsed.forEach(u => recomputeUnitProgress(u));
         return parsed;
       }
