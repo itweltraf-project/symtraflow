@@ -518,7 +518,7 @@
             </button>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <button class="btn-primary" onclick="openAddTrafoModal('PT-PLN-01')" style="background:#2563eb; border-color:#2563eb; font-size:12px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+            <button class="btn-primary" onclick="openAddTrafoModal()" style="background:#2563eb; border-color:#2563eb; font-size:12px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
               <i class="fa-solid fa-circle-plus"></i> Tambah SO / Trafo
             </button>
             <button class="btn-secondary" onclick="openAddProjectModal()" style="font-size:12px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
@@ -701,7 +701,7 @@
               <div class="detail-header">
                 <div>
                   <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL SO</div>
-                  <span class="detail-order-id" id="detailOrderId">TRF-PLN-001</span>
+                  <span class="detail-order-id" id="detailOrderId">-</span>
                 </div>
                 <span class="badge-status badge-assembly" id="detailStatusBadge">ASSEMBLY</span>
               </div>
@@ -749,7 +749,7 @@
                 <!-- Dynamically populated -->
               </div>
 
-              <button class="btn-primary btn-full-width" onclick="openFullDetailModal('TRF-PLN-001')">
+              <button class="btn-primary btn-full-width" onclick="openFullDetailModal()">
                 LIHAT DETAIL LENGKAP
               </button>
             </div>
@@ -2373,11 +2373,11 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 20px; font-weight: 800; color: #60a5fa;" id="modalDetailOrderCode">TRF-PLN-001</span>
-                <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;" id="mReadonlySOCode">SO: SO/PLN/2024/007</span>
+                <span style="font-size: 20px; font-weight: 800; color: #60a5fa;" id="modalDetailOrderCode">-</span>
+                <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;" id="mReadonlySOCode">SO: -</span>
                 <span class="dp-badge proses" id="modalDetailBadge">● Proses</span>
               </div>
-              <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;" id="modalDetailTrafoName">PT PLN (Persero)</div>
+              <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;" id="modalDetailTrafoName">-</div>
               <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;" id="mReadonlySpecsMeta">100 kVA • 20 kV / 400 V • Distribusi (CU - CU)</div>
             </div>
             <div style="text-align: right; min-width: 140px;">
@@ -2493,10 +2493,10 @@
           <div style="background: linear-gradient(135deg, #0b132b 0%, #1c2541 100%); color: #fff; padding: 18px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; gap: 16px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-weight: 700;" id="mTrafoPT">PT PLN (Persero)</span>
+                <span style="font-size: 11px; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-weight: 700;" id="mTrafoPT">-</span>
                 <span style="font-size: 11px; color: rgba(255,255,255,0.7);" id="mTrafoProject">TRAFO DISTRIBUSI 20kV</span>
               </div>
-              <div style="font-size: 20px; font-weight: 800; margin-top: 4px; color: #60a5fa;" id="mTrafoId">TRF-PLN-001</div>
+              <div style="font-size: 20px; font-weight: 800; margin-top: 4px; color: #60a5fa;" id="mTrafoId">-</div>
               <div style="font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 600;" id="mTrafoNama">Trafo Distribusi - 100 kVA (20 kV / 400 V)</div>
             </div>
             <div style="text-align: right; flex-shrink: 0;">

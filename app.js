@@ -208,52 +208,25 @@ let prj2Units = [
 ];
 
 // PT Project Data — Hierarchy: PT Company → Project → Trafo Units
-const defaultPTProjects = [
-  {
-    id: 'PT-PLN-01',
-    pt: 'PT PLN (Persero)',
-    ptShort: 'PLN',
-    ptColor: '#2563eb',
-    ptBg: '#dbeafe',
-    project: 'TRAFO DISTRIBUSI 20kV',
-    contract: 'SO/PLN/2024/007',
-    location: 'GI Kembangan, Jakarta Barat',
-    startDate: '10/05/2024',
-    endDate: '25/07/2024',
-    units: [
-      { no: 1, id: 'TRF-PLN-001', nama: 'Trafo Distribusi', cap: '100 kVA',  volt: '20 kV / 400 V',  status: 'SELESAI',       badge: 'badge-selesai',   progress: 100, stage: 'DELIVERY',      operator: 'ELNIRA AINUNNISA',       dead: '02/06/2024', orderDate: '10/05/2024' },
-      { no: 2, id: 'TRF-PLN-002', nama: 'Trafo Distribusi', cap: '250 kVA',  volt: '20 kV / 400 V',  status: 'FAT',           badge: 'badge-assembly',  progress: 90,  stage: 'FAT',           operator: 'AHMAD NURSEHA',          dead: '10/06/2024', orderDate: '12/05/2024' },
-      { no: 3, id: 'TRF-PLN-003', nama: 'Trafo Distribusi', cap: '500 kVA',  volt: '20 kV / 400 V',  status: 'ASSEMBLY',      badge: 'badge-assembly',  progress: 55,  stage: 'ASSEMBLY',      operator: 'YOGI RAHMADANI SAPUTRA', dead: '18/06/2024', orderDate: '15/05/2024' },
-      { no: 4, id: 'TRF-PLN-004', nama: 'Trafo Distribusi', cap: '630 kVA',  volt: '20 kV / 400 V',  status: 'CORE MAKING',   badge: 'badge-core',      progress: 30,  stage: 'CORE MAKING',   operator: 'LUTHFAN ANDI PRADANA',   dead: '25/06/2024', orderDate: '18/05/2024' },
-      { no: 5, id: 'TRF-PLN-005', nama: 'Trafo Distribusi', cap: '1000 kVA', volt: '20 kV / 400 V',  status: 'BELUM MULAI',   badge: 'badge-belum',     progress: 0,   stage: '-',             operator: 'AURELLIA LAYLA MAHANI',  dead: '05/07/2024', orderDate: '20/05/2024' }
-    ]
-  }
-];
+const defaultPTProjects = [];
 
-let ptProjects;
+let ptProjects = [];
 try {
   const savedPT = localStorage.getItem('SYMTRAFLOW_PT_PROJECTS');
-  let loadedPT = savedPT !== null ? JSON.parse(savedPT) : defaultPTProjects;
+  let loadedPT = savedPT !== null ? JSON.parse(savedPT) : [];
   if (Array.isArray(loadedPT)) {
-    // Filter out Pertamina and Pupuk Kaltim
+    // Filter out Pertamina, Pupuk Kaltim, and PLN
     ptProjects = loadedPT.filter(pt => {
       const name = (pt.pt || '').toUpperCase();
       const pid = (pt.id || '').toUpperCase();
-      return !name.includes('PERTAMINA') && !name.includes('PUPUK') && !name.includes('KALTIM') && !pid.includes('PTM') && !pid.includes('PKT');
-    });
-    if (ptProjects.length === 0) ptProjects = defaultPTProjects;
-    ptProjects.forEach(pt => {
-      if (Array.isArray(pt.units)) {
-        pt.units.forEach(u => {
-          if (!u.orderDate) u.orderDate = u.tglPesan || pt.startDate || '10/05/2024';
-        });
-      }
+      return !name.includes('PERTAMINA') && !name.includes('PUPUK') && !name.includes('KALTIM') && !name.includes('PLN') &&
+             !pid.includes('PTM') && !pid.includes('PKT') && !pid.includes('PLN');
     });
   } else {
-    ptProjects = defaultPTProjects;
+    ptProjects = [];
   }
 } catch (e) {
-  ptProjects = defaultPTProjects;
+  ptProjects = [];
 }
 try {
   localStorage.setItem('SYMTRAFLOW_PT_PROJECTS', JSON.stringify(ptProjects));
@@ -1093,31 +1066,9 @@ function getPTProjectsFromUnitsData() {
   const units = getUnitsData();
   units.forEach(u => recomputeUnitProgress(u));
 
-  const groups = [
-    {
-      id: 'PT-PLN-01',
-      pt: 'PT PLN (Persero)',
-      ptShort: 'PLN',
-      ptColor: '#2563eb',
-      ptBg: '#dbeafe',
-      project: 'PENGADAAN TRAFO DISTRIBUSI REGIONAL',
-      contract: 'SO/PLN/2024/007',
-      location: 'GI Jateng & Distribusi Jawa Bagian Barat',
-      startDate: '10/05/2024',
-      endDate: '25/07/2024',
-      units: units.filter(u => u.customer && (u.customer.includes('PLN') || u.unitId.includes('PLN')))
-    }
-  ];
-
-  // Dynamically group any other companies (e.g., PT INDOBARA)
-  const isDefaultCompany = (cust = '') => {
-    const c = cust.toUpperCase();
-    return c.includes('PLN');
-  };
-
-  const remainingUnits = units.filter(u => !isDefaultCompany(u.customer));
+  const groups = [];
   const dynamicMap = new Map();
-  remainingUnits.forEach(u => {
+  units.forEach(u => {
     const cName = u.customer ? u.customer.trim() : 'Mitra Industri';
     if (!dynamicMap.has(cName)) dynamicMap.set(cName, []);
     dynamicMap.get(cName).push(u);
@@ -1235,20 +1186,37 @@ function renderPTProjects() {
     container.innerHTML = '';
 
     if (activeGroups.length === 0) {
-      container.innerHTML = `
-        <div style="text-align:center; padding:48px 24px; background:#ffffff; border-radius:16px; border:2px dashed #cbd5e1; color:#64748b; margin-bottom:20px;">
-          <div style="width:56px; height:56px; border-radius:50%; background:#ecfdf5; color:#10b981; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:26px;">
-            <i class="fa-solid fa-circle-check"></i>
+      if (completedGroups.length > 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:48px 24px; background:#ffffff; border-radius:16px; border:2px dashed #cbd5e1; color:#64748b; margin-bottom:20px;">
+            <div style="width:56px; height:56px; border-radius:50%; background:#ecfdf5; color:#10b981; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:26px;">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div style="font-size:17px; font-weight:800; color:#0f172a; margin-bottom:6px;">Semua Proyek Perusahaan (PT) Selesai 100%!</div>
+            <div style="font-size:12.5px; color:#64748b; max-width:540px; margin:0 auto 16px; line-height:1.5;">
+              Seluruh unit trafo untuk proyek PT yang ada telah berstatus selesai dan secara otomatis diarsipkan ke dalam <strong>Riwayat Produksi</strong>.
+            </div>
+            <button onclick="switchMonitoringSubTab('riwayat')" class="btn-primary" style="font-size:12px; padding:9px 20px; display:inline-flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-clock-rotate-left"></i> Lihat Arsip di Riwayat Produksi
+            </button>
           </div>
-          <div style="font-size:17px; font-weight:800; color:#0f172a; margin-bottom:6px;">Semua Proyek Perusahaan (PT) Selesai 100%!</div>
-          <div style="font-size:12.5px; color:#64748b; max-width:540px; margin:0 auto 16px; line-height:1.5;">
-            Seluruh unit trafo untuk proyek PT yang ada telah berstatus selesai dan secara otomatis diarsipkan ke dalam <strong>Riwayat Produksi</strong>.
+        `;
+      } else {
+        container.innerHTML = `
+          <div style="text-align:center; padding:48px 24px; background:#ffffff; border-radius:16px; border:2px dashed #cbd5e1; color:#64748b; margin-bottom:20px;">
+            <div style="width:60px; height:60px; border-radius:50%; background:#f8fafc; color:#94a3b8; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:26px; border:1px solid #e2e8f0;">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:6px;">Belum Ada Proyek Perusahaan (PT) di Monitoring Produksi</div>
+            <div style="font-size:12.5px; color:#64748b; max-width:520px; margin:0 auto 18px; line-height:1.5;">
+              Monitoring produksi saat ini kosong. Anda dapat menambahkan proyek PT baru secara manual atau membuat dan memproses Sales Order baru.
+            </div>
+            <button onclick="openAddProjectModal()" class="btn-primary" style="font-size:12px; padding:9px 20px; display:inline-flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-building-circle-plus"></i> Tambah Proyek PT Baru
+            </button>
           </div>
-          <button onclick="switchMonitoringSubTab('riwayat')" class="btn-primary" style="font-size:12px; padding:9px 20px; display:inline-flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-clock-rotate-left"></i> Lihat Arsip di Riwayat Produksi
-          </button>
-        </div>
-      `;
+        `;
+      }
       return;
     }
 
@@ -1694,6 +1662,11 @@ function populateProjectDropdowns() {
 
 // Open Modal Add Trafo
 function openAddTrafoModal(projectId) {
+  if (ptProjects.length === 0) {
+    if (typeof showToast === 'function') showToast('⚠️ Belum ada Proyek PT. Silakan tambah Proyek PT terlebih dahulu.');
+    if (typeof openAddProjectModal === 'function') openAddProjectModal();
+    return;
+  }
   populateProjectDropdowns();
   const sel = document.getElementById('inpTrafoTargetProject');
   if (projectId && sel) {
@@ -4849,202 +4822,10 @@ function openProyekDetail(soNumber) {
 
 // ================= UNIFIED UNITS DATA STORE (SINGLE SOURCE OF TRUTH) =================
 
-const defaultUnitsData = [
-  // PT PLN (Persero) Units
-  {
-    unitId: 'TRF-PLN-001',
-    soNumber: 'SO-PLN-2024-001',
-    customer: 'PT PLN (Persero)',
-    variant: 'Distribusi',
-    capacity: '250 kVA',
-    voltage: '20 kV / 400 V',
-    winding: 'CU - CU',
-    orderDate: '10/05/2024',
-    targetDate: '15/06/2024',
-    pic: 'MOCHAMMAD ZIDAN FEBRIAN',
-    location: 'UID Jawa Timur, Surabaya',
-    notes: 'Pengadaan Trafo Distribusi 250 kVA 20kV Tahap 1',
-    lastUpdate: '10 Mei 2024 10:00',
-    progress: 50,
-    status: 'Dalam Proses',
-    electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-15', pic: 'MOCHAMMAD ZIDAN FEBRIAN', note: 'Winding LV tembaga 250kVA selesai', doc: 'Drawing-LV-PLN001.pdf' },
-      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-22', pic: 'MOCHAMMAD ZIDAN FEBRIAN', note: 'Coil HV lulus isolasi tegangan', doc: '' },
-      { name: 'Susun Core', status: 'Selesai', date: '2024-05-28', pic: 'Andi Pratama', note: 'Penyusunan core silikon baja CRGO', doc: '' },
-      { name: 'CCA', status: 'Selesai', date: '2024-06-03', pic: 'Budi Santoso', note: 'Core Coil Assembly selesai', doc: '' },
-      { name: 'Connect', status: 'Proses', date: '2024-06-09', pic: 'Wahyu Hidayat', note: 'Terminasi lead & tap changer', doc: '' },
-      { name: 'Final', status: 'Belum Mulai', date: '2024-06-12', pic: 'Rizky', note: '-', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2024-06-15', pic: 'Shevira Indraswari', note: '-', doc: '' }
-    ],
-    mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-12', pic: 'Dedi Kurniawan', note: 'Plat tangki 4mm potong presisi CNC', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-18', pic: 'Dedi Kurniawan', note: 'Welding tangki & fitting lifting lug', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-25', pic: 'Wahyu Hidayat', note: 'Panel fin radiator terpasang', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2024-05-30', pic: 'Andi Pratama', note: 'Leak test 0.5 bar PASS', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-06', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-11', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-14', pic: 'Budi Santoso', note: '-', doc: '' }
-    ],
-    activities: [
-      { time: '09 Jun 2024 11:00', icon: 'gear', color: 'blue', title: 'Connect Dalam Proses', desc: 'Terminasi tap changer dan lead busbar' },
-      { time: '30 Mei 2024 14:00', icon: 'check', color: 'green', title: 'Leak Test Selesai', desc: 'Tangki lolos uji tekan kebocoran 0.5 bar' }
-    ],
-    chatNotes: []
-  },
-  {
-    unitId: 'TRF-PLN-002',
-    soNumber: 'SO-PLN-2024-002',
-    customer: 'PT PLN (Persero)',
-    variant: 'Distribusi',
-    capacity: '315 kVA',
-    voltage: '20 kV / 400 V',
-    winding: 'CU - CU',
-    orderDate: '12/05/2024',
-    targetDate: '20/06/2024',
-    pic: 'MUHAMMAD RIVALDO ZIDAN',
-    location: 'UID Jawa Tengah & DIY, Semarang',
-    notes: 'Unit 2 Distribusi 315 kVA',
-    lastUpdate: '12 Mei 2024 11:30',
-    progress: 75,
-    status: 'Dalam Proses',
-    electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-18', pic: 'MUHAMMAD RIVALDO ZIDAN', note: 'Gulungan LV selesai', doc: '' },
-      { name: 'HV (High Voltage)', status: 'Selesai', date: '2024-05-24', pic: 'MUHAMMAD RIVALDO ZIDAN', note: 'Gulungan HV selesai', doc: '' },
-      { name: 'Susun Core', status: 'Selesai', date: '2024-05-30', pic: 'Andi Pratama', note: 'Susun core CRGO selesai', doc: '' },
-      { name: 'CCA', status: 'Selesai', date: '2024-06-05', pic: 'Budi Santoso', note: 'Perakitan CCA selesai', doc: '' },
-      { name: 'Connect', status: 'Selesai', date: '2024-06-10', pic: 'Wahyu Hidayat', note: 'Koneksi terminal & tap changer selesai', doc: '' },
-      { name: 'Final', status: 'Proses', date: '2024-06-15', pic: 'Rizky', note: 'Pemasangan ke tangki & vacuum drying', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2024-06-20', pic: 'Shevira Indraswari', note: '-', doc: '' }
-    ],
-    mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-14', pic: 'Dedi Kurniawan', note: 'Pemotongan plat selesai', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Selesai', date: '2024-05-20', pic: 'Dedi Kurniawan', note: 'Pengelasan tangki selesai', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Selesai', date: '2024-05-27', pic: 'Wahyu Hidayat', note: 'Fin radiator terpasang', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Selesai', date: '2024-06-02', pic: 'Andi Pratama', note: 'Leak test PASS', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Selesai', date: '2024-06-07', pic: 'Dedi Kurniawan', note: 'Sandblasting Sa 2.5 selesai', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Proses', date: '2024-06-14', pic: 'Wahyu Hidayat', note: 'Pengecatan polyurethane sedang berjalan', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-18', pic: 'Budi Santoso', note: '-', doc: '' }
-    ],
-    activities: [
-      { time: '14 Jun 2024 15:00', icon: 'gear', color: 'blue', title: 'Pengecatan Dalam Proses', desc: 'Aplikasi cat akhir polyurethane RAL 7032' }
-    ],
-    chatNotes: []
-  },
-  {
-    unitId: 'TRF-PLN-003',
-    soNumber: 'SO-PLN-2024-003',
-    customer: 'PT PLN (Persero)',
-    variant: 'Distribusi',
-    capacity: '400 kVA',
-    voltage: '20 kV / 400 V',
-    winding: 'CU - CU',
-    orderDate: '15/05/2024',
-    targetDate: '22/06/2024',
-    pic: 'DEVI KURNIA SAFITRI',
-    location: 'UID Jawa Barat, Bandung',
-    notes: 'Unit 3 Distribusi 400 kVA',
-    lastUpdate: '15 Mei 2024 09:15',
-    progress: 40,
-    status: 'Dalam Proses',
-    electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Selesai', date: '2024-05-22', pic: 'DEVI KURNIA SAFITRI', note: 'Gulungan LV selesai', doc: '' },
-      { name: 'HV (High Voltage)', status: 'Proses', date: '2024-05-29', pic: 'DEVI KURNIA SAFITRI', note: 'Winding HV sedang berjalan', doc: '' },
-      { name: 'Susun Core', status: 'Belum Mulai', date: '2024-06-05', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'CCA', status: 'Belum Mulai', date: '2024-06-11', pic: 'Budi Santoso', note: '-', doc: '' },
-      { name: 'Connect', status: 'Belum Mulai', date: '2024-06-16', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Final', status: 'Belum Mulai', date: '2024-06-19', pic: 'Rizky', note: '-', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2024-06-22', pic: 'Shevira Indraswari', note: '-', doc: '' }
-    ],
-    mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Selesai', date: '2024-05-20', pic: 'Dedi Kurniawan', note: 'Bending plat selesai', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Proses', date: '2024-05-28', pic: 'Dedi Kurniawan', note: 'Sedang pengelasan bodi tangki', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2024-06-04', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2024-06-10', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-15', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-18', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-21', pic: 'Budi Santoso', note: '-', doc: '' }
-    ],
-    activities: [],
-    chatNotes: []
-  },
-  {
-    unitId: 'TRF-PLN-004',
-    soNumber: 'SO-PLN-2024-004',
-    customer: 'PT PLN (Persero)',
-    variant: 'Distribusi',
-    capacity: '630 kVA',
-    voltage: '20 kV / 400 V',
-    winding: 'CU - CU',
-    orderDate: '18/05/2024',
-    targetDate: '25/06/2024',
-    pic: 'LUTHFAN ANDI PRADANA',
-    location: 'UID DKI Jakarta, Gambir',
-    notes: 'Unit 4 Distribusi 630 kVA',
-    lastUpdate: '18 Mei 2024 13:00',
-    progress: 30,
-    status: 'Dalam Proses',
-    electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Proses', date: '2024-05-25', pic: 'LUTHFAN ANDI PRADANA', note: 'Persiapan winding LV', doc: '' },
-      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '2024-06-02', pic: 'LUTHFAN ANDI PRADANA', note: '-', doc: '' },
-      { name: 'Susun Core', status: 'Belum Mulai', date: '2024-06-08', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'CCA', status: 'Belum Mulai', date: '2024-06-14', pic: 'Budi Santoso', note: '-', doc: '' },
-      { name: 'Connect', status: 'Belum Mulai', date: '2024-06-18', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Final', status: 'Belum Mulai', date: '2024-06-22', pic: 'Rizky', note: '-', doc: '' },
-      { name: 'QC', status: 'Belum Mulai', date: '2024-06-25', pic: 'Shevira Indraswari', note: '-', doc: '' }
-    ],
-    mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Proses', date: '2024-05-25', pic: 'Dedi Kurniawan', note: 'Pemotongan plat CNC', doc: '' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '2024-06-02', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '2024-06-08', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '2024-06-14', pic: 'Andi Pratama', note: '-', doc: '' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '2024-06-18', pic: 'Dedi Kurniawan', note: '-', doc: '' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '2024-06-22', pic: 'Wahyu Hidayat', note: '-', doc: '' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '2024-06-25', pic: 'Budi Santoso', note: '-', doc: '' }
-    ],
-    activities: [],
-    chatNotes: []
-  },
-  {
-    unitId: 'TRF-PLN-005',
-    soNumber: 'SO-PLN-2024-005',
-    customer: 'PT PLN (Persero)',
-    variant: 'Distribusi',
-    capacity: '1000 kVA',
-    voltage: '20 kV / 400 V',
-    winding: 'CU - CU',
-    orderDate: '20/05/2024',
-    targetDate: '05/07/2024',
-    pic: 'AURELLIA LAYLA MAHANI',
-    location: 'UID Banten, Tangerang',
-    notes: 'Unit 5 Distribusi 1000 kVA',
-    lastUpdate: '20 Mei 2024 14:00',
-    progress: 0,
-    status: 'Belum Mulai',
-    electricalStages: [
-      { name: 'LV (Low Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
-      { name: 'HV (High Voltage)', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
-      { name: 'Susun Core', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
-      { name: 'CCA', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' },
-      { name: 'Connect', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
-      { name: 'Final', status: 'Belum Mulai', date: '-', pic: 'Rizky', note: '-' },
-      { name: 'QC', status: 'Belum Mulai', date: '-', pic: 'Shevira Indraswari', note: '-' }
-    ],
-    mechanicalStages: [
-      { name: 'Pemotongan & Bending Plat', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
-      { name: 'Pengelasan Tangki & Cover', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
-      { name: 'Pemasangan Fin Radiator', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
-      { name: 'Uji Tekan / Kebocoran (Leak Test)', status: 'Belum Mulai', date: '-', pic: 'Andi Pratama', note: '-' },
-      { name: 'Sandblasting & Shot Peening', status: 'Belum Mulai', date: '-', pic: 'Dedi Kurniawan', note: '-' },
-      { name: 'Pengecatan Dasar & Finishing', status: 'Belum Mulai', date: '-', pic: 'Wahyu Hidayat', note: '-' },
-      { name: 'Asesoris & Final Tangki', status: 'Belum Mulai', date: '-', pic: 'Budi Santoso', note: '-' }
-    ],
-    activities: [],
-    chatNotes: []
-  }
-];
+const defaultUnitsData = [];
 
-let activeDPUnitId = 'TRF-PLN-001';
-let activeMonitoringUnitId = 'TRF-PLN-001';
+let activeDPUnitId = '';
+let activeMonitoringUnitId = '';
 let activeEditingCategory = 'electrical';
 let activeEditingStageIndex = 0;
 
@@ -5054,23 +4835,25 @@ function getUnitsData() {
     if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        // Filter out Pertamina and Pupuk Kaltim
+        // Filter out Pertamina, Pupuk Kaltim, and PLN
         const filtered = parsed.filter(u => {
           const cust = (u.customer || '').toUpperCase();
           const uid = (u.unitId || '').toUpperCase();
-          return !cust.includes('PERTAMINA') && !cust.includes('PUPUK') && !cust.includes('KALTIM') && !uid.includes('PTM') && !uid.includes('PKT');
+          return !cust.includes('PERTAMINA') && !cust.includes('PUPUK') && !cust.includes('KALTIM') && !cust.includes('PLN') &&
+                 !uid.includes('PTM') && !uid.includes('PKT') && !uid.includes('PLN');
         });
-        if (filtered.length > 0) {
-          filtered.forEach(u => recomputeUnitProgress(u));
-          return filtered;
-        }
+        filtered.forEach(u => recomputeUnitProgress(u));
+        try {
+          localStorage.setItem('SYMTRAFLOW_UNITS_DATA_V7', JSON.stringify(filtered));
+          localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(filtered));
+        } catch(e){}
+        return filtered;
       }
     }
   } catch (err) {
     console.error('Error loading units data from storage:', err);
   }
-  const cloned = JSON.parse(JSON.stringify(defaultUnitsData));
-  cloned.forEach(u => recomputeUnitProgress(u));
+  const cloned = [];
   try {
     localStorage.setItem('SYMTRAFLOW_UNITS_DATA_V7', JSON.stringify(cloned));
     localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(cloned));
@@ -6164,10 +5947,13 @@ function handleDPSearch(e) {
 
 // Open Full Detail Modal in Monitoring Produksi (Read-Only: Electrical & Mechanical)
 function openFullDetailModal(unitId) {
-  const targetId = unitId || activeMonitoringUnitId || 'TRF-PLN-001';
   const units = getUnitsData();
+  const targetId = unitId || activeMonitoringUnitId;
   const unit = units.find(u => u.unitId === targetId) || units[0];
-  if (!unit) return;
+  if (!unit) {
+    if (typeof showToast === 'function') showToast('⚠️ Belum ada unit trafo untuk ditampilkan.');
+    return;
+  }
 
   activeMonitoringUnitId = unit.unitId;
   activeDPUnitId = unit.unitId;
