@@ -51,7 +51,22 @@ function getSalesAvatar(name) {
 }
 
 // Initial Orders Data (Matching Image 1)
-let orders = [
+function getOrdersData() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_ORDERS_V1');
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(e){}
+  return defaultOrdersData;
+}
+function saveOrdersData(data) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_ORDERS_V1', JSON.stringify(data));
+  } catch(e){}
+}
+const defaultOrdersData = [
   {
     id: 'TRF-240522-001',
     nama: 'Trafo Distribusi',
@@ -185,7 +200,25 @@ let orders = [
 ];
 
 // Project 1 Units Data (10 Units - Matching Image 2)
-let prj1Units = [
+let orders = getOrdersData();
+
+// Project 1 Units Data (10 Units - Matching Image 2)
+function getPrj1Units() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_PRJ1_UNITS_V1');
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(e){}
+  return defaultPrj1Units;
+}
+function savePrj1Units(data) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_PRJ1_UNITS_V1', JSON.stringify(data));
+  } catch(e){}
+}
+const defaultPrj1Units = [
   { no: 1, id: 'TRF-240522-001', cap: '500 kVA', volt: '20 kV / 400 V', status: 'ASSEMBLY', badge: 'badge-assembly', progress: 60, stageIdx: 3, startCol: 1, endCol: 4, operator: 'I WAYAN EVA VERDIANA', dead: '28/05/2024' },
   { no: 2, id: 'TRF-240522-002', cap: '750 kVA', volt: '20 kV / 400 V', status: 'CORE MAKING', badge: 'badge-core', progress: 75, stageIdx: 1, startCol: 1, endCol: 2, operator: 'SHEVIRA INDRASWARI', dead: '27/05/2024' },
   { no: 3, id: 'TRF-240522-003', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 40, stageIdx: 7, startCol: 1, endCol: 8, operator: 'WILLI SYUKRAN', dead: '25/05/2024' },
@@ -199,13 +232,33 @@ let prj1Units = [
 ];
 
 // Project 2 Units Data (5 Units - Matching Image 2)
-let prj2Units = [
+let prj1Units = getPrj1Units();
+
+// Project 2 Units Data (5 Units - Matching Image 2)
+function getPrj2Units() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_PRJ2_UNITS_V1');
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(e){}
+  return defaultPrj2Units;
+}
+function savePrj2Units(data) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_PRJ2_UNITS_V1', JSON.stringify(data));
+  } catch(e){}
+}
+const defaultPrj2Units = [
   { no: 1, id: 'TRF-240522-A01', cap: '500 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 60, stageIdx: 7, startCol: 1, endCol: 8, operator: 'JHODY AIDO SAUT HUTAGALUNG', dead: '26/05/2024' },
   { no: 2, id: 'TRF-240522-A02', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 30, stageIdx: 6, startCol: 5, endCol: 7, operator: 'KEYSHA ZARA ALIFA PANJAITAN', dead: '26/05/2024' },
   { no: 3, id: 'TRF-240522-A03', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 4, operator: 'I WAYAN EVA VERDIANA', dead: '24/05/2024' },
   { no: 4, id: 'TRF-240522-A04', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'CORE MAKING', badge: 'badge-core', progress: 70, stageIdx: 1, startCol: 4, endCol: 6, operator: 'SHEVIRA INDRASWARI', dead: '29/05/2024' },
   { no: 5, id: 'TRF-240522-A05', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 7, operator: 'WILLI SYUKRAN', dead: '30/05/2024' }
 ];
+
+let prj2Units = getPrj2Units();
 
 // PT Project Data — Hierarchy: PT Company → Project → Trafo Units
 const defaultPTProjects = [];
@@ -301,7 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
   populateStepperOrderSelector();
   renderStepper(selectedOrder);
   renderOrdersTable();
-  updateDetailPanel(selectedOrder);
+  const initUnits = getUnitsData();
+  if (initUnits.length > 0) {
+    updateDetailPanel(initUnits[0]);
+  } else {
+    updateDetailPanel(null);
+  }
   initProgressChart();
   renderActivityLogs();
   startStepperSlideshow();
@@ -659,7 +717,36 @@ function renderOrdersTable(filteredList = null) {
 
 // Update Detail Order Side Panel in Monitoring Produksi
 function updateDetailPanel(ord) {
-  if (!ord) return;
+  if (!ord) {
+    const idEl = document.getElementById('detailOrderId');
+    if (idEl) idEl.innerText = '-';
+    const badgeEl = document.getElementById('detailStatusBadge');
+    if (badgeEl) {
+      badgeEl.innerText = '-';
+      badgeEl.className = 'badge-status badge-belum';
+    }
+    const namaEl = document.getElementById('detailNamaTrafo');
+    if (namaEl) namaEl.innerText = ': -';
+    const capEl = document.getElementById('detailKapasitas');
+    if (capEl) capEl.innerText = ': -';
+    const voltEl = document.getElementById('detailTegangan');
+    if (voltEl) voltEl.innerText = ': -';
+    const mulaiEl = document.getElementById('detailMulai');
+    if (mulaiEl) mulaiEl.innerText = ': -';
+    const deadEl = document.getElementById('detailDeadline');
+    if (deadEl) deadEl.innerText = ': -';
+    const statusEl = document.getElementById('detailStatusSaatIni');
+    if (statusEl) statusEl.innerText = ': -';
+    const pctEl = document.getElementById('detailProgressPct');
+    if (pctEl) pctEl.innerText = '0%';
+    const barEl = document.getElementById('detailProgressBar');
+    if (barEl) barEl.style.width = '0%';
+    const timelineContainer = document.getElementById('timelineProsesList');
+    if (timelineContainer) {
+      timelineContainer.innerHTML = '<div style="text-align:center; padding:24px 10px; color:#94a3b8; font-size:11.5px;">Belum ada trafo yang dipilih</div>';
+    }
+    return;
+  }
   recomputeUnitProgress(ord);
 
   const idEl = document.getElementById('detailOrderId');
@@ -1962,19 +2049,43 @@ function handleAddPTProjectSubmit(e) {
 
 // Delete Entire PT Project
 function deletePTProject(ptId) {
-  const pt = ptProjects.find(p => p.id === ptId);
-  if (!pt) return;
+  const allGroups = getPTProjectsFromUnitsData();
+  const pt = ptProjects.find(p => p.id === ptId) || allGroups.find(p => p.id === ptId);
+  const ptName = pt ? pt.pt : '';
 
-  const total = pt.units ? pt.units.length : 0;
+  const total = pt && pt.units ? pt.units.length : 0;
   const unitInfo = total > 0 ? `\nSemua ${total} unit trafo di bawah proyek ini akan ikut terhapus permanen.` : '';
-  const confirmMsg = `⚠️ Apakah Anda yakin ingin menghapus seluruh proyek "${pt.pt}"?${unitInfo}\n\nTindakan ini tidak dapat dibatalkan.`;
+  const confirmMsg = `⚠️ Apakah Anda yakin ingin menghapus seluruh proyek "${ptName || ptId}"?${unitInfo}\n\nTindakan ini tidak dapat dibatalkan.`;
   
   if (confirm(confirmMsg)) {
+    // 1. Remove from ptProjects
     ptProjects = ptProjects.filter(p => p.id !== ptId);
     savePTProjects();
+
+    // 2. Remove all related units from unified units data
+    let allUnits = getUnitsData();
+    allUnits = allUnits.filter(u => {
+      if (pt && pt.units && pt.units.some(pu => (pu.id === u.unitId || pu.unitId === u.unitId))) return false;
+      if (ptName && u.customer && u.customer.trim().toUpperCase() === ptName.trim().toUpperCase()) return false;
+      return true;
+    });
+    saveUnitsData(allUnits);
+
+    // 3. Remove from erpProduksiUnits
+    if (typeof erpProduksiUnits !== 'undefined' && Array.isArray(erpProduksiUnits)) {
+      erpProduksiUnits = erpProduksiUnits.filter(u => {
+        if (ptName && u.customer && u.customer.trim().toUpperCase() === ptName.trim().toUpperCase()) return false;
+        return true;
+      });
+      if (typeof saveERPProduksiUnits === 'function') saveERPProduksiUnits(erpProduksiUnits);
+    }
+
     renderPTProjects();
+    renderOrdersTable();
+    renderDetailProduksiView();
     populateProjectDropdowns();
-    showToast(`🗑️ Proyek ${pt.pt} beserta seluruh unitnya telah dihapus.`);
+    updateMonitoringKPICards();
+    showToast(`🗑️ Proyek ${ptName || ptId} beserta seluruh unitnya telah dihapus permanen.`);
   }
 }
 
@@ -1990,12 +2101,20 @@ function deleteTrafoUnit(ptId, trafoId) {
       savePTProjects();
     }
 
-    // Also remove from unified units data
-    const allUnits = getUnitsData().filter(u => u.unitId !== trafoId);
+    // Remove from unified units data
+    const allUnits = getUnitsData().filter(u => u.unitId !== trafoId && u.id !== trafoId);
     saveUnitsData(allUnits);
 
+    // Remove from erpProduksiUnits
+    if (typeof erpProduksiUnits !== 'undefined' && Array.isArray(erpProduksiUnits)) {
+      erpProduksiUnits = erpProduksiUnits.filter(u => u.unitNo !== trafoId && u.unitId !== trafoId);
+      if (typeof saveERPProduksiUnits === 'function') saveERPProduksiUnits(erpProduksiUnits);
+    }
+
     renderPTProjects();
+    renderOrdersTable();
     renderDetailProduksiView();
+    updateMonitoringKPICards();
     showToast(`🗑️ Unit trafo ${trafoId} berhasil dihapus.`);
   }
 }
@@ -2705,14 +2824,14 @@ function handleSaveTrafoEdit(e) {
 function printSOUnit(unitParam, ptParam) {
   const unit = unitParam || currentActiveUnit || selectedOrder || (orders && orders[0]) || {};
   const pt   = ptParam || currentActivePT || {
-    pt: 'PT PLN (Persero)',
-    ptShort: 'PLN',
+    pt: 'PT MITRA INDUSTRI',
+    ptShort: 'MITRA',
     project: 'TRAFO DISTRIBUSI 20kV',
-    contract: 'SO/PLN/2024/001',
-    location: 'UID Jawa Timur, Surabaya'
+    contract: 'SO/MTR/2026/001',
+    location: 'Pabrik Trafo SYMTRAFLOW'
   };
 
-  const idUnit = unit.id || 'TRF-PLN-001';
+  const idUnit = unit.id || 'TRF-001';
   const namaUnit = unit.nama || unit.name || 'Trafo Power';
   const capUnit = unit.cap || unit.kapasitas || '1000 kVA';
   const voltUnit = unit.volt || unit.tegangan || '20 kV / 400 V';
@@ -2813,10 +2932,10 @@ function printSOUnit(unitParam, ptParam) {
       <div class="grid-info">
         <div class="info-box">
           <div class="info-title">1. INFORMASI PELANGGAN & KONTRAK</div>
-          <div class="info-row"><span class="info-label">Perusahaan (PT):</span><span class="info-value">${pt.pt || 'PT PLN (Persero)'}</span></div>
+          <div class="info-row"><span class="info-label">Perusahaan (PT):</span><span class="info-value">${pt.pt || 'PT MITRA INDUSTRI'}</span></div>
           <div class="info-row"><span class="info-label">Nama Proyek:</span><span class="info-value">${pt.project || 'TRAFO DISTRIBUSI 20kV'}</span></div>
-          <div class="info-row"><span class="info-label">Nomor Kontrak / SO:</span><span class="info-value">${pt.contract || 'SO/PLN/2024/001'}</span></div>
-          <div class="info-row"><span class="info-label">Lokasi Tujuan:</span><span class="info-value">${pt.location || 'UID Jawa Timur, Surabaya'}</span></div>
+          <div class="info-row"><span class="info-label">Nomor Kontrak / SO:</span><span class="info-value">${pt.contract || 'SO/MTR/2026/001'}</span></div>
+          <div class="info-row"><span class="info-label">Lokasi Tujuan:</span><span class="info-value">${pt.location || 'Pabrik Trafo SYMTRAFLOW'}</span></div>
         </div>
 
         <div class="info-box">
@@ -3304,53 +3423,6 @@ function handleLogout() {
 const defaultERPSalesOrders = [
   {
     no: 1,
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    variant: 'Distribusi',
-    kva: 500,
-    qty: 10,
-    orderDate: '01/05/2026',
-    targetDate: '30/06/2026',
-    status: 'Dalam Proses',
-    pic: 'I Wayan Eva Verdiana',
-    units: [
-      { unitNo: 'TRF-001', kva: 500, stage: 'HV', progress: 60, targetDate: '20/06/2026', status: 'Dalam Proses' },
-      { unitNo: 'TRF-002', kva: 500, stage: 'Susun Core', progress: 40, targetDate: '22/06/2026', status: 'Dalam Proses' }
-    ]
-  },
-  {
-    no: 2,
-    soNumber: '25-0442D',
-    customer: 'PT PLN Nusa Daya',
-    variant: 'Distribusi',
-    kva: 1000,
-    qty: 5,
-    orderDate: '03/05/2026',
-    targetDate: '25/07/2026',
-    status: 'Dalam Proses',
-    pic: 'Shevira Indraswari',
-    units: [
-      { unitNo: 'TRF-003', kva: 1000, stage: 'CCA', progress: 30, targetDate: '10/07/2026', status: 'Dalam Proses' },
-      { unitNo: 'TRF-004', kva: 1000, stage: 'LV', progress: 20, targetDate: '10/07/2026', status: 'Dalam Proses' }
-    ]
-  },
-  {
-    no: 3,
-    soNumber: '25-0789',
-    customer: 'PT PLN Jawa Tengah',
-    variant: 'Distribusi',
-    kva: 250,
-    qty: 2,
-    orderDate: '10/05/2026',
-    targetDate: '15/08/2026',
-    status: 'Belum Proses',
-    pic: 'Willi Syukran',
-    units: [
-      { unitNo: 'TRF-005', kva: 250, stage: 'Belum Mulai', progress: 0, targetDate: '15/08/2026', status: 'Belum Proses' }
-    ]
-  },
-  {
-    no: 4,
     soNumber: '25-0810',
     customer: 'PT INDOBARA',
     variant: 'Distribusi',
@@ -3367,13 +3439,23 @@ const defaultERPSalesOrders = [
 function getERPSalesOrders() {
   try {
     const raw = localStorage.getItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2');
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        parsed.forEach(so => {
+      if (Array.isArray(parsed)) {
+        // Filter out Pertamina, Pupuk Kaltim, and PLN
+        const filtered = parsed.filter(so => {
+          const c = (so.customer || '').toUpperCase();
+          const s = (so.soNumber || '').toUpperCase();
+          return !c.includes('PERTAMINA') && !c.includes('PUPUK') && !c.includes('KALTIM') && !c.includes('PLN') &&
+                 !s.includes('PTM') && !s.includes('PKT');
+        });
+        filtered.forEach(so => {
           if (so.status === 'Belum Mulai') so.status = 'Belum Proses';
         });
-        return parsed;
+        try {
+          localStorage.setItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2', JSON.stringify(filtered));
+        } catch(e){}
+        return filtered;
       }
     }
   } catch (e) {
@@ -3392,128 +3474,59 @@ function saveERPSalesOrders(data) {
 
 let erpSalesOrders = getERPSalesOrders();
 
-let erpProduksiUnits = [
-  {
-    no: 1,
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    unitNo: 'TRF-001',
-    kva: 500,
-    stage: 'HV',
-    progress: 60,
-    targetDate: '20/06/2026',
-    status: 'Dalam Proses',
-    operator: 'Budi Santoso'
-  },
-  {
-    no: 2,
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    unitNo: 'TRF-002',
-    kva: 500,
-    stage: 'Susun Core',
-    progress: 40,
-    targetDate: '22/06/2026',
-    status: 'Dalam Proses',
-    operator: 'Agus Pratama'
-  },
-  {
-    no: 3,
-    soNumber: '25-0442D',
-    customer: 'PT PLN Nusa Daya',
-    unitNo: 'TRF-003',
-    kva: 1000,
-    stage: 'CCA',
-    progress: 30,
-    targetDate: '10/07/2026',
-    status: 'Dalam Proses',
-    operator: 'Hendra Gunawan'
-  },
-  {
-    no: 4,
-    soNumber: '25-0442D',
-    customer: 'PT PLN Nusa Daya',
-    unitNo: 'TRF-004',
-    kva: 1000,
-    stage: 'LV',
-    progress: 20,
-    targetDate: '10/07/2026',
-    status: 'Dalam Proses',
-    operator: 'Dedi Kurniawan'
-  },
-  {
-    no: 5,
-    soNumber: '25-0789',
-    customer: 'PT PLN Jawa Tengah',
-    unitNo: 'TRF-005',
-    kva: 250,
-    stage: 'Belum Mulai',
-    progress: 0,
-    targetDate: '15/08/2026',
-    status: 'Belum Mulai',
-    operator: 'Eko Wahyudi'
-  }
-];
+function getERPProduksiUnits() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1');
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(u => {
+          const c = (u.customer || '').toUpperCase();
+          const num = (u.unitNo || '').toUpperCase();
+          const so = (u.soNumber || '').toUpperCase();
+          return !c.includes('PERTAMINA') && !c.includes('PUPUK') && !c.includes('KALTIM') && !c.includes('PLN') &&
+                 !num.includes('PTM') && !num.includes('PKT') && !num.includes('PLN');
+        });
+      }
+    }
+  } catch(e){}
+  return [];
+}
 
-let erpShipments = [
-  {
-    no: 1,
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    unitNo: 'TRF-001',
-    kva: 500,
-    finishDate: '20/06/2026',
-    shipDate: '22/06/2026',
-    status: 'Siap Kirim',
-    driver: 'Supardi (Truk B-9821-TF)',
-    dest: 'Gardu Induk Jateng, Semarang',
-    stepActive: 2,
-    steps: [
-      { name: 'Siap Kirim', date: '20 Jun 2026' },
-      { name: 'Dalam Pengiriman', date: '22 Jun 2026' },
-      { name: 'Tiba di Lokasi', date: '24 Jun 2026' },
-      { name: 'Selesai', date: '25 Jun 2026' }
-    ]
-  },
-  {
-    no: 2,
-    soNumber: '25-0442D',
-    customer: 'PT PLN Nusa Daya',
-    unitNo: 'TRF-003',
-    kva: 1000,
-    finishDate: '10/07/2026',
-    shipDate: '12/07/2026',
-    status: 'Dalam Pengiriman',
-    driver: 'Bambang S. (Low-Bed Trailer L-8812-UX)',
-    dest: 'GI Mataram, Lombok',
-    stepActive: 2,
-    steps: [
-      { name: 'Siap Kirim', date: '10 Jul 2026' },
-      { name: 'Dalam Pengiriman', date: '12 Jul 2026' },
-      { name: 'Tiba di Lokasi', date: '15 Jul 2026' },
-      { name: 'Selesai', date: '16 Jul 2026' }
-    ]
-  },
-  {
-    no: 3,
-    soNumber: '25-0789',
-    customer: 'PT PLN Jawa Tengah',
-    unitNo: 'TRF-005',
-    kva: 250,
-    finishDate: '15/08/2026',
-    shipDate: '18/08/2026',
-    status: 'Selesai',
-    driver: 'Joko Susilo (Flatbed H-9120-EA)',
-    dest: 'PLN UID Jateng-DIY, Kudus',
-    stepActive: 4,
-    steps: [
-      { name: 'Siap Kirim', date: '15 Agu 2026' },
-      { name: 'Dalam Pengiriman', date: '18 Agu 2026' },
-      { name: 'Tiba di Lokasi', date: '19 Agu 2026' },
-      { name: 'Selesai', date: '20 Agu 2026' }
-    ]
-  }
-];
+function saveERPProduksiUnits(units) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1', JSON.stringify(units));
+  } catch(e){}
+}
+
+let erpProduksiUnits = getERPProduksiUnits();
+
+function getERPShipments() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_ERP_SHIPMENTS_V1');
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(s => {
+          const c = (s.customer || '').toUpperCase();
+          const u = (s.unitNo || '').toUpperCase();
+          const so = (s.soNumber || '').toUpperCase();
+          return !c.includes('PERTAMINA') && !c.includes('PUPUK') && !c.includes('KALTIM') && !c.includes('PLN') &&
+                 !u.includes('PTM') && !u.includes('PKT') && !u.includes('PLN');
+        });
+      }
+    }
+  } catch(e){}
+  return [];
+}
+
+function saveERPShipments(list) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_ERP_SHIPMENTS_V1', JSON.stringify(list));
+  } catch(e){}
+}
+
+let erpShipments = getERPShipments();
 let activeTrackingShipmentIndex = 0;
 
 // --- Main Tab Switcher Function ---
@@ -4559,6 +4572,18 @@ function deleteSalesOrder(soNumber) {
       if (isCustomerMatch(u.customer, u.unitNo) && !hasOtherSOForCust) return false;
       return true;
     });
+    saveERPProduksiUnits(erpProduksiUnits);
+  }
+
+  // 6. Remove from erpShipments
+  if (typeof erpShipments !== 'undefined' && Array.isArray(erpShipments)) {
+    erpShipments = erpShipments.filter(s => {
+      if (s.soNumber === soNumber) return false;
+      if (definedUnitNos.includes(s.unitNo)) return false;
+      if (isCustomerMatch(s.customer, s.unitNo) && !hasOtherSOForCust) return false;
+      return true;
+    });
+    saveERPShipments(erpShipments);
   }
 
   // 6. Refresh and re-render all dependent tables and views
@@ -4945,7 +4970,7 @@ const defaultMaterialsData = [
     requirement: 1200,
     unit: 'kg',
     supplier: 'PT Supreme Cable Tbk',
-    allocatedTo: 'TRF-PLN-001, TRF-PLN-002 (PT PLN)',
+    allocatedTo: 'Lini Gulung LV & HV Tembaga',
     leadTime: '5 Hari'
   },
   {
@@ -4957,7 +4982,7 @@ const defaultMaterialsData = [
     requirement: 950,
     unit: 'kg',
     supplier: 'PT Jembo Cable Company',
-    allocatedTo: 'TRF-PLN-002 (Distribusi 315 kVA)',
+    allocatedTo: 'Lini Winding CTC Trafo Tenaga',
     leadTime: '10 Hari'
   },
   {
@@ -5005,7 +5030,7 @@ const defaultMaterialsData = [
     requirement: 10,
     unit: 'set',
     supplier: 'Workshop Fabrikasi Internal',
-    allocatedTo: 'TRF-PLN-001, TRF-PLN-002, TRF-PLN-003',
+    allocatedTo: 'Lini Fabrikasi & Finishing Tangki',
     leadTime: 'Ready'
   },
   {
@@ -5029,7 +5054,7 @@ const defaultMaterialsData = [
     requirement: 30,
     unit: 'pcs',
     supplier: 'Sediver / NGK Insulators',
-    allocatedTo: 'Unit Distribusi 20 kV (PLN & Mitra)',
+    allocatedTo: 'Unit Distribusi 20 kV Mitra Industri',
     leadTime: '6 Hari'
   },
   {
@@ -5077,7 +5102,7 @@ const defaultMaterialsData = [
     requirement: 8,
     unit: 'set',
     supplier: 'EMB Elektromotoren und Geratebau',
-    allocatedTo: 'Trafo Distribusi PLN UID Jawa Timur',
+    allocatedTo: 'Trafo Distribusi Kelas Tenaga',
     leadTime: 'Ready'
   },
   {
@@ -5159,7 +5184,7 @@ function getMaterialsData() {
     const raw = localStorage.getItem('SYMTRAFLOW_MONITORING_MATERIALS_V1');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch (e) {
     console.error('Error reading Materials data:', e);
@@ -5492,9 +5517,48 @@ function renderDetailProduksiView() {
   let unit = units.find(u => u.unitId === activeDPUnitId);
   if (!unit) {
     unit = units[0];
-    activeDPUnitId = unit ? unit.unitId : 'TRF-001';
+    activeDPUnitId = unit ? unit.unitId : '';
   }
-  if (!unit) return;
+  if (!unit) {
+    const selector = document.getElementById('dpUnitSelector');
+    if (selector) selector.innerHTML = '<option value="">(Belum ada unit trafo aktif)</option>';
+    const elCode = document.getElementById('dpUnitCode');
+    if (elCode) elCode.innerText = '-';
+    const elBadge = document.getElementById('dpUnitStatusBadge');
+    if (elBadge) { elBadge.innerText = '● Belum Mulai'; elBadge.className = 'dp-badge belum'; }
+    const elSO = document.getElementById('dpMetaSO');
+    if (elSO) elSO.innerText = '-';
+    const elCust = document.getElementById('dpMetaCustomer');
+    if (elCust) elCust.innerText = '-';
+    const elVar = document.getElementById('dpMetaVariant');
+    if (elVar) elVar.innerText = '-';
+    const elCap = document.getElementById('dpMetaCapacity');
+    if (elCap) elCap.innerText = '-';
+    const elWind = document.getElementById('dpMetaWinding');
+    if (elWind) elWind.innerText = '-';
+    const elOrderDate = document.getElementById('dpMetaOrderDate');
+    if (elOrderDate) elOrderDate.innerText = '-';
+    const elTargetDate = document.getElementById('dpMetaTargetDate');
+    if (elTargetDate) elTargetDate.innerText = '-';
+    const elPIC = document.getElementById('dpMetaPIC');
+    if (elPIC) elPIC.innerText = '-';
+    const elLoc = document.getElementById('dpMetaLocation');
+    if (elLoc) elLoc.innerText = '-';
+    const elNotes = document.getElementById('dpMetaNotes');
+    if (elNotes) elNotes.innerText = '-';
+    const elPct = document.getElementById('dpProgressPercent');
+    if (elPct) elPct.innerText = '0%';
+    const elBar = document.getElementById('dpProgressFill');
+    if (elBar) elBar.style.width = '0%';
+    const elCurrentStage = document.getElementById('dpCurrentStageName');
+    if (elCurrentStage) elCurrentStage.innerText = '-';
+
+    const elecBody = document.getElementById('dpElectricalTableBody');
+    if (elecBody) elecBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#94a3b8;">Belum ada data tahapan Electrical.</td></tr>';
+    const mechBody = document.getElementById('dpMechanicalTableBody');
+    if (mechBody) mechBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#94a3b8;">Belum ada data tahapan Mechanical.</td></tr>';
+    return;
+  }
 
   recomputeUnitProgress(unit);
 
@@ -6342,7 +6406,7 @@ function openPengirimanDetail(unitNo) {
         <div><span style="color:#64748b;">Tanggal Kirim:</span> <strong>${ship.shipDate}</strong></div>
         <div><span style="color:#64748b;">Driver & Armada:</span> <strong style="color:#0f172a;">${ship.driver || 'Tim Ekspedisi'}</strong></div>
         <div><span style="color:#64748b;">Status Logistik:</span> <span class="erp-badge erp-badge-blue">${ship.status}</span></div>
-        <div style="grid-column: span 2;"><span style="color:#64748b;">Alamat Tujuan:</span> <strong>${ship.dest || 'Gardu Induk PLN Jawa'}</strong></div>
+        <div style="grid-column: span 2;"><span style="color:#64748b;">Alamat Tujuan:</span> <strong>${ship.dest || 'Area Fabrikasi Trafo'}</strong></div>
       </div>
 
       <div style="font-size:12px; font-weight:700; margin-bottom:10px; color:#0f172a;">Ubah Status Tracking Cepat:</div>
@@ -6361,10 +6425,10 @@ function openPengirimanDetail(unitNo) {
 // --- MASTER DATA FUNCTIONS ---
 const erpMasterDataStore = {
   pelanggan: [
-    { code: 'CUST-01', name: 'PT PLN UP3 Jateng', sector: 'BUMN Distribusi Listrik', city: 'Semarang', contact: 'Ir. Hendra (024-8412345)', orders: '10 Unit' },
-    { code: 'CUST-02', name: 'PT PLN Nusa Daya', sector: 'BUMN Pembangkitan', city: 'Mataram', contact: 'Ibu Ratna (0370-621980)', orders: '5 Unit' },
-    { code: 'CUST-03', name: 'PT PLN Jawa Tengah', sector: 'Transmisi & Gardu Induk', city: 'Kudus', contact: 'Bpk. Tri Wahyudi (0274-512990)', orders: '2 Unit' },
-    { code: 'CUST-04', name: 'PT PLN UID Jawa Timur', sector: 'BUMN Distribusi Listrik', city: 'Surabaya', contact: 'Bpk. Ahmad Fauzi (031-8283344)', orders: '5 Unit' },
+    { code: 'CUST-01', name: 'PT Indobara Energi Utama', sector: 'Mining & Power Generation', city: 'Samarinda', contact: 'Ir. Hendra (0541-7412345)', orders: '8 Unit' },
+    { code: 'CUST-02', name: 'PT Cikarang Listrindo Tbk', sector: 'Industrial Estate IPP', city: 'Bekasi', contact: 'Ibu Ratna (021-8934567)', orders: '4 Unit' },
+    { code: 'CUST-03', name: 'PT Krakatau Posco', sector: 'Steel Industry', city: 'Cilegon', contact: 'Bpk. Tri Wahyudi (0254-371290)', orders: '2 Unit' },
+    { code: 'CUST-04', name: 'PT Semen Indonesia Group', sector: 'Industrial Manufacturing', city: 'Gresik', contact: 'Ir. Bambang (031-3981732)', orders: '5 Unit' },
     { code: 'CUST-05', name: 'PT Semen Indonesia', sector: 'Industrial Manufacturing', city: 'Gresik', contact: 'Ir. Bambang (031-3981732)', orders: '2 Unit' }
   ],
   trafo: [
@@ -6627,8 +6691,8 @@ let erpDocuments = [
     format: 'DWG',
     title: 'General Arrangement (GA) Drawing Trafo 500 kVA Step-Down',
     desc: 'Gambar teknis dimensi luar, posisi bushing HV/LV, conservator tank, dan lubang pondasi.',
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
+    soNumber: '25-0810',
+    customer: 'PT Indobara Energi Utama',
     category: 'Gambar Teknik',
     categoryKey: 'drawing',
     revision: 'Rev 2',
@@ -6643,8 +6707,8 @@ let erpDocuments = [
     format: 'PDF',
     title: 'Factory Acceptance Test (FAT) Routine Test Certificate',
     desc: 'Sertifikat pengujian komprehensif: rasio tegangan, rugi-rugi tembaga/besi, dan polaritas kumparan.',
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
+    soNumber: '25-0810',
+    customer: 'PT Indobara Energi Utama',
     category: 'FAT & Uji Lab',
     categoryKey: 'fat',
     revision: 'Rev 0',
@@ -6659,8 +6723,8 @@ let erpDocuments = [
     format: 'DWG',
     title: 'Core & Coil Assembly Detail Drawing 1000 kVA',
     desc: 'Skema penumpukan laminasi silikon CRGO dan isolasi winding kertas Kraft densitas tinggi.',
-    soNumber: '25-0564',
-    customer: 'PT PLN Distribusi Jatim',
+    soNumber: 'SO-2026-001',
+    customer: 'PT Cikarang Listrindo',
     category: 'Gambar Teknik',
     categoryKey: 'drawing',
     revision: 'Rev 1',
@@ -6675,8 +6739,8 @@ let erpDocuments = [
     format: 'XLS',
     title: 'Dielectric Breakdown Voltage (BDV) Oil Test Report',
     desc: 'Hasil uji tegangan tembus minyak Shell DialaS 60 kV/2.5mm dan analisa kadar kelembaban (Karl Fischer).',
-    soNumber: '25-0564',
-    customer: 'PT PLN Distribusi Jatim',
+    soNumber: 'SO-2026-001',
+    customer: 'PT Cikarang Listrindo',
     category: 'FAT & Uji Lab',
     categoryKey: 'fat',
     revision: 'Rev 0',
@@ -6691,8 +6755,8 @@ let erpDocuments = [
     format: 'PDF',
     title: 'Marshalling Box Wiring & Alarm Schematic 1500 kVA',
     desc: 'Diagram pengkabelan sensor suhu winding (WTI), oil temperature (OTI), dan relay Buchholz.',
-    soNumber: '25-0565',
-    customer: 'PT PLN UID Jawa Barat',
+    soNumber: 'SO-2026-002',
+    customer: 'PT Semen Indonesia Group',
     category: 'Gambar Teknik',
     categoryKey: 'drawing',
     revision: 'Rev 0',
@@ -6895,7 +6959,7 @@ function handleDocUpload(e) {
     title: title,
     desc: notes || `Dokumen resmi proyek untuk ${soNumber} kategori ${category}.`,
     soNumber: soNumber,
-    customer: 'PT PLN (Persero)',
+    customer: 'PT Indobara Energi Utama',
     category: category,
     categoryKey: catKeyMap[category] || 'drawing',
     revision: revision,
@@ -7019,7 +7083,7 @@ function triggerQuickReportDownload(type) {
   const names = {
     'harian': 'Laporan_Harian_Produksi_Trafo.pdf',
     'bulanan': 'Laporan_Bulanan_Fabrikasi_Trafo.xlsx',
-    'fat': 'Rekapitulasi_FAT_Test_PLN.pdf'
+    'fat': 'Rekapitulasi_FAT_Test_Industri.pdf'
   };
   const fileName = names[type] || 'Laporan_Produksi.pdf';
   showToast(`📄 Mempersiapkan unduhan "${fileName}"...`);
@@ -7032,85 +7096,7 @@ function triggerQuickReportDownload(type) {
 // RIWAYAT PRODUKSI & AUDIT TRAIL LOG SYSTEM
 // =========================================================================
 
-const defaultProductionHistoryLogs = [
-  {
-    timestamp: '08 Okt 2026 11:20',
-    unitId: 'TRF-001',
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    category: 'Electrical',
-    stageName: 'HV (High Voltage)',
-    status: 'Proses',
-    pic: 'Rizky',
-    note: 'Pengujian insulasi awal HV memenuhi spesifikasi teknis.'
-  },
-  {
-    timestamp: '08 Okt 2026 09:15',
-    unitId: 'TRF-001',
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    category: 'Electrical',
-    stageName: 'LV (Low Voltage)',
-    status: 'Selesai',
-    pic: 'Budi Santoso',
-    note: 'Winding LV selesai dan lolos inspeksi QC awal.'
-  },
-  {
-    timestamp: '08 Okt 2026 08:30',
-    unitId: 'TRF-001',
-    soNumber: '25-0563',
-    customer: 'PT PLN UP3 Jateng',
-    category: 'Mechanical',
-    stageName: 'Pemotongan & Bending Plat',
-    status: 'Selesai',
-    pic: 'Agus Setiawan',
-    note: 'Plat tangki dipotong presisi CNC tolerance 0.2mm.'
-  },
-  {
-    timestamp: '07 Okt 2026 14:00',
-    unitId: 'TRF-PLN-001',
-    soNumber: 'SO-PLN-2024-001',
-    customer: 'PT PLN UID Jawa Timur',
-    category: 'Electrical',
-    stageName: 'Susun Core',
-    status: 'Selesai',
-    pic: 'Andi Pratama',
-    note: 'Silicone steel lamination core stacking rampung.'
-  },
-  {
-    timestamp: '07 Okt 2026 11:10',
-    unitId: 'TRF-PLN-001',
-    soNumber: 'SO-PLN-2024-001',
-    customer: 'PT PLN UID Jawa Timur',
-    category: 'Mechanical',
-    stageName: 'Pengelasan Tangki & Cover',
-    status: 'Selesai',
-    pic: 'Dedi Kurniawan',
-    note: 'Welding tangki & fitting lifting lug selesai.'
-  },
-  {
-    timestamp: '06 Okt 2026 16:20',
-    unitId: 'TRF-PLN-002',
-    soNumber: 'SO-PLN-2024-002',
-    customer: 'PT PLN UID Jawa Tengah & DIY',
-    category: 'Electrical',
-    stageName: 'LV (Low Voltage)',
-    status: 'Selesai',
-    pic: 'MUHAMMAD RIVALDO ZIDAN',
-    note: 'Gulungan LV tembaga murni selesai.'
-  },
-  {
-    timestamp: '05 Okt 2026 10:45',
-    unitId: 'TRF-PLN-002',
-    soNumber: 'SO-PLN-2024-002',
-    customer: 'PT PLN UID Jawa Tengah & DIY',
-    category: 'Mechanical',
-    stageName: 'Pemotongan & Bending Plat',
-    status: 'Selesai',
-    pic: 'Dedi Kurniawan',
-    note: 'Pemotongan plat tangki baja selesai.'
-  }
-];
+const defaultProductionHistoryLogs = [];
 
 function getProductionHistoryLogs() {
   try {
@@ -7122,7 +7108,7 @@ function getProductionHistoryLogs() {
           const c = (l.customer || '').toUpperCase();
           const u = (l.unitId || '').toUpperCase();
           const s = (l.soNumber || '').toUpperCase();
-          return !c.includes('PERTAMINA') && !c.includes('PUPUK') && !c.includes('KALTIM') && !u.includes('PTM') && !u.includes('PKT') && !s.includes('PTM') && !s.includes('PKT');
+          return !c.includes('PERTAMINA') && !c.includes('PUPUK') && !c.includes('KALTIM') && !c.includes('PLN') && !u.includes('PTM') && !u.includes('PKT') && !u.includes('PLN') && !s.includes('PTM') && !s.includes('PKT') && !s.includes('PLN');
         });
       }
     }
