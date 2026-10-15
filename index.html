@@ -518,7 +518,7 @@
             </button>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <button class="btn-primary" onclick="openAddTrafoModal('PT-PTM-01')" style="background:#16a34a; border-color:#16a34a; font-size:12px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+            <button class="btn-primary" onclick="openAddTrafoModal('PT-PLN-01')" style="background:#2563eb; border-color:#2563eb; font-size:12px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
               <i class="fa-solid fa-circle-plus"></i> Tambah SO / Trafo
             </button>
             <button class="btn-secondary" onclick="openAddProjectModal()" style="font-size:12px; padding:6px 14px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
@@ -701,7 +701,7 @@
               <div class="detail-header">
                 <div>
                   <div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">DETAIL SO</div>
-                  <span class="detail-order-id" id="detailOrderId">TRF-PTM-001</span>
+                  <span class="detail-order-id" id="detailOrderId">TRF-PLN-001</span>
                 </div>
                 <span class="badge-status badge-assembly" id="detailStatusBadge">ASSEMBLY</span>
               </div>
@@ -749,7 +749,7 @@
                 <!-- Dynamically populated -->
               </div>
 
-              <button class="btn-primary btn-full-width" onclick="openFullDetailModal('TRF-PTM-001')">
+              <button class="btn-primary btn-full-width" onclick="openFullDetailModal('TRF-PLN-001')">
                 LIHAT DETAIL LENGKAP
               </button>
             </div>
@@ -1135,7 +1135,7 @@
               Hierarki Proyek Perusahaan & Manajamen Trafo
             </div>
             <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
-              Kelola daftar proyek tiap perusahaan (misalnya PT Pertamina Persero) dan tambahkan unit trafo baru di bawahnya tanpa batasan orderan.
+              Kelola daftar proyek tiap perusahaan (misalnya PT PLN (Persero)) dan tambahkan unit trafo baru di bawahnya tanpa batasan orderan.
             </div>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -2263,7 +2263,7 @@
   </div>
 
   <!-- ================= MODAL: UPDATE PROGRESS PRODUKSI ================= -->
-  <div class="modal-overlay" id="updateProgressModal" style="display: none;">
+  <div class="modal-overlay" id="updateProgressModal" style="display: none; z-index: 300;">
     <div class="modal-box" style="max-width: 520px; width: 95%;">
       <div class="modal-header">
         <span class="modal-title" style="font-weight: 800; font-size: 16px; color: #0f172a;">
@@ -2344,9 +2344,9 @@
     </div>
   </div>
 
-  <!-- Modal 2: Detail Monitoring Produksi (Read-Only: Electrical & Mechanical) -->
+  <!-- Modal 2: Detail Monitoring Produksi (Electrical & Mechanical Interactive) -->
   <div class="modal-overlay" id="fullDetailModal">
-    <div class="modal-box" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-box" style="max-width: 890px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
       <div class="modal-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 20px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <i class="fa-solid fa-chart-line" style="color: var(--color-primary); font-size: 18px;"></i>
@@ -2355,13 +2355,13 @@
               Monitoring Detail Unit Trafo
             </span>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-              Informasi spesifikasi teknis dan progres real-time per tahap
+              Informasi spesifikasi teknis dan progres real-time Electrical &amp; Mechanical
             </div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-            <i class="fa-solid fa-eye"></i> Mode Pantau (Hanya Lihat)
+            <i class="fa-solid fa-bolt"></i> Progres Electrical &amp; Mechanical
           </span>
           <button class="modal-close-btn" onclick="closeModal('fullDetailModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
@@ -2373,30 +2373,30 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 20px; font-weight: 800; color: #60a5fa;" id="modalDetailOrderCode">TRF-001</span>
-                <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;" id="mReadonlySOCode">SO: 25-0563</span>
+                <span style="font-size: 20px; font-weight: 800; color: #60a5fa;" id="modalDetailOrderCode">TRF-PLN-001</span>
+                <span style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;" id="mReadonlySOCode">SO: SO/PLN/2024/007</span>
                 <span class="dp-badge proses" id="modalDetailBadge">● Proses</span>
               </div>
-              <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;" id="modalDetailTrafoName">PT PLN UP3 Jateng</div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;" id="mReadonlySpecsMeta">500 KVA • 20 kV / 400 V • Distribusi (CU - CU)</div>
+              <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;" id="modalDetailTrafoName">PT PLN (Persero)</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;" id="mReadonlySpecsMeta">100 kVA • 20 kV / 400 V • Distribusi (CU - CU)</div>
             </div>
             <div style="text-align: right; min-width: 140px;">
               <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">PROGRESS UNIT</div>
-              <div style="font-size: 24px; font-weight: 900; color: #34d399;" id="mReadonlyProgressPct">60%</div>
+              <div style="font-size: 24px; font-weight: 900; color: #34d399;" id="mReadonlyProgressPct">100%</div>
               <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; margin-top: 4px; overflow: hidden;">
-                <div id="mReadonlyProgressBar" style="height: 100%; width: 60%; background: #10b981; border-radius: 999px;"></div>
+                <div id="mReadonlyProgressBar" style="height: 100%; width: 100%; background: #10b981; border-radius: 999px;"></div>
               </div>
             </div>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
-            <div><span style="color:#94a3b8;">Tgl Pesan:</span> <b id="mReadonlyOrderDate">01/05/2026</b></div>
-            <div><span style="color:#94a3b8;">Target Selesai:</span> <b id="mReadonlyTargetDate">30/06/2026</b></div>
-            <div><span style="color:#94a3b8;">PIC Officer:</span> <b id="mReadonlyPIC">Budi Santoso</b></div>
-            <div><span style="color:#94a3b8;">Lokasi:</span> <b id="mReadonlyLocation">UP3 Jateng</b></div>
+            <div><span style="color:#94a3b8;">Tgl Pesan:</span> <b id="mReadonlyOrderDate">10/05/2024</b></div>
+            <div><span style="color:#94a3b8;">Target Selesai:</span> <b id="mReadonlyTargetDate">02/06/2024</b></div>
+            <div><span style="color:#94a3b8;">PIC Officer:</span> <b id="mReadonlyPIC">ELNIRA AINUNNISA</b></div>
+            <div><span style="color:#94a3b8;">Lokasi:</span> <b id="mReadonlyLocation">GI Kembangan, Jakarta Barat</b></div>
           </div>
         </div>
 
-        <!-- 2 Read-Only Progress Tables: Electrical & Mechanical -->
+        <!-- 2 Progress Tables: Electrical & Mechanical with Action Column -->
         <div style="display: flex; flex-direction: column; gap: 18px;">
           <!-- 1. Progres Electrical Table -->
           <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
@@ -2412,14 +2412,15 @@
                   <tr>
                     <th style="width: 40px;">No.</th>
                     <th>Tahap Proses</th>
-                    <th style="width: 125px;">Status</th>
+                    <th style="width: 120px;">Status</th>
                     <th>Tanggal</th>
                     <th>PIC</th>
                     <th>Catatan</th>
+                    <th style="width: 80px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="mReadonlyElectricalBody">
-                  <!-- Rendered dynamically -->
+                  <!-- Rendered dynamically with Ubah action -->
                 </tbody>
               </table>
             </div>
@@ -2439,14 +2440,15 @@
                   <tr>
                     <th style="width: 40px;">No.</th>
                     <th>Tahap Proses</th>
-                    <th style="width: 125px;">Status</th>
+                    <th style="width: 120px;">Status</th>
                     <th>Tanggal</th>
                     <th>PIC</th>
                     <th>Catatan</th>
+                    <th style="width: 80px; text-align: center;">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="mReadonlyMechanicalBody">
-                  <!-- Rendered dynamically -->
+                  <!-- Rendered dynamically with Ubah action -->
                 </tbody>
               </table>
             </div>
@@ -2457,17 +2459,16 @@
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
           <div style="font-size: 11.5px; color: #1e40af; display: flex; align-items: center; gap: 8px;">
             <i class="fa-solid fa-circle-info" style="font-size: 16px; color: #2563eb;"></i>
-            <span>Data tersinkronisasi otomatis dengan alur Monitoring Produksi dan Proyek Sales Order (SO).</span>
+            <span>Data tahapan Electrical &amp; Mechanical tersinkronisasi otomatis dengan alur Monitoring Produksi dan Proyek Sales Order (SO).</span>
           </div>
-          <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 11px; background: #2563eb; white-space: nowrap;" onclick="closeModal('fullDetailModal'); openTrafoDetailModal(activeMonitoringUnitId);">
-            <i class="fa-solid fa-pen-to-square"></i> Kelola Progres &amp; QC Unit
+          <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 11px; background: #2563eb; white-space: nowrap;" onclick="showToast('ℹ️ Klik tombol Ubah pada tiap baris tahapan Electrical atau Mechanical untuk memperbarui progress.')">
+            <i class="fa-solid fa-circle-question"></i> Panduan Update
           </button>
         </div>
       </div>
 
       <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn-secondary" onclick="closeModal('fullDetailModal')">Tutup</button>
-        <button type="button" class="btn-primary" onclick="closeModal('fullDetailModal'); openTrafoDetailModal(activeMonitoringUnitId);"><i class="fa-solid fa-pen-to-square"></i> Edit Progres Unit</button>
+        <button type="button" class="btn-primary" onclick="closeModal('fullDetailModal')"><i class="fa-solid fa-check"></i> Selesai &amp; Tutup</button>
       </div>
     </div>
   </div>
@@ -2492,41 +2493,15 @@
           <div style="background: linear-gradient(135deg, #0b132b 0%, #1c2541 100%); color: #fff; padding: 18px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: space-between; gap: 16px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 11px; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-weight: 700;" id="mTrafoPT">PT Pertamina Persero</span>
-                <span style="font-size: 11px; color: rgba(255,255,255,0.7);" id="mTrafoProject">TRAFO POWER 20kV</span>
+                <span style="font-size: 11px; background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-weight: 700;" id="mTrafoPT">PT PLN (Persero)</span>
+                <span style="font-size: 11px; color: rgba(255,255,255,0.7);" id="mTrafoProject">TRAFO DISTRIBUSI 20kV</span>
               </div>
-              <div style="font-size: 20px; font-weight: 800; margin-top: 4px; color: #60a5fa;" id="mTrafoId">TRF-PTM-001</div>
-              <div style="font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 600;" id="mTrafoNama">Trafo Power - 500 kVA (20 kV / 400 V)</div>
+              <div style="font-size: 20px; font-weight: 800; margin-top: 4px; color: #60a5fa;" id="mTrafoId">TRF-PLN-001</div>
+              <div style="font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 600;" id="mTrafoNama">Trafo Distribusi - 100 kVA (20 kV / 400 V)</div>
             </div>
             <div style="text-align: right; flex-shrink: 0;">
-              <span class="badge-status badge-assembly" id="mTrafoBadge" style="font-size: 12px; padding: 6px 12px;">ASSEMBLY</span>
-              <div style="margin-top: 8px; font-size: 18px; font-weight: 900; color: #34d399;" id="mTrafoProgressPct">60%</div>
-            </div>
-          </div>
-
-          <!-- 11-Stage Production Stepper Progress -->
-          <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; background: #fff;">
-            <div style="font-size: 12px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-              <span><i class="fa-solid fa-bars-progress" style="color: var(--color-primary); margin-right: 6px;"></i> TAHAPAN PROSES PRODUKSI (11 STAGES)</span>
-              <span style="font-size: 11px; color: #2563eb; font-weight: 700; cursor: default;">
-                <i class="fa-solid fa-hand-pointer" style="margin-right: 3px;"></i> Klik kartu tahapan untuk beralih cepat
-              </span>
-            </div>
-            
-            <!-- Stepper Grid Container -->
-            <div style="display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px; overflow-x: auto; padding-bottom: 4px;" id="mTrafoStepperGrid">
-              <!-- Dynamically populated via JS -->
-            </div>
-
-            <!-- Overall Progress Bar -->
-            <div style="margin-top: 14px;">
-              <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">
-                <span>TOTAL PROGRES DISESUAIKAN STAGE</span>
-                <span id="mTrafoProgressBarLabel">Penyelesaian Unit</span>
-              </div>
-              <div style="background: #e2e8f0; height: 10px; border-radius: 999px; overflow: hidden;">
-                <div id="mTrafoProgressBar" style="width: 60%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 999px; transition: width 0.4s ease;"></div>
-              </div>
+              <span class="badge-status badge-assembly" id="mTrafoBadge" style="font-size: 12px; padding: 6px 12px;">DALAM PROSES</span>
+              <div style="margin-top: 8px; font-size: 18px; font-weight: 900; color: #34d399;" id="mTrafoProgressPct">100%</div>
             </div>
           </div>
 
@@ -2543,7 +2518,7 @@
               <div style="font-size: 11px; display: flex; flex-direction: column; gap: 6px;">
                 <div style="display: flex; justify-content: space-between; padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9;">
                   <span style="color: var(--text-muted);">Kapasitas Nominal:</span>
-                  <span style="font-weight: 700;" id="mTrafoCap">500 kVA</span>
+                  <span style="font-weight: 700;" id="mTrafoCap">100 kVA</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9;">
                   <span style="color: var(--text-muted);">Tegangan:</span>
@@ -2551,15 +2526,15 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9;">
                   <span style="color: var(--text-muted);">Sales Officer:</span>
-                  <span style="font-weight: 700; color: #2563eb;" id="mTrafoOperator">I WAYAN EVA VERDIANA</span>
+                  <span style="font-weight: 700; color: #2563eb;" id="mTrafoOperator">ELNIRA AINUNNISA</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding-bottom: 4px; border-bottom: 1px dashed #f1f5f9;">
                   <span style="color: var(--text-muted);">Deadline Target:</span>
-                  <span style="font-weight: 700; color: #dc2626;" id="mTrafoDeadline">20/06/2024</span>
+                  <span style="font-weight: 700; color: #dc2626;" id="mTrafoDeadline">02/06/2024</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">Lokasi Proyek:</span>
-                  <span style="font-weight: 700; font-size: 10px;" id="mTrafoLocation">Refinery Unit IV Cilacap</span>
+                  <span style="font-weight: 700; font-size: 10px;" id="mTrafoLocation">GI Kembangan, Jakarta Barat</span>
                 </div>
               </div>
             </div>
@@ -2595,29 +2570,10 @@
           <form id="formEditTrafoDetail" onsubmit="handleSaveTrafoEdit(event)">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
               
-              <!-- Kolom Kiri: Tahapan & Progres -->
+              <!-- Kolom Kiri: QC & Progres Info -->
               <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
                 <div style="font-size: 12px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-                  <i class="fa-solid fa-bars-progress" style="color: var(--color-primary);"></i> UBAH TAHAPAN & PROGRES PRODUKSI
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Tahapan Proses Produksi Saat Ini</label>
-                  <select class="form-select" id="inpEditStage" onchange="onEditStageSelect(this.value)" required style="font-weight: 700;">
-                    <option value="BELUM MULAI">0. BELUM MULAI (0%)</option>
-                    <option value="TANK MAKING">1. TANK MAKING (10%)</option>
-                    <option value="CORE MAKING">2. CORE MAKING (20%)</option>
-                    <option value="COIL MAKING">3. COIL MAKING (30%)</option>
-                    <option value="ASSEMBLY">4. ASSEMBLY (45%)</option>
-                    <option value="CONNECTION">5. CONNECTION (55%)</option>
-                    <option value="FINAL ASSEMBLY">6. FINAL ASSEMBLY (65%)</option>
-                    <option value="INTERNAL TEST">7. INTERNAL TEST (75%)</option>
-                    <option value="FINISHING">8. FINISHING (85%)</option>
-                    <option value="FAT">9. FAT (90%)</option>
-                    <option value="PUNCHLIST">10. PUNCHLIST (95%)</option>
-                    <option value="DELIVERY">11. DELIVERY (100%)</option>
-                    <option value="SELESAI">SELESAI (100%)</option>
-                  </select>
+                  <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> STATUS INSPEKSI QUALITY CONTROL (QC)
                 </div>
 
                 <div class="form-group">
@@ -2632,7 +2588,7 @@
                 </div>
 
                 <div class="form-group" style="margin-top: 4px;">
-                  <label class="form-label"><i class="fa-solid fa-shield-halved" style="color: #10b981; margin-right: 4px;"></i> Status Inspeksi QC</label>
+                  <label class="form-label"><i class="fa-solid fa-shield-halved" style="color: #10b981; margin-right: 4px;"></i> Hasil Inspeksi Standar Mutu</label>
                   <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
                       <span style="font-weight: 600;">Tank Pressure & Leakage:</span>
@@ -2837,7 +2793,7 @@
           <div class="form-row-2">
             <div class="form-group">
               <label class="form-label">No. SO / Kode Trafo</label>
-              <input type="text" class="form-input" id="inpTrafoCode" placeholder="TRF-PTM-006" required>
+              <input type="text" class="form-input" id="inpTrafoCode" placeholder="TRF-PLN-006" required>
             </div>
             <div class="form-group">
               <label class="form-label">Variant</label>
@@ -2948,9 +2904,9 @@
             <div class="form-group">
               <label class="form-label">Warna Tema PT</label>
               <select class="form-select" id="inpPTColor">
-                <option value="#16a34a|#dcfce7">Hijau (Pertamina Theme)</option>
-                <option value="#2563eb|#dbeafe">Biru (PLN Theme)</option>
-                <option value="#d97706|#fef3c7">Amber/Kuning (Pupuk Kaltim Theme)</option>
+                <option value="#16a34a|#dcfce7">Hijau (Green Theme)</option>
+                <option value="#2563eb|#dbeafe">Biru (PLN Blue Theme)</option>
+                <option value="#d97706|#fef3c7">Amber/Kuning (Amber Theme)</option>
                 <option value="#7c3aed|#f3e8ff">Ungu (Purple Theme)</option>
                 <option value="#0891b2|#cffaff">Cyan (Cyan Theme)</option>
                 <option value="#dc2626|#fee2e2">Merah (Red Theme)</option>
