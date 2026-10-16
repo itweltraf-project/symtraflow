@@ -2002,6 +2002,11 @@ function handleAddTrafoSubmit(e) {
 
 // Open Modal Add PT Project
 function openAddPTProjectModal() {
+  if (typeof window.SymtraSync !== 'undefined' && !window.SymtraSync.hasPermission('proyek_edit')) {
+    const auth = window.SymtraSync.getCurrentAuthUser();
+    showToast(`⚠️ Hak Akses Dibatasi: Anda login sebagai "${auth.role}" yang tidak memiliki izin edit di Proyek (SO). Silakan gunakan akun Super Admin atau Admin Proyek SO.`);
+    return;
+  }
   document.getElementById('addPTProjectModal').classList.add('active');
 }
 
@@ -3329,34 +3334,52 @@ function handleLogin(e) {
   const inputPass = document.getElementById('loginPassword').value.trim();
   const loginScreen = document.getElementById('loginScreen');
 
-  // Verify against SuperAdmin or Admin credentials
+  // Verify against SymtraSync RBAC or fallback credentials
   let authenticatedUser = null;
   let roleKey = null;
 
-  if (inputUser.toLowerCase() === systemAccounts.superadmin.username.toLowerCase() && inputPass === systemAccounts.superadmin.pass) {
-    authenticatedUser = systemAccounts.superadmin;
-    roleKey = 'superadmin';
-  } else if (inputUser.toLowerCase() === systemAccounts.admin.username.toLowerCase() && inputPass === systemAccounts.admin.pass) {
-    authenticatedUser = systemAccounts.admin;
-    roleKey = 'admin';
-  } else if (inputUser.toLowerCase() === 'jodi' && inputPass === 'symphos1011') {
-    // Fallback superadmin default
-    authenticatedUser = systemAccounts.superadmin;
-    roleKey = 'superadmin';
-  } else if (inputUser.toLowerCase() === 'admin' && inputPass === 'admin123') {
-    // Fallback admin default
-    authenticatedUser = systemAccounts.admin;
-    roleKey = 'admin';
+  if (typeof window.SymtraSync !== 'undefined') {
+    authenticatedUser = window.SymtraSync.authenticateUser(inputUser, inputPass);
+    if (authenticatedUser) {
+      roleKey = authenticatedUser.rolePreset || (authenticatedUser.role === 'Super Admin' ? 'superadmin' : 'admin');
+    }
+  }
+
+  if (!authenticatedUser) {
+    if (inputUser.toLowerCase() === systemAccounts.superadmin.username.toLowerCase() && inputPass === systemAccounts.superadmin.pass) {
+      authenticatedUser = systemAccounts.superadmin;
+      roleKey = 'superadmin';
+    } else if (inputUser.toLowerCase() === systemAccounts.admin.username.toLowerCase() && inputPass === systemAccounts.admin.pass) {
+      authenticatedUser = systemAccounts.admin;
+      roleKey = 'admin';
+    } else if (inputUser.toLowerCase() === 'jodi' && inputPass === 'symphos1011') {
+      authenticatedUser = systemAccounts.superadmin;
+      roleKey = 'superadmin';
+    } else if (inputUser.toLowerCase() === 'admin' && inputPass === 'admin123') {
+      authenticatedUser = systemAccounts.admin;
+      roleKey = 'admin';
+    }
   }
 
   if (authenticatedUser) {
-    // Save authentication state to sessionStorage for the active session
+    // Ensure permissions object exists
+    if (!authenticatedUser.permissions) {
+      authenticatedUser.permissions = {
+        all: authenticatedUser.role === 'Super Admin' || roleKey === 'superadmin',
+        proyek_edit: true,
+        produksi_edit: true,
+        pengiriman_edit: true
+      };
+    }
+
     sessionStorage.setItem('SYMTRAFLOW_AUTH_USER', JSON.stringify({
+      id: authenticatedUser.id || 'usr_active',
       username: authenticatedUser.username,
       name: authenticatedUser.name,
       role: authenticatedUser.role,
       avatar: authenticatedUser.avatar || '',
-      roleKey: roleKey
+      roleKey: roleKey,
+      permissions: authenticatedUser.permissions
     }));
 
     if (loginScreen) {
@@ -3370,7 +3393,11 @@ function handleLogin(e) {
       navName.innerHTML = `${authenticatedUser.name} <i class="fa-solid fa-chevron-down" style="font-size: 10px; color: #64748b;"></i>`;
     }
     if (navRole) {
-      navRole.innerText = authenticatedUser.role;
+      const isSuper = authenticatedUser.role === 'Super Admin' || authenticatedUser.permissions?.all;
+      const tag = isSuper ? '<span style="font-size:9px; background:#e11d48; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">SUPER</span>' :
+                  (authenticatedUser.permissions?.proyek_edit && !authenticatedUser.permissions?.produksi_edit ? '<span style="font-size:9px; background:#2563eb; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">SO ONLY</span>' :
+                  (!authenticatedUser.permissions?.proyek_edit && authenticatedUser.permissions?.produksi_edit ? '<span style="font-size:9px; background:#f59e0b; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">PRODUKSI ONLY</span>' : ''));
+      navRole.innerHTML = `${authenticatedUser.role} ${tag}`;
     }
 
     // Set navbar avatar photo from saved profile
@@ -3389,7 +3416,7 @@ function handleLogin(e) {
     switchMainTab('dashboard');
     showWelcomePopup(authenticatedUser, roleKey);
   } else {
-    showToast(`⚠️ Username atau Password salah! Periksa Pengaturan.`);
+    showToast(`⚠️ Username atau Password salah! Periksa Portal Admin.`);
   }
 }
 
@@ -4039,6 +4066,11 @@ function updateSOUnitRowQty(idx, val) {
 }
 
 function openAddSOModal() {
+  if (typeof window.SymtraSync !== 'undefined' && !window.SymtraSync.hasPermission('proyek_edit')) {
+    const auth = window.SymtraSync.getCurrentAuthUser();
+    showToast(`⚠️ Hak Akses Dibatasi: Anda login sebagai "${auth.role}" yang tidak memiliki izin edit di Proyek (SO). Silakan gunakan akun Super Admin atau Admin Proyek SO.`);
+    return;
+  }
   const modal = document.getElementById('modalAddSO');
   if (modal) {
     modal.classList.add('active');
@@ -5804,6 +5836,11 @@ function switchDPTab(tabKey) {
 
 // Modal Handlers for Update Progress Produksi (Supports both Electrical and Mechanical)
 function openUpdateProgressModal(stageIndex, category = 'electrical') {
+  if (typeof window.SymtraSync !== 'undefined' && !window.SymtraSync.hasPermission('produksi_edit')) {
+    const auth = window.SymtraSync.getCurrentAuthUser();
+    showToast(`⚠️ Hak Akses Dibatasi: Anda login sebagai "${auth.role}" yang hanya berwenang di Proyek (SO). Silakan gunakan akun Admin Produksi atau Super Admin.`);
+    return;
+  }
   const units = getUnitsData();
   const unit = units.find(u => u.unitId === activeDPUnitId) || units[0];
   if (!unit) return;
@@ -6479,18 +6516,20 @@ function openMasterModal(type) {
   const body = document.getElementById('masterModalBody');
   if (!modal || !title || !body) return;
 
+  const activeMaster = typeof window.SymtraSync !== 'undefined' ? window.SymtraSync.getAllMasterData() : erpMasterDataStore;
+
   const titles = {
-    pelanggan: '<i class="fa-solid fa-users" style="color:#2563eb;"></i> Data Pelanggan / Perusahaan',
-    trafo: '<i class="fa-solid fa-bolt-lightning" style="color:#2563eb;"></i> Data Trafo & Varian',
-    proses: '<i class="fa-solid fa-gear" style="color:#2563eb;"></i> Data Tahapan Proses Produksi',
-    material: '<i class="fa-solid fa-cubes-stacked" style="color:#2563eb;"></i> Data Material Utama & Pendukung',
-    pic: '<i class="fa-solid fa-user-tie" style="color:#2563eb;"></i> Data PIC & Pengguna Sistem'
+    pelanggan: '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;"><span><i class="fa-solid fa-users" style="color:#2563eb;"></i> Data Pelanggan / Perusahaan</span> <a href="admin.html" target="_blank" class="btn-primary" style="font-size:11px;padding:4px 10px;text-decoration:none;"><i class="fa-solid fa-pen-to-square"></i> Kelola di Portal Admin</a></div>',
+    trafo: '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;"><span><i class="fa-solid fa-bolt-lightning" style="color:#2563eb;"></i> Data Trafo & Varian</span> <a href="admin.html" target="_blank" class="btn-primary" style="font-size:11px;padding:4px 10px;text-decoration:none;"><i class="fa-solid fa-pen-to-square"></i> Kelola di Portal Admin</a></div>',
+    proses: '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;"><span><i class="fa-solid fa-gear" style="color:#2563eb;"></i> Data Tahapan Proses Produksi</span> <a href="admin.html" target="_blank" class="btn-primary" style="font-size:11px;padding:4px 10px;text-decoration:none;"><i class="fa-solid fa-pen-to-square"></i> Kelola di Portal Admin</a></div>',
+    material: '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;"><span><i class="fa-solid fa-cubes-stacked" style="color:#2563eb;"></i> Data Material Utama & Pendukung</span> <a href="admin.html" target="_blank" class="btn-primary" style="font-size:11px;padding:4px 10px;text-decoration:none;"><i class="fa-solid fa-pen-to-square"></i> Kelola di Portal Admin</a></div>',
+    pic: '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;"><span><i class="fa-solid fa-user-tie" style="color:#2563eb;"></i> Data PIC & Pengguna Sistem</span> <a href="admin.html" target="_blank" class="btn-primary" style="font-size:11px;padding:4px 10px;text-decoration:none;"><i class="fa-solid fa-pen-to-square"></i> Kelola di Portal Admin</a></div>'
   };
 
   title.innerHTML = titles[type] || 'Data Master';
 
   if (type === 'pelanggan') {
-    const list = erpMasterDataStore.pelanggan;
+    const list = activeMaster.pelanggan || erpMasterDataStore.pelanggan;
     body.innerHTML = `
       <table class="erp-master-modal-table">
         <thead>
@@ -6518,7 +6557,7 @@ function openMasterModal(type) {
       </table>
     `;
   } else if (type === 'trafo') {
-    const list = erpMasterDataStore.trafo;
+    const list = activeMaster.trafo || erpMasterDataStore.trafo;
     body.innerHTML = `
       <table class="erp-master-modal-table">
         <thead>
@@ -6546,7 +6585,7 @@ function openMasterModal(type) {
       </table>
     `;
   } else if (type === 'proses') {
-    const list = erpMasterDataStore.proses;
+    const list = activeMaster.proses || erpMasterDataStore.proses;
     body.innerHTML = `
       <table class="erp-master-modal-table">
         <thead>
@@ -6572,7 +6611,7 @@ function openMasterModal(type) {
       </table>
     `;
   } else if (type === 'material') {
-    const list = erpMasterDataStore.material;
+    const list = activeMaster.material || erpMasterDataStore.material;
     body.innerHTML = `
       <table class="erp-master-modal-table">
         <thead>
@@ -6600,7 +6639,7 @@ function openMasterModal(type) {
       </table>
     `;
   } else if (type === 'pic') {
-    const list = erpMasterDataStore.pic;
+    const list = activeMaster.pic || erpMasterDataStore.pic;
     body.innerHTML = `
       <table class="erp-master-modal-table">
         <thead>
@@ -7271,4 +7310,49 @@ function exportRiwayatProduksi(type) {
   document.body.removeChild(link);
   showToast('📊 Berhasil mengekspor Arsip Proyek PT ke CSV!');
 }
+
+/* ==========================================================================
+   REALTIME SYNCHRONIZATION LISTENERS (MONITORING PORTAL)
+   ========================================================================== */
+if (typeof window.SymtraSync !== 'undefined') {
+  // Listen to Admin Account & Permission Updates
+  window.SymtraSync.subscribe('users', (admins) => {
+    const current = window.SymtraSync.getCurrentAuthUser();
+    if (current) {
+      const updatedMatch = admins.find(a => a.id === current.id || a.username.toLowerCase() === current.username.toLowerCase());
+      if (updatedMatch) {
+        current.role = updatedMatch.role;
+        current.permissions = updatedMatch.permissions;
+        sessionStorage.setItem('SYMTRAFLOW_AUTH_USER', JSON.stringify(current));
+      }
+
+      const navRole = document.querySelector('.user-nav-role');
+      if (navRole) {
+        const isSuper = current.role === 'Super Admin' || current.permissions?.all;
+        const tag = isSuper ? '<span style="font-size:9px; background:#e11d48; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">SUPER</span>' :
+                    (current.permissions?.proyek_edit && !current.permissions?.produksi_edit ? '<span style="font-size:9px; background:#2563eb; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">SO ONLY</span>' :
+                    (!current.permissions?.proyek_edit && current.permissions?.produksi_edit ? '<span style="font-size:9px; background:#f59e0b; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">PRODUKSI ONLY</span>' : ''));
+        navRole.innerHTML = `${current.role} ${tag}`;
+      }
+    }
+    showToast('⚡ Realtime: Data Akun & Hak Akses Admin disinkronkan!');
+  });
+
+  // Listen to Master Data Updates (Customer, Trafo, Proses, Material, PIC)
+  window.SymtraSync.subscribe('master', (data) => {
+    // If master modal is currently open, refresh it
+    const masterModal = document.getElementById('modalMasterData');
+    if (masterModal && masterModal.classList.contains('active')) {
+      // Re-trigger openMasterModal with current module
+      const titleText = (document.getElementById('masterModalTitle')?.innerText || '').toLowerCase();
+      if (titleText.includes('pelanggan')) openMasterModal('pelanggan');
+      else if (titleText.includes('trafo')) openMasterModal('trafo');
+      else if (titleText.includes('proses')) openMasterModal('proses');
+      else if (titleText.includes('material')) openMasterModal('material');
+      else if (titleText.includes('pic')) openMasterModal('pic');
+    }
+    showToast('⚡ Realtime: Master Data diperbarui dari Portal Admin!');
+  });
+}
+
 

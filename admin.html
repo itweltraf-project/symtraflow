@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symtraflow - Portal Admin & Master Data Realtime</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="admin-navbar">
+    <div class="brand-section">
+      <div class="brand-logo-badge">
+        <i class="fa-solid fa-bolt"></i>
+      </div>
+      <div class="brand-info">
+        <h1>
+          Symtraflow 
+          <span class="brand-tag">Admin & Master Data</span>
+        </h1>
+        <div class="brand-subtitle">Portal Manajemen Admin, Hak Akses & Master Data Trafo Realtime</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <!-- Live Realtime Sync Status Badge -->
+      <div class="realtime-sync-badge" title="Data tersinkronkan otomatis secara instan lintas tab & browser">
+        <span class="sync-pulse"></span>
+        <span>Realtime Sync Aktif</span>
+      </div>
+
+      <!-- Quick Link to Monitoring Website -->
+      <a href="index.html" class="btn-monitoring-link" target="_blank" title="Buka Website Monitoring Produksi">
+        <i class="fa-solid fa-desktop"></i>
+        <span>Website Monitoring Produksi</span>
+        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+      </a>
+
+      <!-- Current Logged In Admin Profile -->
+      <div class="user-profile-btn" onclick="switchAdminTab('admins')" title="Profil Pengguna Aktif">
+        <img id="currentAdminAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" class="user-avatar-mini">
+        <div style="text-align: left; line-height: 1.2;">
+          <div id="currentAdminName" style="font-size: 13px; font-weight: 700; color: #fff;">Jodi Setiawan</div>
+          <div id="currentAdminRole" style="font-size: 11px; color: #fb7185; font-weight: 600;">Super Admin</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="admin-container">
+    
+    <!-- Hero Banner -->
+    <div class="admin-hero">
+      <div class="hero-left">
+        <div class="hero-title">
+          <i class="fa-solid fa-user-shield" style="color: #60a5fa;"></i>
+          Kontrol Terpusat Admin & Master Data
+        </div>
+        <p class="hero-desc">
+          Atur hak akses secara spesifik: <strong>Super Admin</strong> dapat mengedit semua modul, sedangkan <strong>Admin 1</strong> dapat dibatasi khusus modul Proyek (SO), dan <strong>Admin 2</strong> khusus modul Produksi. Seluruh perubahan disinkronkan secara <strong>realtime</strong> ke website monitoring tanpa perlu reload.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="openAddAdminModal()">
+          <i class="fa-solid fa-user-plus"></i> + Tambah Admin Baru
+        </button>
+        <button class="btn-secondary" onclick="triggerManualSyncTest()">
+          <i class="fa-solid fa-rotate"></i> Uji Realtime Sync
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card" onclick="switchAdminTab('admins')" style="cursor: pointer;">
+        <div class="stat-icon icon-rose">
+          <i class="fa-solid fa-users-gear"></i>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTotalAdmins">4</div>
+          <div class="stat-label">Total Akun Admin</div>
+        </div>
+      </div>
+
+      <div class="stat-card" onclick="switchAdminTab('pelanggan')" style="cursor: pointer;">
+        <div class="stat-icon icon-blue">
+          <i class="fa-solid fa-building"></i>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTotalPelanggan">5</div>
+          <div class="stat-label">Master Pelanggan PT</div>
+        </div>
+      </div>
+
+      <div class="stat-card" onclick="switchAdminTab('trafo')" style="cursor: pointer;">
+        <div class="stat-icon icon-amber">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTotalTrafo">5</div>
+          <div class="stat-label">Varian Kapasitas Trafo</div>
+        </div>
+      </div>
+
+      <div class="stat-card" onclick="switchAdminTab('proses')" style="cursor: pointer;">
+        <div class="stat-icon icon-emerald">
+          <i class="fa-solid fa-diagram-project"></i>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTotalProses">10</div>
+          <div class="stat-label">Tahapan Alur Produksi</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal Navigation Tabs -->
+    <div class="portal-tabs">
+      <button class="tab-btn active" data-tab="admins">
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Manajemen Admin & Hak Akses</span>
+        <span class="tab-badge" id="tabBadgeAdmins">RBAC</span>
+      </button>
+
+      <button class="tab-btn" data-tab="pelanggan">
+        <i class="fa-solid fa-users"></i>
+        <span>Master Pelanggan (Customer)</span>
+      </button>
+
+      <button class="tab-btn" data-tab="trafo">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Master Trafo & Varian</span>
+      </button>
+
+      <button class="tab-btn" data-tab="proses">
+        <i class="fa-solid fa-gears"></i>
+        <span>Master Tahapan Produksi</span>
+      </button>
+
+      <button class="tab-btn" data-tab="material">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Master Material</span>
+      </button>
+
+      <button class="tab-btn" data-tab="pic">
+        <i class="fa-solid fa-user-tie"></i>
+        <span>Master PIC / Personil</span>
+      </button>
+
+      <button class="tab-btn" data-tab="logs">
+        <i class="fa-solid fa-wave-square"></i>
+        <span>Live Realtime & Log Audit</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: MANAJEMEN ADMIN & HAK AKSES -->
+    <section class="tab-content active" id="tab-admins">
+      
+      <!-- Visual Role Matrix Explanations -->
+      <div class="role-guide-grid">
+        <div class="role-guide-card">
+          <span class="role-badge-pill pill-super">
+            <i class="fa-solid fa-crown"></i> SUPER ADMIN
+          </span>
+          <div class="role-guide-title">Akses Penuh Semua Modul</div>
+          <div class="role-guide-desc">
+            Bisa menambah, mengedit, dan menghapus seluruh data pada Proyek (SO), Produksi, Pengiriman, Document Control, Master Data, hingga akun Admin.
+          </div>
+          <div class="permission-tags-list">
+            <span class="perm-tag active">Proyek SO (Full)</span>
+            <span class="perm-tag active">Produksi (Full)</span>
+            <span class="perm-tag active">Pengiriman (Full)</span>
+            <span class="perm-tag active">Master Data</span>
+            <span class="perm-tag active">Kelola Admin</span>
+          </div>
+        </div>
+
+        <div class="role-guide-card">
+          <span class="role-badge-pill pill-so">
+            <i class="fa-solid fa-file-invoice"></i> ADMIN 1 · PROYEK (SO)
+          </span>
+          <div class="role-guide-title">Khusus Modul Proyek & Order</div>
+          <div class="role-guide-desc">
+            Bisa membuat dan mengedit Sales Order (SO) serta Proyek PT. Pada modul Produksi hanya memiliki hak lihat (View Only) tanpa izin mengubah tahapan.
+          </div>
+          <div class="permission-tags-list">
+            <span class="perm-tag active"><i class="fa-solid fa-check"></i> Edit Proyek (SO)</span>
+            <span class="perm-tag"><i class="fa-solid fa-lock"></i> Produksi (Read Only)</span>
+            <span class="perm-tag"><i class="fa-solid fa-lock"></i> Pengiriman (Read Only)</span>
+          </div>
+        </div>
+
+        <div class="role-guide-card">
+          <span class="role-badge-pill pill-prod">
+            <i class="fa-solid fa-gear"></i> ADMIN 2 · PRODUKSI
+          </span>
+          <div class="role-guide-title">Khusus Tahapan & Unit Produksi</div>
+          <div class="role-guide-desc">
+            Bisa memperbarui tahapan trafo (Tank, Core, Coil, Assembly, dsb.), input hasil pengerjaan, dan monitoring unit. Modul Proyek terkunci View Only.
+          </div>
+          <div class="permission-tags-list">
+            <span class="perm-tag"><i class="fa-solid fa-lock"></i> Proyek SO (Read Only)</span>
+            <span class="perm-tag active"><i class="fa-solid fa-check"></i> Edit Produksi Trafo</span>
+            <span class="perm-tag active"><i class="fa-solid fa-check"></i> Update Tahapan</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="section-toolbar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchAdminInput" placeholder="Cari nama, username, atau role admin..." onkeyup="filterAdmins()">
+        </div>
+        <button class="btn-primary" onclick="openAddAdminModal()">
+          <i class="fa-solid fa-user-plus"></i> Tambah Admin Baru
+        </button>
+      </div>
+
+      <!-- Admin List Table -->
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Pengguna / Nama Lengkap</th>
+              <th>Role Sistem</th>
+              <th>Cakupan Hak Akses (Permissions)</th>
+              <th>Status Akun</th>
+              <th style="text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="adminsTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: MASTER PELANGGAN -->
+    <section class="tab-content" id="tab-pelanggan">
+      <div class="section-toolbar">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Data Pelanggan / Perusahaan (PT)</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Kelola master data customer yang akan otomatis sinkron ke pilihan Proyek (SO)</p>
+        </div>
+        <button class="btn-primary" onclick="openAddPelangganModal()">
+          <i class="fa-solid fa-plus"></i> Tambah Pelanggan Baru
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Kode Customer</th>
+              <th>Nama Perusahaan (PT)</th>
+              <th>Sektor Industri</th>
+              <th>Kota / Lokasi</th>
+              <th>Kontak Person</th>
+              <th>Unit Order Aktif</th>
+              <th style="text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="pelangganTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 3: MASTER TRAFO & VARIAN -->
+    <section class="tab-content" id="tab-trafo">
+      <div class="section-toolbar">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Data Trafo & Spesifikasi Varian</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Daftar model, kapasitas daya (kVA), dan rasio tegangan trafo</p>
+        </div>
+        <button class="btn-primary" onclick="openAddTrafoModal()">
+          <i class="fa-solid fa-plus"></i> Tambah Varian Trafo
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Kode Model</th>
+              <th>Tipe Transformator</th>
+              <th>Kapasitas Daya</th>
+              <th>Rasio Tegangan</th>
+              <th>Sistem Pendingin</th>
+              <th>Standar Uji</th>
+              <th style="text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="trafoTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 4: MASTER TAHAPAN PROSES PRODUKSI -->
+    <section class="tab-content" id="tab-proses">
+      <div class="section-toolbar">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Tahapan Alur Proses Produksi Trafo</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Urutan tahapan fabrikasi trafo yang disinkronkan ke kanban board & monitoring flow</p>
+        </div>
+        <button class="btn-primary" onclick="openAddProsesModal()">
+          <i class="fa-solid fa-plus"></i> Tambah Tahapan Baru
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Urutan</th>
+              <th>Nama Tahapan</th>
+              <th>Departemen / Area</th>
+              <th>Deskripsi Aktivitas</th>
+              <th>Standar Siklus</th>
+              <th style="text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="prosesTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 5: MASTER MATERIAL -->
+    <section class="tab-content" id="tab-material">
+      <div class="section-toolbar">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Master Material Produksi</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Data material utama dan pendukung perakitan transformator</p>
+        </div>
+        <button class="btn-primary" onclick="openAddMaterialModal()">
+          <i class="fa-solid fa-plus"></i> Tambah Material Baru
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Kode Material</th>
+              <th>Nama Material</th>
+              <th>Spesifikasi Teknis</th>
+              <th>Stok Tersedia</th>
+              <th>Satuan</th>
+              <th>Status Stok</th>
+              <th style="text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="materialTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 6: MASTER PIC -->
+    <section class="tab-content" id="tab-pic">
+      <div class="section-toolbar">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Master PIC & Personil</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Daftar penanggung jawab dan supervisor operasional trafo</p>
+        </div>
+        <button class="btn-primary" onclick="openAddPicModal()">
+          <i class="fa-solid fa-plus"></i> Tambah Personil / PIC
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID Personil</th>
+              <th>Nama Lengkap</th>
+              <th>Jabatan / Tanggung Jawab</th>
+              <th>Departemen</th>
+              <th>Status</th>
+              <th style="text-align: right;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="picTableBody">
+            <!-- Rendered by admin.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 7: LIVE REALTIME & AUDIT LOGS -->
+    <section class="tab-content" id="tab-logs">
+      <div class="section-toolbar">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Log Aktivitas Sinkronisasi Realtime</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Audit trail pengiriman data lintas tab melalui BroadcastChannel & LocalStorage</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <span id="syncLatencyStatus" style="font-size: 12px; color: #34d399;"></span>
+          <button class="btn-primary" onclick="triggerManualSyncTest()">
+            <i class="fa-solid fa-bolt"></i> Pancarkan Sinyal Sync
+          </button>
+        </div>
+      </div>
+
+      <div class="logs-container" id="syncLogsList">
+        <!-- Rendered by admin.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL: TAMBAH / EDIT ADMIN ================= -->
+  <div class="modal-overlay" id="modalAdmin">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modalAdminTitle">
+          <i class="fa-solid fa-user-plus" style="color: #2563eb;"></i> Tambah Admin Baru
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('modalAdmin')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="formAdmin" onsubmit="handleSaveAdminSubmit(event)">
+        <input type="hidden" id="adminId">
+        <input type="hidden" id="adminRolePreset" value="superadmin">
+
+        <div class="modal-body">
+          
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nama Lengkap</label>
+              <input type="text" class="form-control" id="adminFullName" placeholder="Contoh: Budi Santoso" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username Login</label>
+              <input type="text" class="form-control" id="adminUsername" placeholder="Contoh: budi_so" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="text" class="form-control" id="adminPassword" placeholder="Password akun" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Judul Role (Tampilan)</label>
+              <input type="text" class="form-control" id="adminRoleTitle" placeholder="Contoh: Admin Proyek SO" required>
+            </div>
+          </div>
+
+          <!-- Pilihan Template Hak Akses Cepat (Preset) -->
+          <div class="form-group">
+            <label class="form-label">Pilih Pola Hak Akses (Role Preset)</label>
+            <div class="preset-radio-grid">
+              <div class="preset-card selected" data-preset="superadmin" onclick="selectRolePreset('superadmin')">
+                <div class="preset-icon" style="color:#fb7185;"><i class="fa-solid fa-crown"></i></div>
+                <div class="preset-title">Super Admin</div>
+                <div class="preset-sub">Bisa edit semua modul</div>
+              </div>
+
+              <div class="preset-card" data-preset="admin_so" onclick="selectRolePreset('admin_so')">
+                <div class="preset-icon" style="color:#60a5fa;"><i class="fa-solid fa-file-invoice"></i></div>
+                <div class="preset-title">Admin 1 (Proyek SO)</div>
+                <div class="preset-sub">Khusus Proyek (SO)</div>
+              </div>
+
+              <div class="preset-card" data-preset="admin_produksi" onclick="selectRolePreset('admin_produksi')">
+                <div class="preset-icon" style="color:#fbbf24;"><i class="fa-solid fa-gear"></i></div>
+                <div class="preset-title">Admin 2 (Produksi)</div>
+                <div class="preset-sub">Khusus Produksi Trafo</div>
+              </div>
+
+              <div class="preset-card" data-preset="admin_pengiriman" onclick="selectRolePreset('admin_pengiriman')">
+                <div class="preset-icon" style="color:#34d399;"><i class="fa-solid fa-truck"></i></div>
+                <div class="preset-title">Admin Pengiriman</div>
+                <div class="preset-sub">Khusus Logistik/Kirim</div>
+              </div>
+
+              <div class="preset-card" data-preset="custom" onclick="selectRolePreset('custom')">
+                <div class="preset-icon" style="color:#c4b5fd;"><i class="fa-solid fa-sliders"></i></div>
+                <div class="preset-title">Custom Access</div>
+                <div class="preset-sub">Pilih modul bebas</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkbox Matrix Hak Akses Granular -->
+          <div class="form-group">
+            <label class="form-label">Detail Pilihan Hak Akses Modul (Permissions)</label>
+            <div class="permissions-box">
+              
+              <label class="perm-checkbox-item" style="border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 6px;">
+                <input type="checkbox" id="perm_all" onchange="handlePermAllToggle(this.checked)">
+                <div class="perm-info">
+                  <div class="perm-name" style="color: #fb7185;"><i class="fa-solid fa-crown"></i> Super Admin (Semua Hak Akses Diizinkan)</div>
+                  <div class="perm-desc">Mengizinkan pengubahan pada semua data tanpa batas</div>
+                </div>
+              </label>
+
+              <label class="perm-checkbox-item">
+                <input type="checkbox" id="perm_proyek">
+                <div class="perm-info">
+                  <div class="perm-name"><i class="fa-solid fa-file-invoice" style="color:#60a5fa;"></i> Modul Proyek (SO)</div>
+                  <div class="perm-desc">Bisa menambah proyek PT baru, edit order SO, dan hapus proyek</div>
+                </div>
+              </label>
+
+              <label class="perm-checkbox-item">
+                <input type="checkbox" id="perm_produksi">
+                <div class="perm-info">
+                  <div class="perm-name"><i class="fa-solid fa-gears" style="color:#fbbf24;"></i> Modul Produksi Trafo</div>
+                  <div class="perm-desc">Bisa mengubah tahapan proses, memajukan progres trafo, edit unit, dan jadwal</div>
+                </div>
+              </label>
+
+              <label class="perm-checkbox-item">
+                <input type="checkbox" id="perm_pengiriman">
+                <div class="perm-info">
+                  <div class="perm-name"><i class="fa-solid fa-truck" style="color:#34d399;"></i> Modul Pengiriman & Logistik</div>
+                  <div class="perm-desc">Bisa mengubah status pelacakan pengiriman dan surat jalan trafo</div>
+                </div>
+              </label>
+
+              <label class="perm-checkbox-item">
+                <input type="checkbox" id="perm_doc">
+                <div class="perm-info">
+                  <div class="perm-name"><i class="fa-solid fa-file-shield" style="color:#c4b5fd;"></i> Document Control & Uji FAT</div>
+                  <div class="perm-desc">Bisa mengunggah dokumen teknik, drawing, dan hasil pengujian mutu</div>
+                </div>
+              </label>
+
+              <label class="perm-checkbox-item">
+                <input type="checkbox" id="perm_master">
+                <div class="perm-info">
+                  <div class="perm-name"><i class="fa-solid fa-database" style="color:#38bdf8;"></i> Modul Master Data</div>
+                  <div class="perm-desc">Bisa menambah & mengedit data pelanggan, trafo, material, proses, dan PIC</div>
+                </div>
+              </label>
+
+              <label class="perm-checkbox-item">
+                <input type="checkbox" id="perm_admin">
+                <div class="perm-info">
+                  <div class="perm-name"><i class="fa-solid fa-user-shield" style="color:#f43f5e;"></i> Manajemen Admin Sistem</div>
+                  <div class="perm-desc">Bisa menambah akun admin baru dan mengubah hak akses pengguna lain</div>
+                </div>
+              </label>
+
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">URL Foto Profil / Avatar (Opsional)</label>
+            <input type="url" class="form-control" id="adminAvatar" placeholder="https://images.unsplash.com/...">
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalAdmin')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan & Sinkronkan Realtime</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MASTER PELANGGAN ================= -->
+  <div class="modal-overlay" id="modalPelanggan">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modalPelangganTitle">Tambah Pelanggan Baru</div>
+        <button class="modal-close-btn" onclick="closeModal('modalPelanggan')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSavePelangganSubmit(event)">
+        <input type="hidden" id="pelangganOldCode">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Kode Pelanggan</label>
+              <input type="text" class="form-control" id="pelangganCode" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Perusahaan (PT)</label>
+              <input type="text" class="form-control" id="pelangganName" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Sektor Industri</label>
+              <input type="text" class="form-control" id="pelangganSector" placeholder="Contoh: Mining, IPP, Steel" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kota / Lokasi</label>
+              <input type="text" class="form-control" id="pelangganCity" placeholder="Contoh: Samarinda, Bekasi" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Kontak Person</label>
+              <input type="text" class="form-control" id="pelangganContact" placeholder="Nama PIC & No Telepon" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status Unit Order</label>
+              <input type="text" class="form-control" id="pelangganOrders" placeholder="Contoh: 4 Unit">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalPelanggan')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan Pelanggan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MASTER TRAFO ================= -->
+  <div class="modal-overlay" id="modalTrafo">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTrafoTitle">Tambah Varian Trafo</div>
+        <button class="modal-close-btn" onclick="closeModal('modalTrafo')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveTrafoSubmit(event)">
+        <input type="hidden" id="trafoOldModel">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Kode Model</label>
+              <input type="text" class="form-control" id="trafoModel" placeholder="Contoh: TRF-DIS-1600" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipe Trafo</label>
+              <input type="text" class="form-control" id="trafoType" placeholder="Trafo Distribusi / Tenaga" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Kapasitas Daya (kVA)</label>
+              <input type="text" class="form-control" id="trafoCap" placeholder="Contoh: 1600 kVA" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rasio Tegangan</label>
+              <input type="text" class="form-control" id="trafoVolt" placeholder="20 kV / 400 V" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Sistem Pendingin</label>
+              <input type="text" class="form-control" id="trafoCooling" placeholder="ONAN / ONAF" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Standar Uji</label>
+              <input type="text" class="form-control" id="trafoStandard" placeholder="SPLN D3.002-1 / IEC 60076" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalTrafo')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan Varian Trafo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MASTER PROSES ================= -->
+  <div class="modal-overlay" id="modalProses">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modalProsesTitle">Tambah Tahapan Proses</div>
+        <button class="modal-close-btn" onclick="closeModal('modalProses')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveProsesSubmit(event)">
+        <input type="hidden" id="prosesOldStep">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Nomor Urut Step</label>
+              <input type="number" class="form-control" id="prosesStep" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Tahapan</label>
+              <input type="text" class="form-control" id="prosesName" placeholder="Contoh: Tank Making" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Departemen Penanggung Jawab</label>
+              <input type="text" class="form-control" id="prosesDept" placeholder="Contoh: Fabrikasi" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Standar Siklus Waktu</label>
+              <input type="text" class="form-control" id="prosesCycle" placeholder="Contoh: 2 Hari" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deskripsi Aktivitas</label>
+            <textarea class="form-control" id="prosesDesc" rows="3" placeholder="Rincian proses..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalProses')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan Tahapan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MASTER MATERIAL ================= -->
+  <div class="modal-overlay" id="modalMaterial">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modalMaterialTitle">Tambah Material Baru</div>
+        <button class="modal-close-btn" onclick="closeModal('modalMaterial')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveMaterialSubmit(event)">
+        <input type="hidden" id="materialOldCode">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Kode Material</label>
+              <input type="text" class="form-control" id="materialCode" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Material</label>
+              <input type="text" class="form-control" id="materialName" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Spesifikasi Teknis</label>
+            <input type="text" class="form-control" id="materialSpec" required>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Jumlah Stok</label>
+              <input type="text" class="form-control" id="materialStock" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Satuan</label>
+              <input type="text" class="form-control" id="materialUom" placeholder="Kilogram, Liter, Pcs" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status Stok</label>
+            <select class="form-control" id="materialStatus">
+              <option value="Aman">Aman</option>
+              <option value="Cukup">Cukup</option>
+              <option value="Menipis">Menipis</option>
+              <option value="Kritis">Kritis</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalMaterial')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan Material</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: MASTER PIC ================= -->
+  <div class="modal-overlay" id="modalPic">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">Tambah Personil / PIC</div>
+        <button class="modal-close-btn" onclick="closeModal('modalPic')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSavePicSubmit(event)">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">ID Personil</label>
+              <input type="text" class="form-control" id="picId" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Lengkap</label>
+              <input type="text" class="form-control" id="picName" required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Jabatan / Peran</label>
+              <input type="text" class="form-control" id="picRole" placeholder="Supervisor, Engineer, Lead" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Departemen</label>
+              <input type="text" class="form-control" id="picDept" placeholder="Produksi, QC Lab, PPIC" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="picStatus">
+              <option value="Aktif">Aktif</option>
+              <option value="Online">Online</option>
+              <option value="Cuti">Cuti</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalPic')">Batal</button>
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Simpan PIC</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="realtime-sync.js"></script>
+  <script src="admin.js"></script>
+
+</body>
+</html>
