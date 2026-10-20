@@ -7632,14 +7632,19 @@ const defaultFatSchedules = [
 ];
 
 function getFatSchedules() {
+  let list = defaultFatSchedules;
   try {
     const raw = localStorage.getItem('SYMTRAFLOW_FAT_SCHEDULES');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
     }
   } catch(e) {}
-  return defaultFatSchedules;
+  return list.map(item => ({
+    ...item,
+    startDate: item.startDate || item.date,
+    endDate: item.endDate || item.startDate || item.date
+  }));
 }
 
 function saveFatSchedules(list) {
@@ -7702,21 +7707,26 @@ function renderFatCalendar() {
   const statusFilter = (document.getElementById('fatFilterStatus')?.value || 'all');
 
   const filtered = schedules.filter(item => {
-    if (bayFilter !== 'all' && item.bay !== bayFilter) return false;
-    if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+    if (bayFilter !== 'all' && (item.bay || 'Test Bay 1') !== bayFilter) return false;
+    if (statusFilter !== 'all' && (item.status || 'scheduled') !== statusFilter) return false;
     return true;
   });
 
-  // Calculate Month Stats (based on current active month)
+  // Calculate Month Stats (based on current active month range overlap)
+  const monthStartStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const monthEndStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
   const currentMonthSchedules = schedules.filter(item => {
-    const d = new Date(item.date);
-    return d.getFullYear() === year && d.getMonth() === month;
+    const s = item.startDate || item.date;
+    const e = item.endDate || item.startDate || item.date;
+    return s <= monthEndStr && e >= monthStartStr;
   });
 
   const totalThisMonth = currentMonthSchedules.length;
   const passedCount = currentMonthSchedules.filter(s => s.status === 'passed').length;
   const inProgCount = currentMonthSchedules.filter(s => s.status === 'inprogress').length;
-  const upcomingCount = currentMonthSchedules.filter(s => s.status === 'scheduled').length;
+  const upcomingCount = currentMonthSchedules.filter(s => (s.status === 'scheduled' || !s.status)).length;
 
   const kpiTotal = document.getElementById('fatKpiTotal');
   const kpiPassed = document.getElementById('fatKpiPassed');
@@ -7767,8 +7777,12 @@ function renderFatCalendar() {
 
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-      // Find events on this date
-      const dayEvents = filtered.filter(item => item.date === dateStr);
+      // Find events that span this date
+      const dayEvents = filtered.filter(item => {
+        const s = item.startDate || item.date;
+        const e = item.endDate || item.startDate || item.date;
+        return dateStr >= s && dateStr <= e;
+      });
 
       let eventsHtml = '';
       dayEvents.forEach(ev => {
@@ -7777,17 +7791,20 @@ function renderFatCalendar() {
         else if (ev.status === 'inprogress') statusBadgeText = 'LIVE UJI';
         else if (ev.status === 'rescheduled') statusBadgeText = 'RESCHEDULE';
 
+        const sDate = ev.startDate || ev.date;
+        const eDate = ev.endDate || ev.startDate || ev.date;
+        const isMultiDay = (eDate && eDate !== sDate);
+
         eventsHtml += `
-          <div class="fat-event-pill status-${ev.status}" onclick="showFatDetail('${ev.id}')" title="Klik untuk berita acara & hasil pengujian">
+          <div class="fat-event-pill status-${ev.status || 'scheduled'}" onclick="showFatDetail('${ev.id}')" title="Klik untuk lihat detail & berita acara FAT">
             <div class="fat-event-trafo">
-              <span>${ev.trafoId}</span>
+              <span style="font-weight:800;"><i class="fa-solid fa-hashtag" style="font-size:10px; opacity:0.7;"></i> ${ev.soNumber || ev.trafoId}</span>
               <span class="fat-event-status-tag">${statusBadgeText}</span>
             </div>
-            <div class="fat-event-client">${ev.client}</div>
+            <div class="fat-event-client"><i class="fa-regular fa-building" style="font-size:10px; margin-right:3px;"></i>${ev.client}</div>
             <div class="fat-event-meta">
-              <span><i class="fa-regular fa-clock"></i> ${ev.time}</span>
-              <span>•</span>
-              <span>${ev.bay}</span>
+              <span><i class="fa-solid fa-bolt" style="font-size:10px;"></i> ${ev.rating}</span>
+              ${isMultiDay ? `<span>• <i class="fa-regular fa-calendar-days" style="font-size:10px;"></i> Periode</span>` : ''}
             </div>
           </div>
         `;
@@ -7799,7 +7816,7 @@ function renderFatCalendar() {
             <span class="fat-day-num">${day}</span>
             ${isToday ? '<span class="fat-today-pill">HARI INI</span>' : ''}
           </div>
-          <button type="button" class="fat-btn-add-day" onclick="openAddFatModal('${dateStr}')" title="Jadwalkan FAT pada tanggal ini">
+          <button type="button" class="fat-btn-add-day" onclick="openAddFatModal('${dateStr}')" title="Buat Jadwal FAT pada tanggal ini">
             <i class="fa-solid fa-plus"></i>
           </button>
         </div>
@@ -7837,7 +7854,7 @@ function renderFatAgendaTable(items) {
   if (items.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" style="text-align:center; padding:32px; color:#94a3b8;">
+        <td colspan="7" style="text-align:center; padding:32px; color:#94a3b8;">
           <i class="fa-solid fa-calendar-xmark" style="font-size:32px; margin-bottom:8px; display:block;"></i>
           Tidak ada jadwal FAT yang sesuai dengan filter.
         </td>
@@ -7858,41 +7875,46 @@ function renderFatAgendaTable(items) {
       statusChip = '<span class="fat-chip fat-chip-info"><i class="fa-regular fa-clock"></i> Terjadwal</span>';
     }
 
-    const d = new Date(ev.date);
-    const dateFormatted = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    const sDate = ev.startDate || ev.date;
+    const eDate = ev.endDate || ev.startDate || ev.date;
+
+    const sFormatted = new Date(sDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    const eFormatted = (eDate && eDate !== sDate)
+      ? new Date(eDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+      : null;
+
+    const dateDisplay = eFormatted
+      ? `<div><strong style="color:#0f172a;">${sFormatted}</strong> s/d <strong style="color:#0f172a;">${eFormatted}</strong></div>`
+      : `<div><strong style="color:#0f172a;">${sFormatted}</strong></div>`;
 
     return `
       <tr>
         <td style="font-weight:700; color:#64748b;">${index + 1}</td>
         <td>
-          <div style="font-weight:700; color:#0f172a;"><i class="fa-regular fa-calendar" style="color:#2563eb; margin-right:4px;"></i> ${dateFormatted}</div>
-          <div style="font-size:11px; color:#64748b; margin-top:2px;"><i class="fa-regular fa-clock"></i> Pukul ${ev.time} WIB</div>
+          <div style="color:#0f172a; font-size:12px;"><i class="fa-regular fa-calendar-days" style="color:#2563eb; margin-right:6px;"></i>${dateDisplay}</div>
         </td>
         <td>
-          <div style="font-weight:800; color:#1e293b;">${ev.trafoId}</div>
-          <div style="font-size:11px; color:#2563eb; font-weight:600;">${ev.soNumber}</div>
+          <div style="font-weight:800; color:#1e293b; font-size:13px;"><i class="fa-solid fa-hashtag" style="color:#2563eb; font-size:11px; margin-right:3px;"></i>${ev.soNumber || '-'}</div>
         </td>
         <td>
-          <div style="font-weight:700; color:#0f172a;">${ev.client}</div>
+          <div style="font-weight:700; color:#0f172a;"><i class="fa-regular fa-building" style="color:#64748b; margin-right:4px;"></i>${ev.client || '-'}</div>
         </td>
         <td>
-          <span style="font-weight:600; color:#475569;">${ev.rating}</span>
-        </td>
-        <td>
-          <span class="fat-chip fat-chip-bay"><i class="fa-solid fa-microscope"></i> ${ev.bay}</span>
-        </td>
-        <td>
-          <div style="font-size:11px; font-weight:700; color:#1e293b;"><i class="fa-solid fa-user-check" style="color:#10b981; margin-right:4px;"></i> ${ev.inspector}</div>
-          <div style="font-size:10px; color:#64748b; margin-top:2px;">QC: ${ev.qcLead}</div>
+          <span style="font-weight:700; color:#2563eb; background:#eff6ff; padding:3px 8px; border-radius:6px; font-size:12px; border:1px solid #bfdbfe;">
+            <i class="fa-solid fa-bolt" style="margin-right:4px;"></i>${ev.rating || '-'}
+          </span>
         </td>
         <td>${statusChip}</td>
         <td style="text-align:right;">
           <div style="display:inline-flex; gap:6px;">
-            <button type="button" class="btn-primary" style="font-size:11px; padding:4px 9px;" onclick="showFatDetail('${ev.id}')" title="Buka Berita Acara & Hasil Uji">
-              <i class="fa-solid fa-eye"></i> Detail & BA
+            <button type="button" class="btn-primary" style="font-size:11px; padding:4px 9px;" onclick="showFatDetail('${ev.id}')" title="Buka Detail">
+              <i class="fa-solid fa-eye"></i> Detail
             </button>
             <button type="button" class="btn-secondary" style="font-size:11px; padding:4px 9px;" onclick="openAddFatModal(null, '${ev.id}')" title="Edit Jadwal">
-              <i class="fa-solid fa-pen-to-square"></i>
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+            <button type="button" class="btn-secondary" style="font-size:11px; padding:4px 9px; color:#ef4444; border-color:#fca5a5;" onclick="deleteFatSchedule('${ev.id}')" title="Hapus Jadwal">
+              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
@@ -7918,8 +7940,13 @@ function showFatDetail(fatId) {
   const modalBody = document.getElementById('fatDetailModalBody');
   if (!modalBody) return;
 
-  const d = new Date(ev.date);
-  const dateFormatted = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const sDate = ev.startDate || ev.date;
+  const eDate = ev.endDate || ev.startDate || ev.date;
+  const sFormatted = new Date(sDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const eFormatted = (eDate && eDate !== sDate)
+    ? new Date(eDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+  const dateFormatted = eFormatted ? `${sFormatted} s/d ${eFormatted}` : sFormatted;
 
   let statusBadge = '';
   if (ev.status === 'passed') {
@@ -7960,8 +7987,8 @@ function showFatDetail(fatId) {
     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div>
         <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">BERITA ACARA UJI SERAH TERIMA PABRIK (FAT)</div>
-        <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">${ev.trafoId} · ${ev.soNumber}</div>
-        <div style="font-size:13px; color:#2563eb; font-weight:700; margin-top:2px;">${ev.client}</div>
+        <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">${ev.soNumber || ev.trafoId}</div>
+        <div style="font-size:13px; color:#2563eb; font-weight:700; margin-top:2px;"><i class="fa-regular fa-building" style="margin-right:4px;"></i>${ev.client}</div>
       </div>
       <div>${statusBadge}</div>
     </div>
@@ -7969,27 +7996,23 @@ function showFatDetail(fatId) {
     <!-- Metadata Grid -->
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:22px;">
       <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="font-size:10px; color:#64748b; font-weight:700;">WAKTU PELAKSANAAN</div>
+        <div style="font-size:10px; color:#64748b; font-weight:700;">PERIODE PELAKSANAAN</div>
         <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-regular fa-calendar" style="color:#2563eb;"></i> ${dateFormatted}</div>
-        <div style="font-size:11px; color:#475569; margin-top:2px;">Pukul ${ev.time} WIB</div>
       </div>
 
       <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="font-size:10px; color:#64748b; font-weight:700;">LOKASI / RUANG UJI</div>
-        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-microscope" style="color:#2563eb;"></i> ${ev.bay}</div>
-        <div style="font-size:11px; color:#059669; font-weight:600; margin-top:2px;">Sertifikat Kalibrasi Aktif</div>
+        <div style="font-size:10px; color:#64748b; font-weight:700;">NO. SALES ORDER (SO)</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-hashtag" style="color:#2563eb;"></i> ${ev.soNumber || '-'}</div>
       </div>
 
       <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="font-size:10px; color:#64748b; font-weight:700;">RATING & SPESIFIKASI</div>
-        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> ${ev.rating}</div>
-        <div style="font-size:11px; color:#475569; margin-top:2px;">Vektor Grup: Dyn5 · 50 Hz</div>
+        <div style="font-size:10px; color:#64748b; font-weight:700;">KAPASITAS TRAFO</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> ${ev.rating || '-'}</div>
       </div>
 
       <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="font-size:10px; color:#64748b; font-weight:700;">STANDAR ACUAN UJI</div>
-        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> SPLN D3.002-1:2014</div>
-        <div style="font-size:11px; color:#475569; margin-top:2px;">& IEC 60076 (Power Trafo)</div>
+        <div style="font-size:10px; color:#64748b; font-weight:700;">PERUSAHAAN / PELANGGAN</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-regular fa-building" style="color:#10b981;"></i> ${ev.client || '-'}</div>
       </div>
     </div>
 
@@ -8025,26 +8048,19 @@ function showFatDetail(fatId) {
     <!-- Witness Signature Grid -->
     <div>
       <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:10px; text-transform:uppercase;">TIM SAKSI PENGUJIAN (WITNESSES & APPROVAL):</div>
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; text-align:center;">
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; text-align:center;">
         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
-          <div style="font-size:10px; color:#64748b; font-weight:700;">SAKSI PIHAK PELANGGAN / PLN</div>
+          <div style="font-size:10px; color:#64748b; font-weight:700;">SAKSI PIHAK PELANGGAN</div>
           <div style="font-family:'Courier New', monospace; font-size:14px; color:#2563eb; font-weight:800; margin:16px 0 10px 0;">[ DIGITAL SIGNED ]</div>
-          <div style="font-size:12px; font-weight:800; color:#0f172a;">${ev.inspector}</div>
-          <div style="font-size:10px; color:#64748b;">Inspector Pelanggan</div>
+          <div style="font-size:12px; font-weight:800; color:#0f172a;">${ev.client || 'Pihak Pelanggan'}</div>
+          <div style="font-size:10px; color:#64748b;">Witness & QA Inspector</div>
         </div>
 
         <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
           <div style="font-size:10px; color:#64748b; font-weight:700;">LEAD QC & FAT TEST ENGINEER</div>
           <div style="font-family:'Courier New', monospace; font-size:14px; color:#10b981; font-weight:800; margin:16px 0 10px 0;">[ DIGITAL SIGNED ]</div>
-          <div style="font-size:12px; font-weight:800; color:#0f172a;">${ev.qcLead}</div>
+          <div style="font-size:12px; font-weight:800; color:#0f172a;">${ev.qcLead || 'Shevira Indraswari (QC Lead)'}</div>
           <div style="font-size:10px; color:#64748b;">Quality Control Dept.</div>
-        </div>
-
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
-          <div style="font-size:10px; color:#64748b; font-weight:700;">FACTORY ACCEPTANCE MANAGER</div>
-          <div style="font-family:'Courier New', monospace; font-size:14px; color:#7c3aed; font-weight:800; margin:16px 0 10px 0;">[ DIGITAL SIGNED ]</div>
-          <div style="font-size:12px; font-weight:800; color:#0f172a;">Jodi (Super Administrator)</div>
-          <div style="font-size:10px; color:#64748b;">Symphos Electric Factory</div>
         </div>
       </div>
     </div>
@@ -8059,50 +8075,33 @@ function openAddFatModal(targetDate, editId) {
   const title = document.getElementById('fatScheduleModalTitle');
   const editInput = document.getElementById('fatScheduleEditId');
 
-  const inTrafo = document.getElementById('fatFormTrafoId');
   const inSo = document.getElementById('fatFormSoNumber');
-  const inClient = document.getElementById('fatFormClient');
   const inRating = document.getElementById('fatFormRating');
-  const inDate = document.getElementById('fatFormDate');
-  const inTime = document.getElementById('fatFormTime');
-  const inBay = document.getElementById('fatFormBay');
-  const inStatus = document.getElementById('fatFormStatus');
-  const inInspector = document.getElementById('fatFormInspector');
-  const inQc = document.getElementById('fatFormQcLead');
-  const inNotes = document.getElementById('fatFormNotes');
+  const inClient = document.getElementById('fatFormClient');
+  const inStartDate = document.getElementById('fatFormStartDate');
+  const inEndDate = document.getElementById('fatFormEndDate');
 
   if (editId) {
     const schedules = getFatSchedules();
     const item = schedules.find(s => s.id === editId);
     if (item) {
-      if (title) title.innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: #2563eb;"></i> Edit Jadwal Factory Acceptance Test';
+      if (title) title.innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: #2563eb;"></i> Edit Jadwal FAT';
       if (editInput) editInput.value = item.id;
-      if (inTrafo) inTrafo.value = item.trafoId;
-      if (inSo) inSo.value = item.soNumber;
-      if (inClient) inClient.value = item.client;
-      if (inRating) inRating.value = item.rating;
-      if (inDate) inDate.value = item.date;
-      if (inTime) inTime.value = item.time;
-      if (inBay) inBay.value = item.bay;
-      if (inStatus) inStatus.value = item.status;
-      if (inInspector) inInspector.value = item.inspector;
-      if (inQc) inQc.value = item.qcLead;
-      if (inNotes) inNotes.value = item.notes || '';
+      if (inSo) inSo.value = item.soNumber || '';
+      if (inRating) inRating.value = item.rating || '';
+      if (inClient) inClient.value = item.client || '';
+      if (inStartDate) inStartDate.value = item.startDate || item.date || '2026-10-20';
+      if (inEndDate) inEndDate.value = item.endDate || item.startDate || item.date || '2026-10-20';
     }
   } else {
-    if (title) title.innerHTML = '<i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Jadwalkan Factory Acceptance Test (FAT)';
+    if (title) title.innerHTML = '<i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Buat Jadwal FAT';
     if (editInput) editInput.value = '';
-    if (inTrafo) inTrafo.value = '';
-    if (inSo) inSo.value = 'SO 25-05' + Math.floor(10 + Math.random() * 89);
+    if (inSo) inSo.value = '';
+    if (inRating) inRating.value = '';
     if (inClient) inClient.value = '';
-    if (inRating) inRating.value = '1000 kVA - 20 kV / 400 V';
-    if (inDate) inDate.value = targetDate || '2026-10-25';
-    if (inTime) inTime.value = '09:00';
-    if (inBay) inBay.value = 'Test Bay 1';
-    if (inStatus) inStatus.value = 'scheduled';
-    if (inInspector) inInspector.value = '';
-    if (inQc) inQc.value = 'Shevira Indraswari (QC Lead)';
-    if (inNotes) inNotes.value = '';
+    const initialDate = targetDate || '2026-10-20';
+    if (inStartDate) inStartDate.value = initialDate;
+    if (inEndDate) inEndDate.value = initialDate;
   }
 
   if (modal) modal.classList.add('active');
@@ -8111,17 +8110,23 @@ function openAddFatModal(targetDate, editId) {
 function handleSaveFatSchedule(e) {
   e.preventDefault();
   const editId = document.getElementById('fatScheduleEditId')?.value;
-  const trafoId = document.getElementById('fatFormTrafoId')?.value;
-  const soNumber = document.getElementById('fatFormSoNumber')?.value;
-  const client = document.getElementById('fatFormClient')?.value;
-  const rating = document.getElementById('fatFormRating')?.value;
-  const date = document.getElementById('fatFormDate')?.value;
-  const time = document.getElementById('fatFormTime')?.value;
-  const bay = document.getElementById('fatFormBay')?.value;
-  const status = document.getElementById('fatFormStatus')?.value;
-  const inspector = document.getElementById('fatFormInspector')?.value;
-  const qcLead = document.getElementById('fatFormQcLead')?.value;
-  const notes = document.getElementById('fatFormNotes')?.value;
+  const soNumber = document.getElementById('fatFormSoNumber')?.value.trim();
+  const rating = document.getElementById('fatFormRating')?.value.trim();
+  const client = document.getElementById('fatFormClient')?.value.trim();
+  const startDate = document.getElementById('fatFormStartDate')?.value;
+  const endDate = document.getElementById('fatFormEndDate')?.value;
+
+  if (!soNumber || !rating || !client || !startDate || !endDate) {
+    showToast('⚠️ Mohon lengkapi seluruh isian form jadwal FAT!');
+    return;
+  }
+
+  let sDate = startDate;
+  let eDate = endDate;
+  if (sDate > eDate) {
+    sDate = endDate;
+    eDate = startDate;
+  }
 
   const schedules = getFatSchedules();
 
@@ -8130,25 +8135,33 @@ function handleSaveFatSchedule(e) {
     if (idx !== -1) {
       schedules[idx] = {
         ...schedules[idx],
-        trafoId, soNumber, client, rating, date, time, bay, status, inspector, qcLead, notes
+        soNumber,
+        rating,
+        client,
+        startDate: sDate,
+        endDate: eDate,
+        date: sDate,
+        trafoId: schedules[idx].trafoId || ('TRF-' + soNumber.replace(/[^a-zA-Z0-9]/g, '').slice(-6))
       };
-      showToast(`✅ Jadwal FAT ${trafoId} berhasil diperbarui!`);
+      showToast(`✅ Jadwal FAT SO ${soNumber} berhasil diperbarui!`);
     }
   } else {
     const newId = 'FAT-' + Date.now().toString().slice(-6);
     schedules.push({
       id: newId,
-      trafoId,
       soNumber,
-      client,
       rating,
-      date,
-      time,
-      bay,
-      status,
-      inspector,
-      qcLead,
-      notes,
+      client,
+      startDate: sDate,
+      endDate: eDate,
+      date: sDate,
+      trafoId: 'TRF-' + (soNumber.replace(/[^a-zA-Z0-9]/g, '').slice(-6) || Math.floor(1000 + Math.random() * 9000)),
+      time: '09:00',
+      bay: 'Test Bay 1',
+      status: 'scheduled',
+      inspector: client,
+      qcLead: 'Shevira Indraswari (QC Lead)',
+      notes: `Jadwal FAT resmi untuk ${client} (SO: ${soNumber}) kapasitas ${rating}.`,
       testResults: [
         { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Sesuai Standar', res: 'PASS' },
         { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Sesuai Standar', res: 'PASS' },
@@ -8156,12 +8169,21 @@ function handleSaveFatSchedule(e) {
         { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'IEC 60076-1', val: 'Sesuai Standar', res: 'PASS' }
       ]
     });
-    showToast(`✅ Jadwal FAT baru untuk ${trafoId} berhasil ditambahkan!`);
+    showToast(`✅ Jadwal FAT baru untuk SO ${soNumber} berhasil ditambahkan!`);
   }
 
   saveFatSchedules(schedules);
   closeModal('modalFatSchedule');
   renderFatCalendar();
+}
+
+function deleteFatSchedule(id) {
+  if (!confirm('Apakah Anda yakin ingin menghapus jadwal FAT ini?')) return;
+  let schedules = getFatSchedules();
+  schedules = schedules.filter(s => s.id !== id);
+  saveFatSchedules(schedules);
+  renderFatCalendar();
+  showToast('🗑️ Jadwal FAT berhasil dihapus!');
 }
 
 function printFatCertificate() {

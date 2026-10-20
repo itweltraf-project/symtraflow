@@ -956,12 +956,10 @@
                 <thead>
                   <tr>
                     <th style="width:50px;">No</th>
-                    <th>Jadwal & Waktu</th>
-                    <th>No. Trafo / SO</th>
-                    <th>Pelanggan & Proyek</th>
-                    <th>Spesifikasi Unit</th>
-                    <th>Ruang Uji (Bay)</th>
-                    <th>Saksi Uji (Witness)</th>
+                    <th>Periode Tanggal</th>
+                    <th>No. Sales Order (SO)</th>
+                    <th>Perusahaan / Pelanggan</th>
+                    <th>Kapasitas Trafo</th>
                     <th>Status FAT</th>
                     <th style="text-align:right;">Aksi</th>
                   </tr>
@@ -3289,84 +3287,47 @@
     </div>
   </div>
 
-  <!-- Modal: Jadwalkan / Edit FAT Baru -->
+  <!-- Modal: Jadwalkan / Edit FAT Baru (Custom Simplified) -->
   <div class="modal-overlay" id="modalFatSchedule">
-    <div class="modal-box" style="max-width: 650px;">
+    <div class="modal-box" style="max-width: 520px;">
       <div class="modal-header">
-        <span class="modal-title" id="fatScheduleModalTitle"><i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Jadwalkan Factory Acceptance Test (FAT)</span>
+        <span class="modal-title" id="fatScheduleModalTitle"><i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Buat Jadwal FAT</span>
         <button class="modal-close-btn" onclick="closeModal('modalFatSchedule')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="fatScheduleForm" onsubmit="handleSaveFatSchedule(event)">
         <input type="hidden" id="fatScheduleEditId" value="">
-        <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Nomor Seri / Unit Trafo <span style="color:#ef4444;">*</span></label>
-              <input type="text" class="form-input" id="fatFormTrafoId" placeholder="Contoh: TRF-240522-005" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">No. Sales Order (SO)</label>
-              <input type="text" class="form-input" id="fatFormSoNumber" placeholder="Contoh: SO 25-0560" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Nama Pelanggan / Perusahaan <span style="color:#ef4444;">*</span></label>
-              <input type="text" class="form-input" id="fatFormClient" placeholder="Contoh: PT PLN (Persero) UID Jabar" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Kapasitas & Rating Tegangan</label>
-              <input type="text" class="form-input" id="fatFormRating" placeholder="Contoh: 1000 kVA - 20 kV / 400 V" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Tanggal Pelaksanaan FAT <span style="color:#ef4444;">*</span></label>
-              <input type="date" class="form-input" id="fatFormDate" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Waktu / Jam Mulai</label>
-              <input type="time" class="form-input" id="fatFormTime" value="09:00" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Ruang Uji / Lokasi (Test Bay) <span style="color:#ef4444;">*</span></label>
-              <select class="form-input" id="fatFormBay" required>
-                <option value="Test Bay 1">Test Bay 1 (High Voltage Lab)</option>
-                <option value="Test Bay 2">Test Bay 2 (Medium Voltage Lab)</option>
-                <option value="Test Bay 3">Test Bay 3 (Outdoor / Heavy Duty)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Status Pengujian</label>
-              <select class="form-input" id="fatFormStatus" required>
-                <option value="scheduled">Terjadwal (Akan Datang)</option>
-                <option value="inprogress">Sedang Diuji (Live Testing)</option>
-                <option value="passed">Lolos FAT (Passed 100%)</option>
-                <option value="rescheduled">Rescheduled / Ditunda</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Saksi Pihak Pelanggan / PLN (Witness) <span style="color:#ef4444;">*</span></label>
-              <input type="text" class="form-input" id="fatFormInspector" placeholder="Nama Inspektur / Jabatan (e.g. Ir. Hendra - PLN QA)" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Lead QC & Test Engineer Internal</label>
-              <input type="text" class="form-input" id="fatFormQcLead" value="Shevira Indraswari (QC Lead)" required>
-            </div>
-          </div>
-
+        <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Field 1: Nomor SO -->
           <div class="form-group">
-            <label class="form-label">Catatan Khusus / Permintaan Pengujian Tambahan</label>
-            <textarea class="form-input" id="fatFormNotes" rows="2" placeholder="Contoh: Termasuk pengujian Partial Discharge dan Sound Level test..."></textarea>
+            <label class="form-label" style="font-weight:700; color:#1e293b;">Nomor SO (Sales Order) <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-input" id="fatFormSoNumber" placeholder="Contoh: SO 25-0560 atau PRJ-240522-01" required>
           </div>
+
+          <!-- Field 2: Kapasitas -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700; color:#1e293b;">Kapasitas Trafo <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-input" id="fatFormRating" placeholder="Contoh: 1000 kVA (atau 500 kVA / 2500 kVA)" required>
+          </div>
+
+          <!-- Field 3: Nama Perusahaan -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight:700; color:#1e293b;">Nama Perusahaan / Pelanggan <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-input" id="fatFormClient" placeholder="Contoh: PT PLN (Persero) UID Jabar" required>
+          </div>
+
+          <!-- Field 4 & 5: Tanggal Mulai dan Sampai Tanggal -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" style="font-weight:700; color:#1e293b;">Mulai dari Tanggal <span style="color:#ef4444;">*</span></label>
+              <input type="date" class="form-input" id="fatFormStartDate" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-weight:700; color:#1e293b;">Sampai Tanggal <span style="color:#ef4444;">*</span></label>
+              <input type="date" class="form-input" id="fatFormEndDate" required>
+            </div>
+          </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeModal('modalFatSchedule')">Batal</button>
