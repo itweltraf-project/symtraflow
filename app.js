@@ -3413,6 +3413,7 @@ function handleLogin(e) {
     }
 
     // Default to Dashboard view
+    updateRoleBasedUIVisibility(authenticatedUser);
     switchMainTab('dashboard');
     showWelcomePopup(authenticatedUser, roleKey);
   } else {
@@ -3438,6 +3439,8 @@ function handleLogout() {
   const navAvatarIcon = document.getElementById('navUserAvatarIcon');
   if (navAvatar) navAvatar.style.display = 'none';
   if (navAvatarIcon) navAvatarIcon.style.display = '';
+  
+  updateRoleBasedUIVisibility(null);
   showToast('🔒 Anda telah keluar dari sistem.');
 }
 
@@ -3558,6 +3561,24 @@ let activeTrackingShipmentIndex = 0;
 
 // --- Main Tab Switcher Function ---
 function switchMainTab(tabName) {
+  // Access control check: Only Super Admin can access Master Data
+  if (tabName === 'master-data') {
+    let authUser = null;
+    try {
+      authUser = JSON.parse(sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || 'null');
+    } catch(e) {}
+    const isSuper = !!(authUser && (
+      (authUser.role && authUser.role.toLowerCase().includes('super')) ||
+      authUser.rolePreset === 'superadmin' ||
+      authUser.permissions?.all === true
+    ));
+    if (!isSuper) {
+      showToast('⚠️ Akses Dibatasi: Modul Master Data hanya dapat diakses oleh Super Admin.');
+      switchMainTab('dashboard');
+      return;
+    }
+  }
+
   const tabButtonMap = {
     'dashboard': 'menuDashboard',
     'proyek': 'menuProyek',
@@ -3656,7 +3677,14 @@ function switchMainTab(tabName) {
     }
   }
 
-  // Toggle dashboard sub-action bar (visible for monitoring, gantt, project pt)
+  // Trigger FAT Calendar render if accessing jadwal / multi-project view
+  if (['multi-project', 'jadwal'].includes(tabName)) {
+    if (typeof renderFatCalendar === 'function') {
+      renderFatCalendar();
+    }
+  }
+
+  // Toggle dashboard sub-action bar (visible for monitoring, gantt/jadwal fat, project pt)
   const dashBar = document.getElementById('dashboardActionBar');
   if (dashBar) {
     dashBar.style.display = ['monitoring', 'single-flow', 'multi-project', 'jadwal'].includes(tabName) ? 'flex' : 'none';
@@ -3683,8 +3711,8 @@ function switchMainTab(tabName) {
     'monitoring-material': 'Monitoring Material',
     'produksi': 'Monitoring Material',
     'detail': 'Monitoring Material',
-    'multi-project': 'Jadwal Produksi (Gantt Chart)',
-    'jadwal': 'Jadwal Produksi (Gantt Chart)',
+    'multi-project': 'Jadwal FAT (Factory Acceptance Test)',
+    'jadwal': 'Jadwal FAT (Factory Acceptance Test)',
     'project-pt': 'Monitoring Produksi (Hierarki PT)',
     'riwayat': 'Riwayat Produksi',
     'document-control': 'Document Control',
@@ -3703,8 +3731,8 @@ function switchMainTab(tabName) {
     'monitoring-material': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
     'produksi': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
     'detail': 'Pantau persediaan bahan baku, Bill of Materials (BOM), dan kesiapan alokasi unit',
-    'multi-project': 'Linimasa jadwal multi-proyek transformator',
-    'jadwal': 'Linimasa jadwal multi-proyek transformator',
+    'multi-project': 'Kalender jadwal pengujian Factory Acceptance Test (FAT) transformator bersama pelanggan & PLN',
+    'jadwal': 'Kalender jadwal pengujian Factory Acceptance Test (FAT) transformator bersama pelanggan & PLN',
     'project-pt': 'Hierarki dan pemantauan pengerjaan proyek trafo per perusahaan',
     'riwayat': 'Rekapitulasi arsip proyek perusahaan (PT) transformator yang telah selesai 100% fabrikasi',
     'document-control': 'Kelola dan akses dokumen proyek, gambar teknik, sertifikat, dan dokumen terkait.',
@@ -6712,12 +6740,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (p) p.value = '';
   }
 
+  // Apply Role-Based Visibility (Master Data & Portal Admin only for Super Admin)
+  updateRoleBasedUIVisibility(authUser);
+
   renderProyekTable();
   renderProduksiTable();
   renderDetailProduksiView();
   renderPengirimanTable();
   updateTrackingStepperUI();
   renderDocumentsTable();
+  if (typeof initFatCalendar === 'function') {
+    initFatCalendar();
+  }
 });
 
 /* ==========================================================================
@@ -7334,6 +7368,7 @@ if (typeof window.SymtraSync !== 'undefined') {
                     (!current.permissions?.proyek_edit && current.permissions?.produksi_edit ? '<span style="font-size:9px; background:#f59e0b; color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px; font-weight:700;">PRODUKSI ONLY</span>' : ''));
         navRole.innerHTML = `${current.role} ${tag}`;
       }
+      updateRoleBasedUIVisibility(current);
     }
     showToast('⚡ Realtime: Data Akun & Hak Akses Admin disinkronkan!');
   });
@@ -7354,5 +7389,792 @@ if (typeof window.SymtraSync !== 'undefined') {
     showToast('⚡ Realtime: Master Data diperbarui dari Portal Admin!');
   });
 }
+
+/* ==========================================================================
+   ROLE-BASED VISIBILITY ACCESS CONTROL (RBAC)
+   Super Admin: Full access including Master Data & Portal Admin
+   Other Admins (Admin Produksi, Admin Proyek SO, dll): Master Data & Portal Admin hidden
+   ========================================================================== */
+
+function isUserSuperAdmin(user) {
+  if (!user) {
+    try {
+      user = JSON.parse(sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || 'null');
+    } catch(e) {}
+  }
+  if (!user) return false;
+  const role = (user.role || '').toLowerCase();
+  const preset = (user.rolePreset || '').toLowerCase();
+  return role.includes('super') || preset === 'superadmin' || user.permissions?.all === true;
+}
+
+function updateRoleBasedUIVisibility(user) {
+  const isSuper = isUserSuperAdmin(user);
+
+  // 1. Sidebar Master Data Button
+  const menuMasterData = document.getElementById('menuMasterData');
+  if (menuMasterData) {
+    menuMasterData.style.display = isSuper ? 'flex' : 'none';
+  }
+
+  // 2. Sidebar Portal Admin & Master Link
+  const menuAdminPortal = document.getElementById('menuAdminPortal');
+  if (menuAdminPortal) {
+    menuAdminPortal.style.display = isSuper ? 'flex' : 'none';
+  }
+
+  // 3. Top Navbar "Kelola Admin & Master" Button
+  const btnPortalAdminNav = document.querySelectorAll('.btn-portal-admin-nav');
+  btnPortalAdminNav.forEach(btn => {
+    btn.style.display = isSuper ? 'inline-flex' : 'none';
+  });
+
+  // If currently on master-data and not super admin, redirect to dashboard
+  const viewMaster = document.getElementById('viewMasterData');
+  if (!isSuper && viewMaster && viewMaster.classList.contains('active')) {
+    switchMainTab('dashboard');
+  }
+}
+
+/* ==========================================================================
+   FACTORY ACCEPTANCE TEST (FAT) CALENDAR & SCHEDULING SYSTEM
+   ========================================================================== */
+
+let fatCurrentDate = new Date(2026, 9, 20); // October 20, 2026
+let fatCurrentView = 'grid';
+
+const defaultFatSchedules = [
+  {
+    id: 'FAT-2026-101',
+    date: '2026-10-06',
+    time: '09:00',
+    trafoId: 'TRF-240522-005',
+    soNumber: 'SO 25-0560',
+    client: 'PT PLN (Persero) UID Jabar',
+    rating: '1500 kVA - 20 kV / 6300 V',
+    bay: 'Test Bay 1',
+    status: 'passed',
+    inspector: 'Ir. Dedi Setiadi (PLN QA Specialist)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Pengujian lengkap 9 parameter standar SPLN D3.002-1: 2014 & IEC 60076. Seluruh parameter lulus uji tanpa catatan khusus.',
+    testResults: [
+      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.38%', res: 'PASS' },
+      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.11%', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,850 W', val: '1,710 Watt', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 11,500 W, Z=4.5%', val: '10,790 W (Z=4.48%)', res: 'PASS' },
+      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Breakdown)', res: 'PASS' },
+      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
+      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '68.5 kV / 2.5mm', res: 'PASS' },
+      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '3.6 pC', res: 'PASS' },
+      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 60 dB(A)', val: '51.8 dB(A)', res: 'PASS' }
+    ]
+  },
+  {
+    id: 'FAT-2026-102',
+    date: '2026-10-12',
+    time: '13:30',
+    trafoId: 'TRF-240522-006',
+    soNumber: 'SO 25-0560',
+    client: 'PT PLN (Persero) UID Jabar',
+    rating: '1500 kVA - 20 kV / 6300 V',
+    bay: 'Test Bay 1',
+    status: 'passed',
+    inspector: 'Ir. Dedi Setiadi (PLN QA Specialist)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Unit kedua dari proyek 10 unit PLN Jabar. Karakteristik impedansi sangat presisi antar fasa.',
+    testResults: [
+      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.41%', res: 'PASS' },
+      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.14%', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,850 W', val: '1,735 Watt', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 11,500 W, Z=4.5%', val: '10,820 W (Z=4.51%)', res: 'PASS' },
+      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Breakdown)', res: 'PASS' },
+      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
+      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '71.2 kV / 2.5mm', res: 'PASS' },
+      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '4.1 pC', res: 'PASS' },
+      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 60 dB(A)', val: '52.3 dB(A)', res: 'PASS' }
+    ]
+  },
+  {
+    id: 'FAT-2026-103',
+    date: '2026-10-15',
+    time: '10:00',
+    trafoId: 'TRF-240522-001',
+    soNumber: 'SO 25-0561',
+    client: 'PT Vale Indonesia Tbk',
+    rating: '500 kVA - 20 kV / 400 V',
+    bay: 'Test Bay 2',
+    status: 'passed',
+    inspector: 'Bambang Haryanto (Vale QA Inspector)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Trafo Auxiliary Smelter Sorowako. Disaksikan langsung oleh tim engineering PT Vale Indonesia.',
+    testResults: [
+      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.32%', res: 'PASS' },
+      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.08%', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 950 W', val: '880 Watt', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 5,800 W, Z=4.0%', val: '5,420 W (Z=3.98%)', res: 'PASS' },
+      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Flashover)', res: 'PASS' },
+      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
+      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '66.4 kV / 2.5mm', res: 'PASS' },
+      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '3.1 pC', res: 'PASS' },
+      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 58 dB(A)', val: '49.7 dB(A)', res: 'PASS' }
+    ]
+  },
+  {
+    id: 'FAT-2026-104',
+    date: '2026-10-18',
+    time: '09:30',
+    trafoId: 'TRF-240522-002',
+    soNumber: 'SO 25-0562',
+    client: 'PT Pertamina Geothermal Energy',
+    rating: '750 kVA - 20 kV / 400 V',
+    bay: 'Test Bay 1',
+    status: 'passed',
+    inspector: 'Raden Sukoco (Pertamina QA/QC)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Kebutuhan pembangkit geothermal Kamojang. Tangki heavy duty tahan korosi H2S.',
+    testResults: [
+      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.35%', res: 'PASS' },
+      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.09%', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,250 W', val: '1,140 Watt', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 7,200 W, Z=4.0%', val: '6,880 W (Z=4.02%)', res: 'PASS' },
+      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Breakdown)', res: 'PASS' },
+      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
+      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '69.0 kV / 2.5mm', res: 'PASS' },
+      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '2.9 pC', res: 'PASS' },
+      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 59 dB(A)', val: '50.6 dB(A)', res: 'PASS' }
+    ]
+  },
+  {
+    id: 'FAT-2026-105',
+    date: '2026-10-20',
+    time: '09:15',
+    trafoId: 'TRF-240522-003',
+    soNumber: 'SO 25-0563',
+    client: 'PT Antam Tbk - Pomalaa',
+    rating: '1000 kVA - 20 kV / 400 V',
+    bay: 'Test Bay 1',
+    status: 'inprogress',
+    inspector: 'Kusuma Wardhana (Antam QA Team)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'SEDANG BERLANGSUNG: Pengujian tegangan induksi dan pengukuran dielektrik minyak bersama pihak Antam.',
+    testResults: [
+      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.36%', res: 'PASS' },
+      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.12%', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,450 W', val: '1,320 Watt', res: 'PASS' },
+      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 9,200 W, Z=4.5%', val: 'Sedang Uji...', res: 'TESTING' },
+      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: 'Menunggu Giliran', res: 'WAITING' },
+      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Menunggu Giliran', res: 'WAITING' },
+      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '72.5 kV / 2.5mm', res: 'PASS' },
+      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: 'Menunggu Giliran', res: 'WAITING' },
+      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 60 dB(A)', val: 'Menunggu Giliran', res: 'WAITING' }
+    ]
+  },
+  {
+    id: 'FAT-2026-106',
+    date: '2026-10-23',
+    time: '10:00',
+    trafoId: 'TRF-240522-004',
+    soNumber: 'SO 25-0563',
+    client: 'PT Antam Tbk - Pomalaa',
+    rating: '1000 kVA - 20 kV / 400 V',
+    bay: 'Test Bay 2',
+    status: 'scheduled',
+    inspector: 'Kusuma Wardhana (Antam QA Team)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Unit kedua untuk Proyek Antam. Berkas pengujian internal dan checklist kesiapan telah ditandatangani.',
+    testResults: []
+  },
+  {
+    id: 'FAT-2026-107',
+    date: '2026-10-27',
+    time: '09:00',
+    trafoId: 'TRF-240522-007',
+    soNumber: 'SO 25-0564',
+    client: 'PT Semen Indonesia (Persero) Tbk',
+    rating: '2000 kVA - 30 kV / 6300 V',
+    bay: 'Test Bay 1',
+    status: 'scheduled',
+    inspector: 'Eko Prasetyo (Semen ID Inspector)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Trafo Gardu Distribusi Pabrik Tuban. Pengujian disaksikan perwakilan teknis SIG.',
+    testResults: []
+  },
+  {
+    id: 'FAT-2026-108',
+    date: '2026-10-30',
+    time: '13:30',
+    trafoId: 'TRF-240522-008',
+    soNumber: 'SO 25-0565',
+    client: 'PT Chandra Asri Petrochemical Tbk',
+    rating: '2500 kVA - 30 kV / 6300 V',
+    bay: 'Test Bay 1',
+    status: 'scheduled',
+    inspector: 'Fajar Nugraha (Chandra Asri Lead QA)',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Trafo Daya Kilang Kimia Cilegon. Spesifikasi low loss hermetically sealed.',
+    testResults: []
+  },
+  {
+    id: 'FAT-2026-109',
+    date: '2026-11-04',
+    time: '09:00',
+    trafoId: 'TRF-240522-009',
+    soNumber: 'SO 25-0566',
+    client: 'PT PLN (Persero) UIP Pikitring',
+    rating: '3150 kVA - 33 kV / 11 kV',
+    bay: 'Test Bay 1',
+    status: 'scheduled',
+    inspector: 'Tim Pengawas Mutu PLN UIP',
+    qcLead: 'Shevira Indraswari (QC Lead)',
+    notes: 'Trafo Gardu Hubung Tegangan Menengah. Telah terdaftar dalam agenda serah terima Q4.',
+    testResults: []
+  }
+];
+
+function getFatSchedules() {
+  try {
+    const raw = localStorage.getItem('SYMTRAFLOW_FAT_SCHEDULES');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+  return defaultFatSchedules;
+}
+
+function saveFatSchedules(list) {
+  try {
+    localStorage.setItem('SYMTRAFLOW_FAT_SCHEDULES', JSON.stringify(list));
+  } catch(e) {}
+}
+
+function initFatCalendar() {
+  renderFatCalendar();
+}
+
+function changeFatMonth(delta) {
+  fatCurrentDate.setMonth(fatCurrentDate.getMonth() + delta);
+  renderFatCalendar();
+}
+
+function jumpFatToday() {
+  fatCurrentDate = new Date(2026, 9, 20); // Sync to application present date
+  renderFatCalendar();
+}
+
+function switchFatView(viewType) {
+  fatCurrentView = viewType;
+  const btnGrid = document.getElementById('btnFatGrid');
+  const btnList = document.getElementById('btnFatList');
+  const gridView = document.getElementById('fatGridView');
+  const listView = document.getElementById('fatListView');
+
+  if (viewType === 'grid') {
+    if (btnGrid) btnGrid.classList.add('active');
+    if (btnList) btnList.classList.remove('active');
+    if (gridView) gridView.style.display = 'block';
+    if (listView) listView.style.display = 'none';
+  } else {
+    if (btnGrid) btnGrid.classList.remove('active');
+    if (btnList) btnList.classList.add('active');
+    if (gridView) gridView.style.display = 'none';
+    if (listView) listView.style.display = 'block';
+  }
+}
+
+function renderFatCalendar() {
+  const schedules = getFatSchedules();
+  const year = fatCurrentDate.getFullYear();
+  const month = fatCurrentDate.getMonth(); // 0-indexed
+
+  // Month Display Label
+  const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  const displayEl = document.getElementById('fatCalMonthDisplay');
+  if (displayEl) {
+    displayEl.innerText = `${monthNames[month]} ${year}`;
+  }
+
+  // Filter values
+  const bayFilter = (document.getElementById('fatFilterBay')?.value || 'all');
+  const statusFilter = (document.getElementById('fatFilterStatus')?.value || 'all');
+
+  const filtered = schedules.filter(item => {
+    if (bayFilter !== 'all' && item.bay !== bayFilter) return false;
+    if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+    return true;
+  });
+
+  // Calculate Month Stats (based on current active month)
+  const currentMonthSchedules = schedules.filter(item => {
+    const d = new Date(item.date);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  const totalThisMonth = currentMonthSchedules.length;
+  const passedCount = currentMonthSchedules.filter(s => s.status === 'passed').length;
+  const inProgCount = currentMonthSchedules.filter(s => s.status === 'inprogress').length;
+  const upcomingCount = currentMonthSchedules.filter(s => s.status === 'scheduled').length;
+
+  const kpiTotal = document.getElementById('fatKpiTotal');
+  const kpiPassed = document.getElementById('fatKpiPassed');
+  const kpiInProg = document.getElementById('fatKpiInProg');
+  const kpiUpcoming = document.getElementById('fatKpiUpcoming');
+
+  if (kpiTotal) kpiTotal.innerText = totalThisMonth;
+  if (kpiPassed) kpiPassed.innerText = passedCount;
+  if (kpiInProg) kpiInProg.innerText = inProgCount;
+  if (kpiUpcoming) kpiUpcoming.innerText = upcomingCount;
+
+  // Render Calendar Grid
+  const daysGrid = document.getElementById('fatCalendarDaysGrid');
+  if (daysGrid) {
+    daysGrid.innerHTML = '';
+
+    // First day of current month (0=Sun, 1=Mon, ..., 6=Sat)
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    // Convert to Monday-first (0=Mon, 1=Tue, ..., 6=Sun)
+    const startOffset = (firstDayIndex === 0) ? 6 : (firstDayIndex - 1);
+
+    // Days in current month
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    // Days in previous month
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    // 1. Previous month trailing days
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const prevDay = prevMonthDays - i;
+      const cell = document.createElement('div');
+      cell.className = 'fat-cal-day-cell other-month';
+      cell.innerHTML = `
+        <div class="fat-day-header-row">
+          <span class="fat-day-num">${prevDay}</span>
+        </div>
+      `;
+      daysGrid.appendChild(cell);
+    }
+
+    // 2. Current month days
+    for (let day = 1; day <= totalDays; day++) {
+      const cell = document.createElement('div');
+      cell.className = 'fat-cal-day-cell';
+
+      // Check if today (20 October 2026)
+      const isToday = (year === 2026 && month === 9 && day === 20);
+      if (isToday) cell.classList.add('is-today');
+
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      // Find events on this date
+      const dayEvents = filtered.filter(item => item.date === dateStr);
+
+      let eventsHtml = '';
+      dayEvents.forEach(ev => {
+        let statusBadgeText = 'TERJADWAL';
+        if (ev.status === 'passed') statusBadgeText = 'PASSED';
+        else if (ev.status === 'inprogress') statusBadgeText = 'LIVE UJI';
+        else if (ev.status === 'rescheduled') statusBadgeText = 'RESCHEDULE';
+
+        eventsHtml += `
+          <div class="fat-event-pill status-${ev.status}" onclick="showFatDetail('${ev.id}')" title="Klik untuk berita acara & hasil pengujian">
+            <div class="fat-event-trafo">
+              <span>${ev.trafoId}</span>
+              <span class="fat-event-status-tag">${statusBadgeText}</span>
+            </div>
+            <div class="fat-event-client">${ev.client}</div>
+            <div class="fat-event-meta">
+              <span><i class="fa-regular fa-clock"></i> ${ev.time}</span>
+              <span>•</span>
+              <span>${ev.bay}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      cell.innerHTML = `
+        <div class="fat-day-header-row">
+          <div style="display:flex; align-items:center; gap:4px;">
+            <span class="fat-day-num">${day}</span>
+            ${isToday ? '<span class="fat-today-pill">HARI INI</span>' : ''}
+          </div>
+          <button type="button" class="fat-btn-add-day" onclick="openAddFatModal('${dateStr}')" title="Jadwalkan FAT pada tanggal ini">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+        <div class="fat-events-stack">
+          ${eventsHtml}
+        </div>
+      `;
+
+      daysGrid.appendChild(cell);
+    }
+
+    // 3. Next month leading days to complete the 7-column grid
+    const totalRenderedCells = startOffset + totalDays;
+    const remainingCells = (7 - (totalRenderedCells % 7)) % 7;
+    for (let d = 1; d <= remainingCells; d++) {
+      const cell = document.createElement('div');
+      cell.className = 'fat-cal-day-cell other-month';
+      cell.innerHTML = `
+        <div class="fat-day-header-row">
+          <span class="fat-day-num">${d}</span>
+        </div>
+      `;
+      daysGrid.appendChild(cell);
+    }
+  }
+
+  // Render Agenda / List Table
+  renderFatAgendaTable(filtered);
+}
+
+function renderFatAgendaTable(items) {
+  const tbody = document.getElementById('fatAgendaTableBody');
+  if (!tbody) return;
+
+  if (items.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align:center; padding:32px; color:#94a3b8;">
+          <i class="fa-solid fa-calendar-xmark" style="font-size:32px; margin-bottom:8px; display:block;"></i>
+          Tidak ada jadwal FAT yang sesuai dengan filter.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = items.map((ev, index) => {
+    let statusChip = '';
+    if (ev.status === 'passed') {
+      statusChip = '<span class="fat-chip fat-chip-success"><i class="fa-solid fa-check"></i> Lolos FAT (Passed)</span>';
+    } else if (ev.status === 'inprogress') {
+      statusChip = '<span class="fat-chip fat-chip-warning"><i class="fa-solid fa-bolt"></i> Sedang Diuji (Live)</span>';
+    } else if (ev.status === 'rescheduled') {
+      statusChip = '<span class="fat-chip fat-chip-purple"><i class="fa-solid fa-arrow-rotate-right"></i> Rescheduled</span>';
+    } else {
+      statusChip = '<span class="fat-chip fat-chip-info"><i class="fa-regular fa-clock"></i> Terjadwal</span>';
+    }
+
+    const d = new Date(ev.date);
+    const dateFormatted = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    return `
+      <tr>
+        <td style="font-weight:700; color:#64748b;">${index + 1}</td>
+        <td>
+          <div style="font-weight:700; color:#0f172a;"><i class="fa-regular fa-calendar" style="color:#2563eb; margin-right:4px;"></i> ${dateFormatted}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:2px;"><i class="fa-regular fa-clock"></i> Pukul ${ev.time} WIB</div>
+        </td>
+        <td>
+          <div style="font-weight:800; color:#1e293b;">${ev.trafoId}</div>
+          <div style="font-size:11px; color:#2563eb; font-weight:600;">${ev.soNumber}</div>
+        </td>
+        <td>
+          <div style="font-weight:700; color:#0f172a;">${ev.client}</div>
+        </td>
+        <td>
+          <span style="font-weight:600; color:#475569;">${ev.rating}</span>
+        </td>
+        <td>
+          <span class="fat-chip fat-chip-bay"><i class="fa-solid fa-microscope"></i> ${ev.bay}</span>
+        </td>
+        <td>
+          <div style="font-size:11px; font-weight:700; color:#1e293b;"><i class="fa-solid fa-user-check" style="color:#10b981; margin-right:4px;"></i> ${ev.inspector}</div>
+          <div style="font-size:10px; color:#64748b; margin-top:2px;">QC: ${ev.qcLead}</div>
+        </td>
+        <td>${statusChip}</td>
+        <td style="text-align:right;">
+          <div style="display:inline-flex; gap:6px;">
+            <button type="button" class="btn-primary" style="font-size:11px; padding:4px 9px;" onclick="showFatDetail('${ev.id}')" title="Buka Berita Acara & Hasil Uji">
+              <i class="fa-solid fa-eye"></i> Detail & BA
+            </button>
+            <button type="button" class="btn-secondary" style="font-size:11px; padding:4px 9px;" onclick="openAddFatModal(null, '${ev.id}')" title="Edit Jadwal">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterFatTable() {
+  const query = (document.getElementById('fatSearchInput')?.value || '').toLowerCase();
+  const rows = document.querySelectorAll('#fatAgendaTableBody tr');
+  rows.forEach(r => {
+    const text = r.innerText.toLowerCase();
+    r.style.display = (!query || text.includes(query)) ? '' : 'none';
+  });
+}
+
+function showFatDetail(fatId) {
+  const schedules = getFatSchedules();
+  const ev = schedules.find(s => s.id === fatId) || schedules[0];
+  if (!ev) return;
+
+  const modalBody = document.getElementById('fatDetailModalBody');
+  if (!modalBody) return;
+
+  const d = new Date(ev.date);
+  const dateFormatted = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  let statusBadge = '';
+  if (ev.status === 'passed') {
+    statusBadge = '<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:4px 12px; border-radius:999px; font-weight:800; font-size:12px;"><i class="fa-solid fa-circle-check"></i> LOLOS PENGUJIAN (PASSED)</span>';
+  } else if (ev.status === 'inprogress') {
+    statusBadge = '<span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:4px 12px; border-radius:999px; font-weight:800; font-size:12px;"><i class="fa-solid fa-spinner fa-spin"></i> SEDANG BERLANGSUNG</span>';
+  } else {
+    statusBadge = '<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:4px 12px; border-radius:999px; font-weight:800; font-size:12px;"><i class="fa-solid fa-clock"></i> TERJADWAL RESMI</span>';
+  }
+
+  // Construct test results rows
+  const tests = ev.testResults && ev.testResults.length > 0 ? ev.testResults : [
+    { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Sesuai Standar', res: 'PASS' },
+    { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Sesuai Standar', res: 'PASS' },
+    { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'SPLN D3.002-1', val: 'Sesuai Standar', res: 'PASS' },
+    { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'IEC 60076-1', val: 'Sesuai Standar', res: 'PASS' },
+    { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: 'Lolos Tanpa Flashover', res: 'PASS' },
+    { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
+    { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: 'Lolos Standar', res: 'PASS' }
+  ];
+
+  const testsTableHtml = tests.map((t, idx) => `
+    <tr>
+      <td style="font-weight:700; color:#64748b; width:40px;">${idx + 1}</td>
+      <td style="font-weight:700; color:#0f172a;">${t.param}</td>
+      <td style="color:#475569; font-size:11px;">${t.spec}</td>
+      <td style="font-weight:700; color:#1e293b;">${t.val}</td>
+      <td>
+        ${t.res === 'PASS' ? '<span style="background:#ecfdf5; color:#059669; padding:2px 8px; border-radius:4px; font-weight:800; font-size:10px;"><i class="fa-solid fa-check"></i> PASS</span>' :
+          t.res === 'TESTING' ? '<span style="background:#fffbeb; color:#b45309; padding:2px 8px; border-radius:4px; font-weight:800; font-size:10px;"><i class="fa-solid fa-spinner fa-spin"></i> TESTING</span>' :
+          '<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:4px; font-weight:700; font-size:10px;">PENDING</span>'}
+      </td>
+    </tr>
+  `).join('');
+
+  modalBody.innerHTML = `
+    <!-- Top Summary Banner -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div>
+        <div style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">BERITA ACARA UJI SERAH TERIMA PABRIK (FAT)</div>
+        <div style="font-size:20px; font-weight:800; color:#0f172a; margin-top:2px;">${ev.trafoId} · ${ev.soNumber}</div>
+        <div style="font-size:13px; color:#2563eb; font-weight:700; margin-top:2px;">${ev.client}</div>
+      </div>
+      <div>${statusBadge}</div>
+    </div>
+
+    <!-- Metadata Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:22px;">
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="font-size:10px; color:#64748b; font-weight:700;">WAKTU PELAKSANAAN</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-regular fa-calendar" style="color:#2563eb;"></i> ${dateFormatted}</div>
+        <div style="font-size:11px; color:#475569; margin-top:2px;">Pukul ${ev.time} WIB</div>
+      </div>
+
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="font-size:10px; color:#64748b; font-weight:700;">LOKASI / RUANG UJI</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-microscope" style="color:#2563eb;"></i> ${ev.bay}</div>
+        <div style="font-size:11px; color:#059669; font-weight:600; margin-top:2px;">Sertifikat Kalibrasi Aktif</div>
+      </div>
+
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="font-size:10px; color:#64748b; font-weight:700;">RATING & SPESIFIKASI</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> ${ev.rating}</div>
+        <div style="font-size:11px; color:#475569; margin-top:2px;">Vektor Grup: Dyn5 · 50 Hz</div>
+      </div>
+
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+        <div style="font-size:10px; color:#64748b; font-weight:700;">STANDAR ACUAN UJI</div>
+        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:3px;"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> SPLN D3.002-1:2014</div>
+        <div style="font-size:11px; color:#475569; margin-top:2px;">& IEC 60076 (Power Trafo)</div>
+      </div>
+    </div>
+
+    <!-- Parameter Checklist Table -->
+    <div style="margin-bottom:22px;">
+      <div style="font-size:13px; font-weight:800; color:#0f172a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+        <i class="fa-solid fa-list-check" style="color:#2563eb;"></i> Parameter Pengujian Rutin & Khusus (FAT Protocol)
+      </div>
+      <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
+        <table class="fat-table" style="font-size:11px;">
+          <thead>
+            <tr>
+              <th style="width:40px;">No</th>
+              <th>Nama Pengujian</th>
+              <th>Standar / Toleransi</th>
+              <th>Nilai Hasil Pengukuran</th>
+              <th>Hasil</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${testsTableHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Notes & Witnesses Signatures -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:20px;">
+      <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase;">CATATAN EVALUASI & KESIMPULAN:</div>
+      <div style="font-size:12px; color:#1e293b; margin-top:4px; line-height:1.5;">${ev.notes || 'Pengujian berjalan lancar dan memenuhi seluruh klausul teknis SPLN & IEC 60076.'}</div>
+    </div>
+
+    <!-- Witness Signature Grid -->
+    <div>
+      <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:10px; text-transform:uppercase;">TIM SAKSI PENGUJIAN (WITNESSES & APPROVAL):</div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; text-align:center;">
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+          <div style="font-size:10px; color:#64748b; font-weight:700;">SAKSI PIHAK PELANGGAN / PLN</div>
+          <div style="font-family:'Courier New', monospace; font-size:14px; color:#2563eb; font-weight:800; margin:16px 0 10px 0;">[ DIGITAL SIGNED ]</div>
+          <div style="font-size:12px; font-weight:800; color:#0f172a;">${ev.inspector}</div>
+          <div style="font-size:10px; color:#64748b;">Inspector Pelanggan</div>
+        </div>
+
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+          <div style="font-size:10px; color:#64748b; font-weight:700;">LEAD QC & FAT TEST ENGINEER</div>
+          <div style="font-family:'Courier New', monospace; font-size:14px; color:#10b981; font-weight:800; margin:16px 0 10px 0;">[ DIGITAL SIGNED ]</div>
+          <div style="font-size:12px; font-weight:800; color:#0f172a;">${ev.qcLead}</div>
+          <div style="font-size:10px; color:#64748b;">Quality Control Dept.</div>
+        </div>
+
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+          <div style="font-size:10px; color:#64748b; font-weight:700;">FACTORY ACCEPTANCE MANAGER</div>
+          <div style="font-family:'Courier New', monospace; font-size:14px; color:#7c3aed; font-weight:800; margin:16px 0 10px 0;">[ DIGITAL SIGNED ]</div>
+          <div style="font-size:12px; font-weight:800; color:#0f172a;">Jodi (Super Administrator)</div>
+          <div style="font-size:10px; color:#64748b;">Symphos Electric Factory</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('modalFatDetail');
+  if (modal) modal.classList.add('active');
+}
+
+function openAddFatModal(targetDate, editId) {
+  const modal = document.getElementById('modalFatSchedule');
+  const title = document.getElementById('fatScheduleModalTitle');
+  const editInput = document.getElementById('fatScheduleEditId');
+
+  const inTrafo = document.getElementById('fatFormTrafoId');
+  const inSo = document.getElementById('fatFormSoNumber');
+  const inClient = document.getElementById('fatFormClient');
+  const inRating = document.getElementById('fatFormRating');
+  const inDate = document.getElementById('fatFormDate');
+  const inTime = document.getElementById('fatFormTime');
+  const inBay = document.getElementById('fatFormBay');
+  const inStatus = document.getElementById('fatFormStatus');
+  const inInspector = document.getElementById('fatFormInspector');
+  const inQc = document.getElementById('fatFormQcLead');
+  const inNotes = document.getElementById('fatFormNotes');
+
+  if (editId) {
+    const schedules = getFatSchedules();
+    const item = schedules.find(s => s.id === editId);
+    if (item) {
+      if (title) title.innerHTML = '<i class="fa-solid fa-pen-to-square" style="color: #2563eb;"></i> Edit Jadwal Factory Acceptance Test';
+      if (editInput) editInput.value = item.id;
+      if (inTrafo) inTrafo.value = item.trafoId;
+      if (inSo) inSo.value = item.soNumber;
+      if (inClient) inClient.value = item.client;
+      if (inRating) inRating.value = item.rating;
+      if (inDate) inDate.value = item.date;
+      if (inTime) inTime.value = item.time;
+      if (inBay) inBay.value = item.bay;
+      if (inStatus) inStatus.value = item.status;
+      if (inInspector) inInspector.value = item.inspector;
+      if (inQc) inQc.value = item.qcLead;
+      if (inNotes) inNotes.value = item.notes || '';
+    }
+  } else {
+    if (title) title.innerHTML = '<i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Jadwalkan Factory Acceptance Test (FAT)';
+    if (editInput) editInput.value = '';
+    if (inTrafo) inTrafo.value = '';
+    if (inSo) inSo.value = 'SO 25-05' + Math.floor(10 + Math.random() * 89);
+    if (inClient) inClient.value = '';
+    if (inRating) inRating.value = '1000 kVA - 20 kV / 400 V';
+    if (inDate) inDate.value = targetDate || '2026-10-25';
+    if (inTime) inTime.value = '09:00';
+    if (inBay) inBay.value = 'Test Bay 1';
+    if (inStatus) inStatus.value = 'scheduled';
+    if (inInspector) inInspector.value = '';
+    if (inQc) inQc.value = 'Shevira Indraswari (QC Lead)';
+    if (inNotes) inNotes.value = '';
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function handleSaveFatSchedule(e) {
+  e.preventDefault();
+  const editId = document.getElementById('fatScheduleEditId')?.value;
+  const trafoId = document.getElementById('fatFormTrafoId')?.value;
+  const soNumber = document.getElementById('fatFormSoNumber')?.value;
+  const client = document.getElementById('fatFormClient')?.value;
+  const rating = document.getElementById('fatFormRating')?.value;
+  const date = document.getElementById('fatFormDate')?.value;
+  const time = document.getElementById('fatFormTime')?.value;
+  const bay = document.getElementById('fatFormBay')?.value;
+  const status = document.getElementById('fatFormStatus')?.value;
+  const inspector = document.getElementById('fatFormInspector')?.value;
+  const qcLead = document.getElementById('fatFormQcLead')?.value;
+  const notes = document.getElementById('fatFormNotes')?.value;
+
+  const schedules = getFatSchedules();
+
+  if (editId) {
+    const idx = schedules.findIndex(s => s.id === editId);
+    if (idx !== -1) {
+      schedules[idx] = {
+        ...schedules[idx],
+        trafoId, soNumber, client, rating, date, time, bay, status, inspector, qcLead, notes
+      };
+      showToast(`✅ Jadwal FAT ${trafoId} berhasil diperbarui!`);
+    }
+  } else {
+    const newId = 'FAT-' + Date.now().toString().slice(-6);
+    schedules.push({
+      id: newId,
+      trafoId,
+      soNumber,
+      client,
+      rating,
+      date,
+      time,
+      bay,
+      status,
+      inspector,
+      qcLead,
+      notes,
+      testResults: [
+        { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Sesuai Standar', res: 'PASS' },
+        { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Sesuai Standar', res: 'PASS' },
+        { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'SPLN D3.002-1', val: 'Sesuai Standar', res: 'PASS' },
+        { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'IEC 60076-1', val: 'Sesuai Standar', res: 'PASS' }
+      ]
+    });
+    showToast(`✅ Jadwal FAT baru untuk ${trafoId} berhasil ditambahkan!`);
+  }
+
+  saveFatSchedules(schedules);
+  closeModal('modalFatSchedule');
+  renderFatCalendar();
+}
+
+function printFatCertificate() {
+  window.print();
+}
+
+function exportFatSingleReport() {
+  showToast('📄 Berita Acara FAT sedang diunduh dalam format PDF...');
+}
+
+function exportFatSchedulePDF() {
+  window.print();
+}
+
 
 

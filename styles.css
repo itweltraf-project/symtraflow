@@ -4846,5 +4846,550 @@ body {
   border-color: #94a3b8;
 }
 
+/* ==========================================================================
+   FACTORY ACCEPTANCE TEST (FAT) CALENDAR & SCHEDULING SYSTEM
+   ========================================================================== */
+
+.fat-calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fat-header-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fat-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border: 1px solid #bfdbfe;
+}
+
+.fat-header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.fat-header-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.fat-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fat-month-nav {
+  display: inline-flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 6px;
+}
+
+.fat-nav-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+}
+
+.fat-nav-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.fat-month-display {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  min-width: 150px;
+  text-align: center;
+}
+
+.fat-btn-today {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fat-btn-today:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.fat-view-toggle {
+  display: inline-flex;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.fat-view-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.fat-view-btn.active {
+  background: #ffffff;
+  color: #2563eb;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.fat-filter-select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fat-filter-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* FAT KPI Cards */
+.fat-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.fat-kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fat-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.fat-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fat-kpi-icon.blue { background: #eff6ff; color: #2563eb; }
+.fat-kpi-icon.green { background: #ecfdf5; color: #10b981; }
+.fat-kpi-icon.amber { background: #fffbe6; color: #f59e0b; }
+.fat-kpi-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+.fat-kpi-icon.cyan { background: #ecfeff; color: #06b6d4; }
+
+.fat-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fat-kpi-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.fat-kpi-sub {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Calendar Grid View */
+.fat-calendar-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.fat-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fat-weekday-col {
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fat-cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(130px, auto);
+}
+
+.fat-cal-day-cell {
+  border-right: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 8px 10px;
+  position: relative;
+  min-height: 125px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  transition: background 0.15s ease;
+}
+
+.fat-cal-day-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.fat-cal-day-cell:hover {
+  background: #f8fafc;
+}
+
+.fat-cal-day-cell.other-month {
+  background: #fafafa;
+  opacity: 0.55;
+}
+
+.fat-cal-day-cell.is-today {
+  background: #f0f7ff;
+}
+
+.fat-day-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.fat-day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fat-cal-day-cell.is-today .fat-day-num {
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.fat-today-pill {
+  font-size: 9px;
+  font-weight: 800;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.fat-btn-add-day {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.fat-cal-day-cell:hover .fat-btn-add-day {
+  display: inline-flex;
+}
+
+.fat-btn-add-day:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.fat-events-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+/* Event Pill */
+.fat-event-pill {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  text-align: left;
+}
+
+.fat-event-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.fat-event-pill.status-passed {
+  border-left-color: #10b981;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.fat-event-pill.status-inprogress {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+  border-color: #fde68a;
+  animation: pulseInProg 2s infinite;
+}
+
+.fat-event-pill.status-scheduled {
+  border-left-color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.fat-event-pill.status-rescheduled {
+  border-left-color: #8b5cf6;
+  background: #faf5ff;
+  border-color: #e9d5ff;
+}
+
+@keyframes pulseInProg {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.fat-event-trafo {
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.fat-event-status-tag {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.status-passed .fat-event-status-tag { background: #dcfce7; color: #15803d; }
+.status-inprogress .fat-event-status-tag { background: #fef3c7; color: #b45309; }
+.status-scheduled .fat-event-status-tag { background: #dbeafe; color: #1d4ed8; }
+.status-rescheduled .fat-event-status-tag { background: #ede9fe; color: #6d28d9; }
+
+.fat-event-client {
+  color: #475569;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.fat-event-meta {
+  color: #64748b;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+/* Agenda / List View Table */
+.fat-agenda-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+
+.fat-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fat-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 14px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left;
+}
+
+.fat-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 12px;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.fat-table tr:hover td {
+  background: #f8fafc;
+}
+
+.fat-chip {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fat-chip-bay {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.fat-chip-success {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.fat-chip-warning {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.fat-chip-info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.fat-chip-purple {
+  background: #faf5ff;
+  color: #6d28d9;
+  border: 1px solid #e9d5ff;
+}
+
+/* Print Berita Acara Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #fatPrintModal, #fatPrintModal * {
+    visibility: visible;
+  }
+  #fatPrintModal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+
 
 

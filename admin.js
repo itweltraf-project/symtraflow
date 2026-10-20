@@ -1,6 +1,41 @@
 /* Symtraflow - Admin & Master Data Management Portal Engine */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Security Verification: ONLY Super Admin can view and access Portal Admin & Master
+  const currentAuth = window.SymtraSync?.getCurrentAuthUser() || JSON.parse(sessionStorage.getItem('SYMTRAFLOW_AUTH_USER') || 'null');
+  const isSuper = !!(currentAuth && (
+    (currentAuth.role && currentAuth.role.toLowerCase().includes('super')) ||
+    currentAuth.rolePreset === 'superadmin' ||
+    currentAuth.permissions?.all === true
+  ));
+
+  if (!isSuper) {
+    document.body.innerHTML = `
+      <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#0b132b; font-family:'Plus Jakarta Sans',sans-serif; padding:20px;">
+        <div style="background:#ffffff; max-width:480px; width:100%; border-radius:16px; padding:36px 30px; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
+          <div style="width:72px; height:72px; background:#fee2e2; color:#dc2626; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 20px;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h2 style="font-size:22px; font-weight:800; color:#0f172a; margin-bottom:8px;">Akses Dibatasi: Khusus Super Admin</h2>
+          <p style="font-size:13px; color:#64748b; line-height:1.6; margin-bottom:24px;">
+            Portal Admin & Master Data ini hanya dapat diakses oleh akun <strong>Super Administrator (Jodi)</strong>. Admin lain tidak diperkenankan mengakses modul ini demi keamanan data produksi dan konfigurasi sistem.
+            <br><br>
+            Status Akun Anda Saat Ini:<br>
+            <span style="display:inline-block; margin-top:6px; background:#f1f5f9; border:1px solid #cbd5e1; padding:4px 12px; border-radius:6px; font-weight:700; color:#1e293b;">
+              ${currentAuth?.name || 'Belum Login'} · ${currentAuth?.role || 'Bukan Super Admin'}
+            </span>
+          </p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <a href="index.html" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; background:#2563eb; color:#ffffff; font-weight:700; text-decoration:none; padding:12px; border-radius:8px; font-size:13px; transition:background 0.15s;">
+              <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard ERP
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   // Initialize Tab Switchers
   initTabs();
   
@@ -32,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Current Auth User Display
-  const currentAuth = window.SymtraSync.getCurrentAuthUser();
   if (currentAuth) {
     const nameEl = document.getElementById('currentAdminName');
     const roleEl = document.getElementById('currentAdminRole');
