@@ -7738,7 +7738,7 @@ function renderFatCalendar() {
   if (kpiInProg) kpiInProg.innerText = inProgCount;
   if (kpiUpcoming) kpiUpcoming.innerText = upcomingCount;
 
-  // Render Calendar Grid
+  // Render Calendar Grid (Continuous Multi-Day Spanning Week Row Matrix)
   const daysGrid = document.getElementById('fatCalendarDaysGrid');
   if (daysGrid) {
     daysGrid.innerHTML = '';
@@ -7753,94 +7753,153 @@ function renderFatCalendar() {
     // Days in previous month
     const prevMonthDays = new Date(year, month, 0).getDate();
 
+    const matrixDays = [];
+
     // 1. Previous month trailing days
     for (let i = startOffset - 1; i >= 0; i--) {
       const prevDay = prevMonthDays - i;
-      const cell = document.createElement('div');
-      cell.className = 'fat-cal-day-cell other-month';
-      cell.innerHTML = `
-        <div class="fat-day-header-row">
-          <span class="fat-day-num">${prevDay}</span>
-        </div>
-      `;
-      daysGrid.appendChild(cell);
+      const prevMonth = (month === 0) ? 11 : (month - 1);
+      const prevYear = (month === 0) ? (year - 1) : year;
+      const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(prevDay).padStart(2, '0')}`;
+      matrixDays.push({
+        dateStr,
+        dayNum: prevDay,
+        isCurrentMonth: false,
+        isToday: false
+      });
     }
 
     // 2. Current month days
     for (let day = 1; day <= totalDays; day++) {
-      const cell = document.createElement('div');
-      cell.className = 'fat-cal-day-cell';
-
-      // Check if today (20 October 2026)
       const isToday = (year === 2026 && month === 9 && day === 20);
-      if (isToday) cell.classList.add('is-today');
-
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      matrixDays.push({
+        dateStr,
+        dayNum: day,
+        isCurrentMonth: true,
+        isToday
+      });
+    }
 
-      // Find events that span this date
-      const dayEvents = filtered.filter(item => {
-        const s = item.startDate || item.date;
-        const e = item.endDate || item.startDate || item.date;
-        return dateStr >= s && dateStr <= e;
+    // 3. Next month leading days to complete full 7-day weeks
+    const totalRenderedCells = matrixDays.length;
+    const remainingCells = (7 - (totalRenderedCells % 7)) % 7;
+    for (let d = 1; d <= remainingCells; d++) {
+      const nextMonth = (month === 11) ? 0 : (month + 1);
+      const nextYear = (month === 11) ? (year + 1) : year;
+      const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      matrixDays.push({
+        dateStr,
+        dayNum: d,
+        isCurrentMonth: false,
+        isToday: false
+      });
+    }
+
+    // Group into 7-day week rows
+    const weeks = [];
+    for (let i = 0; i < matrixDays.length; i += 7) {
+      weeks.push(matrixDays.slice(i, i + 7));
+    }
+
+    // Render each week row with continuous multi-day spanning bars
+    weeks.forEach(week => {
+      const weekStart = week[0].dateStr;
+      const weekEnd = week[6].dateStr;
+
+      const weekRow = document.createElement('div');
+      weekRow.className = 'fat-cal-week-row';
+
+      // Part A: Background 7-day cells
+      let daysBgHtml = '<div class="fat-cal-week-days-bg">';
+      week.forEach(dayInfo => {
+        daysBgHtml += `
+          <div class="fat-cal-day-cell ${!dayInfo.isCurrentMonth ? 'other-month' : ''} ${dayInfo.isToday ? 'is-today' : ''}">
+            <div class="fat-day-header-row">
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span class="fat-day-num">${dayInfo.dayNum}</span>
+                ${dayInfo.isToday ? '<span class="fat-today-pill">HARI INI</span>' : ''}
+              </div>
+              <button type="button" class="fat-btn-add-day" onclick="openAddFatModal('${dayInfo.dateStr}')" title="Buat Jadwal FAT pada tanggal ini">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      daysBgHtml += '</div>';
+
+      // Part B: Events Spanning Layer
+      const weekEvents = filtered.filter(ev => {
+        const s = ev.startDate || ev.date;
+        const e = ev.endDate || ev.startDate || ev.date;
+        return s <= weekEnd && e >= weekStart;
       });
 
-      let eventsHtml = '';
-      dayEvents.forEach(ev => {
+      // Sort by start date, then longer duration first
+      weekEvents.sort((a, b) => {
+        const aStart = a.startDate || a.date;
+        const bStart = b.startDate || b.date;
+        if (aStart !== bStart) return aStart.localeCompare(bStart);
+        const aEnd = a.endDate || a.startDate || a.date;
+        const bEnd = b.endDate || b.startDate || b.date;
+        return bEnd.localeCompare(aEnd);
+      });
+
+      let eventsLayerHtml = '<div class="fat-cal-week-events">';
+      weekEvents.forEach(ev => {
+        const sDate = ev.startDate || ev.date;
+        const eDate = ev.endDate || ev.startDate || ev.date;
+
+        let colStart = 1;
+        if (sDate > weekStart) {
+          const idx = week.findIndex(d => d.dateStr === sDate);
+          if (idx !== -1) colStart = idx + 1;
+        }
+
+        let colEnd = 7;
+        if (eDate < weekEnd) {
+          const idx = week.findIndex(d => d.dateStr === eDate);
+          if (idx !== -1) colEnd = idx + 1;
+        }
+
+        const span = Math.max(1, colEnd - colStart + 1);
+        const continuesLeft = (sDate < weekStart);
+        const continuesRight = (eDate > weekEnd);
+
         let statusBadgeText = 'TERJADWAL';
         if (ev.status === 'passed') statusBadgeText = 'PASSED';
         else if (ev.status === 'inprogress') statusBadgeText = 'LIVE UJI';
         else if (ev.status === 'rescheduled') statusBadgeText = 'RESCHEDULE';
 
-        const sDate = ev.startDate || ev.date;
-        const eDate = ev.endDate || ev.startDate || ev.date;
         const isMultiDay = (eDate && eDate !== sDate);
+        const dateRangeShort = formatShortDateRange(sDate, eDate);
 
-        eventsHtml += `
-          <div class="fat-event-pill status-${ev.status || 'scheduled'}" onclick="showFatDetail('${ev.id}')" title="Klik untuk lihat detail & berita acara FAT">
-            <div class="fat-event-trafo">
-              <span style="font-weight:800;"><i class="fa-solid fa-hashtag" style="font-size:10px; opacity:0.7;"></i> ${ev.soNumber || ev.trafoId}</span>
-              <span class="fat-event-status-tag">${statusBadgeText}</span>
+        eventsLayerHtml += `
+          <div class="fat-event-bar status-${ev.status || 'scheduled'} ${continuesLeft ? 'continues-left' : ''} ${continuesRight ? 'continues-right' : ''}"
+               style="grid-column: ${colStart} / span ${span};"
+               onclick="showFatDetail('${ev.id}')"
+               title="Jadwal FAT: ${ev.soNumber || ev.trafoId} · ${ev.client} (${ev.rating}) [${sDate} s/d ${eDate}]">
+            <div class="fat-bar-content">
+              ${continuesLeft ? '<span style="font-size:9px; opacity:0.8;"><i class="fa-solid fa-chevron-left"></i></span>' : ''}
+              <span class="fat-bar-badge-icon"><i class="fa-solid fa-bolt"></i></span>
+              <span class="fat-bar-so">${ev.soNumber || ev.trafoId}</span>
+              <span class="fat-bar-divider">•</span>
+              <span class="fat-bar-client">${ev.client}</span>
+              <span class="fat-bar-rating">(${ev.rating})</span>
             </div>
-            <div class="fat-event-client"><i class="fa-regular fa-building" style="font-size:10px; margin-right:3px;"></i>${ev.client}</div>
-            <div class="fat-event-meta">
-              <span><i class="fa-solid fa-bolt" style="font-size:10px;"></i> ${ev.rating}</span>
-              ${isMultiDay ? `<span>• <i class="fa-regular fa-calendar-days" style="font-size:10px;"></i> Periode</span>` : ''}
+            <div class="fat-bar-end">
+              ${isMultiDay ? `<span class="fat-bar-date-pill"><i class="fa-regular fa-calendar-days"></i> ${dateRangeShort}</span>` : ''}
+              ${continuesRight ? '<span style="font-size:9px; opacity:0.8;"><i class="fa-solid fa-chevron-right"></i></span>' : ''}
             </div>
           </div>
         `;
       });
+      eventsLayerHtml += '</div>';
 
-      cell.innerHTML = `
-        <div class="fat-day-header-row">
-          <div style="display:flex; align-items:center; gap:4px;">
-            <span class="fat-day-num">${day}</span>
-            ${isToday ? '<span class="fat-today-pill">HARI INI</span>' : ''}
-          </div>
-          <button type="button" class="fat-btn-add-day" onclick="openAddFatModal('${dateStr}')" title="Buat Jadwal FAT pada tanggal ini">
-            <i class="fa-solid fa-plus"></i>
-          </button>
-        </div>
-        <div class="fat-events-stack">
-          ${eventsHtml}
-        </div>
-      `;
-
-      daysGrid.appendChild(cell);
-    }
-
-    // 3. Next month leading days to complete the 7-column grid
-    const totalRenderedCells = startOffset + totalDays;
-    const remainingCells = (7 - (totalRenderedCells % 7)) % 7;
-    for (let d = 1; d <= remainingCells; d++) {
-      const cell = document.createElement('div');
-      cell.className = 'fat-cal-day-cell other-month';
-      cell.innerHTML = `
-        <div class="fat-day-header-row">
-          <span class="fat-day-num">${d}</span>
-        </div>
-      `;
-      daysGrid.appendChild(cell);
-    }
+      weekRow.innerHTML = daysBgHtml + eventsLayerHtml;
+      daysGrid.appendChild(weekRow);
+    });
   }
 
   // Render Agenda / List Table
@@ -7932,10 +7991,37 @@ function filterFatTable() {
   });
 }
 
+function formatShortDateRange(sDate, eDate) {
+  if (!sDate) return '';
+  const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const parts1 = sDate.split('-');
+  const d1 = parseInt(parts1[2], 10);
+  const m1 = parseInt(parts1[1], 10) - 1;
+  const monthStr1 = monthNamesShort[m1] || '';
+
+  if (!eDate || sDate === eDate) {
+    return `${d1} ${monthStr1}`;
+  }
+
+  const parts2 = eDate.split('-');
+  const d2 = parseInt(parts2[2], 10);
+  const m2 = parseInt(parts2[1], 10) - 1;
+  const monthStr2 = monthNamesShort[m2] || '';
+
+  if (m1 === m2) {
+    return `${d1} - ${d2} ${monthStr1}`;
+  }
+  return `${d1} ${monthStr1} - ${d2} ${monthStr2}`;
+}
+
+let currentActiveFatDetailId = null;
+
 function showFatDetail(fatId) {
   const schedules = getFatSchedules();
   const ev = schedules.find(s => s.id === fatId) || schedules[0];
   if (!ev) return;
+
+  currentActiveFatDetailId = ev.id;
 
   const modalBody = document.getElementById('fatDetailModalBody');
   if (!modalBody) return;
@@ -8070,10 +8156,32 @@ function showFatDetail(fatId) {
   if (modal) modal.classList.add('active');
 }
 
+function handleDeleteFromDetailModal() {
+  if (currentActiveFatDetailId) {
+    deleteFatSchedule(currentActiveFatDetailId);
+  }
+}
+
+function handleEditFromDetailModal() {
+  if (currentActiveFatDetailId) {
+    const id = currentActiveFatDetailId;
+    closeModal('modalFatDetail');
+    openAddFatModal(null, id);
+  }
+}
+
+function handleDeleteFromEditModal() {
+  const editId = document.getElementById('fatScheduleEditId')?.value;
+  if (editId) {
+    deleteFatSchedule(editId);
+  }
+}
+
 function openAddFatModal(targetDate, editId) {
   const modal = document.getElementById('modalFatSchedule');
   const title = document.getElementById('fatScheduleModalTitle');
   const editInput = document.getElementById('fatScheduleEditId');
+  const btnDel = document.getElementById('btnFatDeleteInModal');
 
   const inSo = document.getElementById('fatFormSoNumber');
   const inRating = document.getElementById('fatFormRating');
@@ -8092,6 +8200,7 @@ function openAddFatModal(targetDate, editId) {
       if (inClient) inClient.value = item.client || '';
       if (inStartDate) inStartDate.value = item.startDate || item.date || '2026-10-20';
       if (inEndDate) inEndDate.value = item.endDate || item.startDate || item.date || '2026-10-20';
+      if (btnDel) btnDel.style.display = 'inline-flex';
     }
   } else {
     if (title) title.innerHTML = '<i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Buat Jadwal FAT';
@@ -8102,6 +8211,7 @@ function openAddFatModal(targetDate, editId) {
     const initialDate = targetDate || '2026-10-20';
     if (inStartDate) inStartDate.value = initialDate;
     if (inEndDate) inEndDate.value = initialDate;
+    if (btnDel) btnDel.style.display = 'none';
   }
 
   if (modal) modal.classList.add('active');
@@ -8178,12 +8288,23 @@ function handleSaveFatSchedule(e) {
 }
 
 function deleteFatSchedule(id) {
-  if (!confirm('Apakah Anda yakin ingin menghapus jadwal FAT ini?')) return;
-  let schedules = getFatSchedules();
-  schedules = schedules.filter(s => s.id !== id);
-  saveFatSchedules(schedules);
+  const schedules = getFatSchedules();
+  const item = schedules.find(s => s.id === id);
+  const label = item ? (item.soNumber || item.trafoId || 'ini') : 'ini';
+
+  if (!confirm(`Apakah Anda yakin ingin menghapus Jadwal FAT untuk SO: ${label}?\n\nData jadwal yang dihapus tidak dapat dikembalikan.`)) {
+    return;
+  }
+
+  const updated = schedules.filter(s => s.id !== id);
+  saveFatSchedules(updated);
+  
+  closeModal('modalFatDetail');
+  closeModal('modalFatSchedule');
+  currentActiveFatDetailId = null;
+
   renderFatCalendar();
-  showToast('🗑️ Jadwal FAT berhasil dihapus!');
+  showToast(`🗑️ Jadwal FAT SO ${label} berhasil dihapus!`);
 }
 
 function printFatCertificate() {

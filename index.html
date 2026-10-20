@@ -3277,12 +3277,16 @@
         <!-- Filled dynamically by showFatDetail() -->
       </div>
 
-      <div class="modal-footer" style="justify-content: space-between; border-top: 1px solid #e2e8f0; padding: 14px 22px;">
-        <div style="display:flex; gap:10px;">
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding: 14px 22px; flex-wrap: wrap; gap: 10px;">
+        <div style="display:flex; gap:10px; flex-wrap: wrap;">
           <button type="button" class="btn-primary" onclick="printFatCertificate()"><i class="fa-solid fa-print"></i> Cetak Berita Acara (BA-FAT)</button>
           <button type="button" class="btn-secondary" onclick="exportFatSingleReport()"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+          <button type="button" id="btnFatDeleteInDetail" class="btn-secondary" style="color:#ef4444; border-color:#fca5a5; background:#fff5f5; font-weight:700;" onclick="handleDeleteFromDetailModal()"><i class="fa-solid fa-trash"></i> Hapus Jadwal</button>
         </div>
-        <button type="button" class="btn-secondary" onclick="closeModal('modalFatDetail')">Tutup</button>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn-secondary" onclick="handleEditFromDetailModal()"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+          <button type="button" class="btn-secondary" onclick="closeModal('modalFatDetail')">Tutup</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3329,9 +3333,16 @@
           </div>
 
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="closeModal('modalFatSchedule')">Batal</button>
-          <button type="submit" class="btn-primary"><i class="fa-solid fa-calendar-check"></i> Simpan Jadwal FAT</button>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <button type="button" id="btnFatDeleteInModal" class="btn-secondary" style="display:none; color:#ef4444; border-color:#fca5a5; background:#fff5f5; font-weight:700;" onclick="handleDeleteFromEditModal()">
+              <i class="fa-solid fa-trash"></i> Hapus Jadwal
+            </button>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-secondary" onclick="closeModal('modalFatSchedule')">Batal</button>
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-calendar-check"></i> Simpan Jadwal FAT</button>
+          </div>
         </div>
       </form>
     </div>
