@@ -1,5 +1,33 @@
 /* Symtraflow - Trafo Production Monitoring System Logic */
 
+// ==========================================================================
+// FORCE RESET ALL PREVIOUS DATA TO CLEAN EMPTY STATE
+// ==========================================================================
+const SYMTRAFLOW_STORAGE_RESET_KEY = 'SYMTRAFLOW_RESET_ALL_DATA_V20261021';
+if (localStorage.getItem(SYMTRAFLOW_STORAGE_RESET_KEY) !== 'done') {
+  const keysToReset = [
+    'SYMTRAFLOW_ERP_SALES_ORDERS_V2',
+    'SYMTRAFLOW_PT_PROJECTS',
+    'SYMTRAFLOW_MONITORING_MATERIALS_V1',
+    'SYMTRAFLOW_ORDERS_V1',
+    'SYMTRAFLOW_PRJ1_UNITS_V1',
+    'SYMTRAFLOW_PRJ2_UNITS_V1',
+    'SYMTRAFLOW_UNITS_DATA_V7',
+    'SYMTRAFLOW_UNITS_DATA',
+    'SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1',
+    'SYMTRAFLOW_FAT_SCHEDULES_V3',
+    'SYMTRAFLOW_FAT_SCHEDULES',
+    'SYMTRAFLOW_ERP_SHIPMENTS_V1',
+    'SYMTRAFLOW_HISTORY_LOGS'
+  ];
+  keysToReset.forEach(key => {
+    try {
+      localStorage.setItem(key, JSON.stringify([]));
+    } catch(e){}
+  });
+  localStorage.setItem(SYMTRAFLOW_STORAGE_RESET_KEY, 'done');
+}
+
 // 11 Production Stages Definitions
 const STAGES = [
   { id: 1, code: 'TANK MAKING', name: 'Tank Making', icon: 'fa-box-open' },
@@ -50,7 +78,7 @@ function getSalesAvatar(name) {
   return SALES_AVATARS[name] || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100';
 }
 
-// Initial Orders Data (Matching Image 1)
+// Initial Orders Data (Empty by Default)
 function getOrdersData() {
   try {
     const raw = localStorage.getItem('SYMTRAFLOW_ORDERS_V1');
@@ -59,150 +87,18 @@ function getOrdersData() {
       if (Array.isArray(parsed)) return parsed;
     }
   } catch(e){}
-  return defaultOrdersData;
+  return [];
 }
 function saveOrdersData(data) {
   try {
     localStorage.setItem('SYMTRAFLOW_ORDERS_V1', JSON.stringify(data));
   } catch(e){}
 }
-const defaultOrdersData = [
-  {
-    id: 'TRF-240522-001',
-    nama: 'Trafo Distribusi',
-    kapasitas: '500 kVA',
-    tegangan: '20 kV / 400 V',
-    status: 'ASSEMBLY',
-    currentStageIndex: 3, // 0-indexed (ASSEMBLY)
-    progress: 60,
-    mulai: '22/05/2024 07:30',
-    deadline: '25/05/2024',
-    operator: 'I WAYAN EVA VERDIANA',
-    operatorAvatar: getSalesAvatar('I WAYAN EVA VERDIANA'),
-    timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '22/05 08:15', operator: 'CASSA VITA SARI' },
-      { stage: 'CORE MAKING', status: 'finished', time: '22/05 08:45', operator: 'WILLI SYUKRAN' },
-      { stage: 'COIL MAKING', status: 'finished', time: '22/05 09:30', operator: 'SHEVIRA INDRASWARI' },
-      { stage: 'ASSEMBLY', status: 'process', time: 'Mulai: 22/05 10:10', operator: 'I WAYAN EVA VERDIANA' },
-      { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINISHING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FAT', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'PUNCHLIST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'DELIVERY', status: 'waiting', time: '-', operator: '-' }
-    ]
-  },
-  {
-    id: 'TRF-240522-002',
-    nama: 'Trafo Distribusi',
-    kapasitas: '1000 kVA',
-    tegangan: '20 kV / 400 V',
-    status: 'ASSEMBLY',
-    currentStageIndex: 3,
-    progress: 55,
-    mulai: '22/05/2024 07:45',
-    deadline: '26/05/2024',
-    operator: 'SHEVIRA INDRASWARI',
-    operatorAvatar: getSalesAvatar('SHEVIRA INDRASWARI'),
-    timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '22/05 08:30', operator: 'CASSA VITA SARI' },
-      { stage: 'CORE MAKING', status: 'finished', time: '22/05 09:00', operator: 'WILLI SYUKRAN' },
-      { stage: 'COIL MAKING', status: 'finished', time: '22/05 09:45', operator: 'SHEVIRA INDRASWARI' },
-      { stage: 'ASSEMBLY', status: 'process', time: 'Mulai: 22/05 10:20', operator: 'SHEVIRA INDRASWARI' },
-      { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINISHING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FAT', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'PUNCHLIST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'DELIVERY', status: 'waiting', time: '-', operator: '-' }
-    ]
-  },
-  {
-    id: 'TRF-240521-003',
-    nama: 'Trafo Power',
-    kapasitas: '1500 kVA',
-    tegangan: '20 kV / 6300 V',
-    status: 'CONNECTION',
-    currentStageIndex: 4,
-    progress: 20,
-    mulai: '21/05/2024 08:10',
-    deadline: '28/05/2024',
-    operator: 'WILLI SYUKRAN',
-    operatorAvatar: getSalesAvatar('WILLI SYUKRAN'),
-    timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '21/05 09:00', operator: 'CASSA VITA SARI' },
-      { stage: 'CORE MAKING', status: 'finished', time: '21/05 11:30', operator: 'SHEVIRA INDRASWARI' },
-      { stage: 'COIL MAKING', status: 'finished', time: '21/05 14:00', operator: 'SHEVIRA INDRASWARI' },
-      { stage: 'ASSEMBLY', status: 'finished', time: '21/05 16:30', operator: 'I WAYAN EVA VERDIANA' },
-      { stage: 'CONNECTION', status: 'process', time: 'Mulai: 22/05 08:10', operator: 'WILLI SYUKRAN' },
-      { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINISHING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FAT', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'PUNCHLIST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'DELIVERY', status: 'waiting', time: '-', operator: '-' }
-    ]
-  },
-  {
-    id: 'TRF-240521-004',
-    nama: 'Trafo Distribusi',
-    kapasitas: '250 kVA',
-    tegangan: '20 kV / 400 V',
-    status: 'TANK MAKING',
-    currentStageIndex: 0,
-    progress: 100,
-    mulai: '21/05/2024 07:50',
-    deadline: '23/05/2024',
-    operator: 'CASSA VITA SARI',
-    operatorAvatar: getSalesAvatar('CASSA VITA SARI'),
-    timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '21/05 10:00', operator: 'CASSA VITA SARI' },
-      { stage: 'CORE MAKING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'COIL MAKING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINISHING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FAT', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'PUNCHLIST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'DELIVERY', status: 'waiting', time: '-', operator: '-' }
-    ]
-  },
-  {
-    id: 'TRF-240520-005',
-    nama: 'Trafo Power',
-    kapasitas: '2000 kVA',
-    tegangan: '30 kV / 6300 V',
-    status: 'CORE MAKING',
-    currentStageIndex: 1,
-    progress: 100,
-    mulai: '20/05/2024 07:40',
-    deadline: '24/05/2024',
-    operator: 'KRESNA BUDI PRASETYA',
-    operatorAvatar: getSalesAvatar('KRESNA BUDI PRASETYA'),
-    timeline: [
-      { stage: 'TANK MAKING', status: 'finished', time: '20/05 09:30', operator: 'CASSA VITA SARI' },
-      { stage: 'CORE MAKING', status: 'finished', time: '20/05 11:45', operator: 'KRESNA BUDI PRASETYA' },
-      { stage: 'COIL MAKING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'CONNECTION', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINAL ASSEMBLY', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'INTERNAL TEST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FINISHING', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'FAT', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'PUNCHLIST', status: 'waiting', time: '-', operator: '-' },
-      { stage: 'DELIVERY', status: 'waiting', time: '-', operator: '-' }
-    ]
-  }
-];
+const defaultOrdersData = [];
 
-// Project 1 Units Data (10 Units - Matching Image 2)
 let orders = getOrdersData();
 
-// Project 1 Units Data (10 Units - Matching Image 2)
+// Project 1 Units Data (Empty by Default)
 function getPrj1Units() {
   try {
     const raw = localStorage.getItem('SYMTRAFLOW_PRJ1_UNITS_V1');
@@ -211,30 +107,18 @@ function getPrj1Units() {
       if (Array.isArray(parsed)) return parsed;
     }
   } catch(e){}
-  return defaultPrj1Units;
+  return [];
 }
 function savePrj1Units(data) {
   try {
     localStorage.setItem('SYMTRAFLOW_PRJ1_UNITS_V1', JSON.stringify(data));
   } catch(e){}
 }
-const defaultPrj1Units = [
-  { no: 1, id: 'TRF-240522-001', cap: '500 kVA', volt: '20 kV / 400 V', status: 'ASSEMBLY', badge: 'badge-assembly', progress: 60, stageIdx: 3, startCol: 1, endCol: 4, operator: 'I WAYAN EVA VERDIANA', dead: '28/05/2024' },
-  { no: 2, id: 'TRF-240522-002', cap: '750 kVA', volt: '20 kV / 400 V', status: 'CORE MAKING', badge: 'badge-core', progress: 75, stageIdx: 1, startCol: 1, endCol: 2, operator: 'SHEVIRA INDRASWARI', dead: '27/05/2024' },
-  { no: 3, id: 'TRF-240522-003', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 40, stageIdx: 7, startCol: 1, endCol: 8, operator: 'WILLI SYUKRAN', dead: '25/05/2024' },
-  { no: 4, id: 'TRF-240522-004', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 20, stageIdx: 6, startCol: 4, endCol: 7, operator: 'CASSA VITA SARI', dead: '29/05/2024' },
-  { no: 5, id: 'TRF-240522-005', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 5, endCol: 11, operator: 'KRESNA BUDI PRASETYA', dead: '24/05/2024' },
-  { no: 6, id: 'TRF-240522-006', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 11, operator: 'ELNIRA AINUNNISA', dead: '23/05/2024' },
-  { no: 7, id: 'TRF-240522-007', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'PUNCHLIST', badge: 'badge-assembly', progress: 80, stageIdx: 9, startCol: 6, endCol: 10, operator: 'AHMAD NURSEHA', dead: '26/05/2024' },
-  { no: 8, id: 'TRF-240522-008', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 10, operator: 'YOGI RAHMADANI SAPUTRA', dead: '30/05/2024' },
-  { no: 9, id: 'TRF-240522-009', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'PROSES', badge: 'badge-assembly', progress: 10, stageIdx: 0, startCol: 1, endCol: 1, operator: 'LUTHFAN ANDI PRADANA', dead: '31/05/2024' },
-  { no: 10, id: 'TRF-240522-010', cap: '3000 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 1, endCol: 1, operator: 'AURELLIA LAYLA MAHANI', dead: '01/06/2024' }
-];
+const defaultPrj1Units = [];
 
-// Project 2 Units Data (5 Units - Matching Image 2)
 let prj1Units = getPrj1Units();
 
-// Project 2 Units Data (5 Units - Matching Image 2)
+// Project 2 Units Data (Empty by Default)
 function getPrj2Units() {
   try {
     const raw = localStorage.getItem('SYMTRAFLOW_PRJ2_UNITS_V1');
@@ -243,20 +127,14 @@ function getPrj2Units() {
       if (Array.isArray(parsed)) return parsed;
     }
   } catch(e){}
-  return defaultPrj2Units;
+  return [];
 }
 function savePrj2Units(data) {
   try {
     localStorage.setItem('SYMTRAFLOW_PRJ2_UNITS_V1', JSON.stringify(data));
   } catch(e){}
 }
-const defaultPrj2Units = [
-  { no: 1, id: 'TRF-240522-A01', cap: '500 kVA', volt: '20 kV / 400 V', status: 'FINISHING', badge: 'badge-finishing', progress: 60, stageIdx: 7, startCol: 1, endCol: 8, operator: 'JHODY AIDO SAUT HUTAGALUNG', dead: '26/05/2024' },
-  { no: 2, id: 'TRF-240522-A02', cap: '1000 kVA', volt: '20 kV / 400 V', status: 'INTERNAL TEST', badge: 'badge-internal', progress: 30, stageIdx: 6, startCol: 5, endCol: 7, operator: 'KEYSHA ZARA ALIFA PANJAITAN', dead: '26/05/2024' },
-  { no: 3, id: 'TRF-240522-A03', cap: '1500 kVA', volt: '20 kV / 6300 V', status: 'SELESAI', badge: 'badge-selesai', progress: 100, stageIdx: 10, startCol: 1, endCol: 4, operator: 'I WAYAN EVA VERDIANA', dead: '24/05/2024' },
-  { no: 4, id: 'TRF-240522-A04', cap: '2000 kVA', volt: '30 kV / 6300 V', status: 'CORE MAKING', badge: 'badge-core', progress: 70, stageIdx: 1, startCol: 4, endCol: 6, operator: 'SHEVIRA INDRASWARI', dead: '29/05/2024' },
-  { no: 5, id: 'TRF-240522-A05', cap: '2500 kVA', volt: '30 kV / 6300 V', status: 'BELUM MULAI', badge: 'badge-belum', progress: 0, stageIdx: 0, startCol: 4, endCol: 7, operator: 'WILLI SYUKRAN', dead: '30/05/2024' }
-];
+const defaultPrj2Units = [];
 
 let prj2Units = getPrj2Units();
 
@@ -1992,7 +1870,8 @@ function handleAddTrafoSubmit(e) {
   }
 
   // Update main tables & KPI
-  document.getElementById('kpiTotalOrder').innerText = orders.length;
+  const elTot1 = document.getElementById('kpiTotalOrder');
+  if (elTot1) elTot1.innerText = orders.length;
   renderOrdersTable();
   if (typeof initProgressChart === 'function') initProgressChart();
 
@@ -2306,7 +2185,8 @@ function handleCreateOrder(e) {
   }
 
   // Update KPI counts
-  document.getElementById('kpiTotalOrder').innerText = orders.length;
+  const elTot2 = document.getElementById('kpiTotalOrder');
+  if (elTot2) elTot2.innerText = orders.length;
 
   populateStepperOrderSelector();
   renderOrdersTable();
@@ -3450,21 +3330,7 @@ function handleLogout() {
    ========================================================================== */
 
 // --- Global Data Stores for the ERP Modules ---
-const defaultERPSalesOrders = [
-  {
-    no: 1,
-    soNumber: '25-0810',
-    customer: 'PT INDOBARA',
-    variant: 'Distribusi',
-    kva: 500,
-    qty: 8,
-    orderDate: '12/10/2026',
-    targetDate: '20/12/2026',
-    status: 'Belum Proses',
-    pic: 'I Wayan Eva Verdiana',
-    units: []
-  }
-];
+const defaultERPSalesOrders = [];
 
 function getERPSalesOrders() {
   try {
@@ -3472,26 +3338,13 @@ function getERPSalesOrders() {
     if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        // Filter out Pertamina, Pupuk Kaltim, and PLN
-        const filtered = parsed.filter(so => {
-          const c = (so.customer || '').toUpperCase();
-          const s = (so.soNumber || '').toUpperCase();
-          return !c.includes('PERTAMINA') && !c.includes('PUPUK') && !c.includes('KALTIM') && !c.includes('PLN') &&
-                 !s.includes('PTM') && !s.includes('PKT');
-        });
-        filtered.forEach(so => {
-          if (so.status === 'Belum Mulai') so.status = 'Belum Proses';
-        });
-        try {
-          localStorage.setItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2', JSON.stringify(filtered));
-        } catch(e){}
-        return filtered;
+        return parsed;
       }
     }
   } catch (e) {
     console.error('Error reading ERP Sales Orders:', e);
   }
-  return JSON.parse(JSON.stringify(defaultERPSalesOrders));
+  return [];
 }
 
 function saveERPSalesOrders(data) {
@@ -5023,224 +4876,7 @@ function recomputeUnitProgress(unit) {
 
 // ================= MONITORING MATERIAL (BILL OF MATERIALS) DATA & CONTROLLER =================
 
-const defaultMaterialsData = [
-  {
-    id: 'MAT-001',
-    code: 'MAT-CU-01',
-    name: 'Kawat Tembaga Enamel (Cu-ETP 99.9% Rectangular)',
-    category: 'Konduktor',
-    stock: 1450,
-    requirement: 1200,
-    unit: 'kg',
-    supplier: 'PT Supreme Cable Tbk',
-    allocatedTo: 'Lini Gulung LV & HV Tembaga',
-    leadTime: '5 Hari'
-  },
-  {
-    id: 'MAT-002',
-    code: 'MAT-CU-02',
-    name: 'Kawat Tembaga CTC (Continuously Transposed Cable)',
-    category: 'Konduktor',
-    stock: 820,
-    requirement: 950,
-    unit: 'kg',
-    supplier: 'PT Jembo Cable Company',
-    allocatedTo: 'Lini Winding CTC Trafo Tenaga',
-    leadTime: '10 Hari'
-  },
-  {
-    id: 'MAT-003',
-    code: 'MAT-CRGO-01',
-    name: 'Silicon Steel Core CRGO M4 0.27mm Laser Treated',
-    category: 'Inti Besi (CRGO)',
-    stock: 2800,
-    requirement: 2400,
-    unit: 'kg',
-    supplier: 'Nippon Steel Corp',
-    allocatedTo: 'Lini Core Slitting & Stacking',
-    leadTime: '14 Hari'
-  },
-  {
-    id: 'MAT-004',
-    code: 'MAT-OIL-01',
-    name: 'Minyak Trafo Uninhibited Mineral Oil Grade 1',
-    category: 'Minyak & Isolasi',
-    stock: 4200,
-    requirement: 3600,
-    unit: 'liter',
-    supplier: 'Nynas Nitro Indonesia',
-    allocatedTo: 'Tangki Penyimpanan & Oven Vacuum',
-    leadTime: '3 Hari'
-  },
-  {
-    id: 'MAT-005',
-    code: 'MAT-ISO-01',
-    name: 'Kertas Isolasi Pressboard (Weidmann Grade T-IV)',
-    category: 'Minyak & Isolasi',
-    stock: 350,
-    requirement: 320,
-    unit: 'lembar',
-    supplier: 'Weidmann Electrical',
-    allocatedTo: 'Spacer Coil & Barrier LV/HV',
-    leadTime: '7 Hari'
-  },
-  {
-    id: 'MAT-006',
-    code: 'MAT-TNK-01',
-    name: 'Tangki Trafo Baja Corrugated Fin Plat SS400 4mm',
-    category: 'Mekanikal & Tangki',
-    stock: 12,
-    requirement: 10,
-    unit: 'set',
-    supplier: 'Workshop Fabrikasi Internal',
-    allocatedTo: 'Lini Fabrikasi & Finishing Tangki',
-    leadTime: 'Ready'
-  },
-  {
-    id: 'MAT-007',
-    code: 'MAT-RAD-01',
-    name: 'Radiator Fin Assembly Cold-rolled Steel 1.2mm',
-    category: 'Mekanikal & Tangki',
-    stock: 24,
-    requirement: 28,
-    unit: 'set',
-    supplier: 'PT Weltraf Radiator Division',
-    allocatedTo: 'Lini Perakitan Tangki Trafo',
-    leadTime: '4 Hari'
-  },
-  {
-    id: 'MAT-008',
-    code: 'MAT-BSH-01',
-    name: 'High Voltage Porcelain Bushing 24 kV / 250A',
-    category: 'Bushing & Asesoris',
-    stock: 36,
-    requirement: 30,
-    unit: 'pcs',
-    supplier: 'Sediver / NGK Insulators',
-    allocatedTo: 'Unit Distribusi 20 kV Mitra Industri',
-    leadTime: '6 Hari'
-  },
-  {
-    id: 'MAT-009',
-    code: 'MAT-BSH-02',
-    name: 'Low Voltage Porcelain Bushing 1 kV / 1000A',
-    category: 'Bushing & Asesoris',
-    stock: 48,
-    requirement: 40,
-    unit: 'pcs',
-    supplier: 'Sediver Insulators',
-    allocatedTo: 'Semua Lini Perakitan Trafo',
-    leadTime: '4 Hari'
-  },
-  {
-    id: 'MAT-010',
-    code: 'MAT-TC-01',
-    name: 'Off-Circuit Tap Changer (OCTC 5-Position ±2x2.5%)',
-    category: 'Bushing & Asesoris',
-    stock: 15,
-    requirement: 12,
-    unit: 'set',
-    supplier: 'Maschinenfabrik Reinhausen (MR)',
-    allocatedTo: 'Trafo Distribusi 500-1000 kVA',
-    leadTime: '8 Hari'
-  },
-  {
-    id: 'MAT-011',
-    code: 'MAT-PRD-01',
-    name: 'Pressure Relief Device (PRD 50 kPa with Microswitch)',
-    category: 'Bushing & Asesoris',
-    stock: 2,
-    requirement: 10,
-    unit: 'pcs',
-    supplier: 'Qualitrol Instruments',
-    allocatedTo: 'Menunggu Pengadaan PO Vendor',
-    leadTime: '12 Hari'
-  },
-  {
-    id: 'MAT-012',
-    code: 'MAT-BCH-01',
-    name: 'Buchholz Relay (Double Float Type with Gas Valve)',
-    category: 'Bushing & Asesoris',
-    stock: 8,
-    requirement: 8,
-    unit: 'set',
-    supplier: 'EMB Elektromotoren und Geratebau',
-    allocatedTo: 'Trafo Distribusi Kelas Tenaga',
-    leadTime: 'Ready'
-  },
-  {
-    id: 'MAT-013',
-    code: 'MAT-GSK-01',
-    name: 'Gasket NBR Cork Oil-Resistant (Nitrile Rubber)',
-    category: 'Minyak & Isolasi',
-    stock: 65,
-    requirement: 50,
-    unit: 'meter',
-    supplier: 'Amorim Cork Composites',
-    allocatedTo: 'Seal Cover Tangki & Flange',
-    leadTime: '3 Hari'
-  },
-  {
-    id: 'MAT-014',
-    code: 'MAT-CAT-01',
-    name: 'Cat Epoxy Primer & Polyurethane Finish RAL 7035',
-    category: 'Mekanikal & Tangki',
-    stock: 180,
-    requirement: 150,
-    unit: 'liter',
-    supplier: 'Jotun Indonesia',
-    allocatedTo: 'Lini Sandblasting & Pengecatan',
-    leadTime: '2 Hari'
-  },
-  {
-    id: 'MAT-015',
-    code: 'MAT-SIL-01',
-    name: 'Dehydrating Breather with Cobalt-Free Silica Gel 1.0kg',
-    category: 'Bushing & Asesoris',
-    stock: 20,
-    requirement: 16,
-    unit: 'set',
-    supplier: 'Comem Group',
-    allocatedTo: 'Konservator Minyak Trafo',
-    leadTime: '5 Hari'
-  },
-  {
-    id: 'MAT-016',
-    code: 'MAT-BAR-01',
-    name: 'Copper Busbar Flat Bar Cu-ETP 50x5mm',
-    category: 'Konduktor',
-    stock: 450,
-    requirement: 380,
-    unit: 'kg',
-    supplier: 'PT Supreme Cable Tbk',
-    allocatedTo: 'Terminasi LV Trafo Power',
-    leadTime: '4 Hari'
-  },
-  {
-    id: 'MAT-017',
-    code: 'MAT-WTI-01',
-    name: 'Winding & Oil Temperature Indicator (Dial WTI/OTI)',
-    category: 'Bushing & Asesoris',
-    stock: 14,
-    requirement: 12,
-    unit: 'set',
-    supplier: 'Messko / Reinhausen',
-    allocatedTo: 'Panel Monitoring Suhu Trafo',
-    leadTime: '7 Hari'
-  },
-  {
-    id: 'MAT-018',
-    code: 'MAT-VLV-01',
-    name: 'Oil Drain & Sampling Valve DN50 Flanged',
-    category: 'Mekanikal & Tangki',
-    stock: 22,
-    requirement: 18,
-    unit: 'pcs',
-    supplier: 'Kitz Valve Indonesia',
-    allocatedTo: 'Pipa Bawah Tangki Trafo',
-    leadTime: '5 Hari'
-  }
-];
+const defaultMaterialsData = [];
 
 function getMaterialsData() {
   try {
@@ -5252,7 +4888,7 @@ function getMaterialsData() {
   } catch (e) {
     console.error('Error reading Materials data:', e);
   }
-  return JSON.parse(JSON.stringify(defaultMaterialsData));
+  return [];
 }
 
 function saveMaterialsData(data) {
@@ -7457,211 +7093,7 @@ function updateRoleBasedUIVisibility(user) {
 let fatCurrentDate = new Date(2026, 9, 20); // October 20, 2026
 let fatCurrentView = 'grid';
 
-const defaultFatSchedules = [
-  {
-    id: 'FAT-2026-101',
-    startDate: '2026-10-05',
-    endDate: '2026-10-09',
-    date: '2026-10-05',
-    time: '09:00',
-    trafoId: 'TRF-240522-005',
-    soNumber: 'SO 25-0560',
-    client: 'PT PLN (Persero) UID Jabar',
-    rating: '1500 kVA - 20 kV / 6300 V',
-    bay: 'Test Bay 1',
-    status: 'passed',
-    inspector: 'Ir. Dedi Setiadi (PLN QA Specialist)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Pengujian lengkap 9 parameter standar SPLN D3.002-1: 2014 & IEC 60076. Seluruh parameter lulus uji tanpa catatan khusus.',
-    testResults: [
-      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.38%', res: 'PASS' },
-      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.11%', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,850 W', val: '1,710 Watt', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 11,500 W, Z=4.5%', val: '10,790 W (Z=4.48%)', res: 'PASS' },
-      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Breakdown)', res: 'PASS' },
-      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
-      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '68.5 kV / 2.5mm', res: 'PASS' },
-      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '3.6 pC', res: 'PASS' },
-      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 60 dB(A)', val: '51.8 dB(A)', res: 'PASS' }
-    ]
-  },
-  {
-    id: 'FAT-2026-102',
-    startDate: '2026-10-12',
-    endDate: '2026-10-16',
-    date: '2026-10-12',
-    time: '13:30',
-    trafoId: 'TRF-240522-006',
-    soNumber: 'SO 25-0560',
-    client: 'PT PLN (Persero) UID Jabar',
-    rating: '1500 kVA - 20 kV / 6300 V',
-    bay: 'Test Bay 1',
-    status: 'passed',
-    inspector: 'Ir. Dedi Setiadi (PLN QA Specialist)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Unit kedua dari proyek 10 unit PLN Jabar. Karakteristik impedansi sangat presisi antar fasa.',
-    testResults: [
-      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.41%', res: 'PASS' },
-      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.14%', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,850 W', val: '1,735 Watt', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 11,500 W, Z=4.5%', val: '10,820 W (Z=4.51%)', res: 'PASS' },
-      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Breakdown)', res: 'PASS' },
-      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
-      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '71.2 kV / 2.5mm', res: 'PASS' },
-      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '4.1 pC', res: 'PASS' },
-      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 60 dB(A)', val: '52.3 dB(A)', res: 'PASS' }
-    ]
-  },
-  {
-    id: 'FAT-2026-103',
-    startDate: '2026-10-14',
-    endDate: '2026-10-16',
-    date: '2026-10-14',
-    time: '10:00',
-    trafoId: 'TRF-240522-001',
-    soNumber: 'SO 25-0561',
-    client: 'PT Vale Indonesia Tbk',
-    rating: '500 kVA - 20 kV / 400 V',
-    bay: 'Test Bay 2',
-    status: 'passed',
-    inspector: 'Bambang Haryanto (Vale QA Inspector)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Trafo Auxiliary Smelter Sorowako. Disaksikan langsung oleh tim engineering PT Vale Indonesia.',
-    testResults: [
-      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.32%', res: 'PASS' },
-      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.08%', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 950 W', val: '880 Watt', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 5,800 W, Z=4.0%', val: '5,420 W (Z=3.98%)', res: 'PASS' },
-      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Flashover)', res: 'PASS' },
-      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
-      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '66.4 kV / 2.5mm', res: 'PASS' },
-      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '3.1 pC', res: 'PASS' },
-      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 58 dB(A)', val: '49.7 dB(A)', res: 'PASS' }
-    ]
-  },
-  {
-    id: 'FAT-2026-104',
-    startDate: '2026-10-17',
-    endDate: '2026-10-18',
-    date: '2026-10-17',
-    time: '09:30',
-    trafoId: 'TRF-240522-002',
-    soNumber: 'SO 25-0562',
-    client: 'PT Pertamina Geothermal Energy',
-    rating: '750 kVA - 20 kV / 400 V',
-    bay: 'Test Bay 1',
-    status: 'passed',
-    inspector: 'Raden Sukoco (Pertamina QA/QC)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Kebutuhan pembangkit geothermal Kamojang. Tangki heavy duty tahan korosi H2S.',
-    testResults: [
-      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.35%', res: 'PASS' },
-      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.09%', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,250 W', val: '1,140 Watt', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 7,200 W, Z=4.0%', val: '6,880 W (Z=4.02%)', res: 'PASS' },
-      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: '50 kV Tahan (No Breakdown)', res: 'PASS' },
-      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Lolos Tanpa Trip', res: 'PASS' },
-      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '69.0 kV / 2.5mm', res: 'PASS' },
-      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: '2.9 pC', res: 'PASS' },
-      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 59 dB(A)', val: '50.6 dB(A)', res: 'PASS' }
-    ]
-  },
-  {
-    id: 'FAT-2026-105',
-    startDate: '2026-10-19',
-    endDate: '2026-10-23',
-    date: '2026-10-19',
-    time: '09:15',
-    trafoId: 'TRF-240522-003',
-    soNumber: 'SO 25-0563',
-    client: 'PT Antam Tbk - Pomalaa',
-    rating: '1000 kVA - 20 kV / 400 V',
-    bay: 'Test Bay 1',
-    status: 'inprogress',
-    inspector: 'Kusuma Wardhana (Antam QA Team)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'SEDANG BERLANGSUNG: Pengujian tegangan induksi dan pengukuran dielektrik minyak bersama pihak Antam.',
-    testResults: [
-      { param: 'Pengukuran Tahanan Gulungan (Winding Resistance)', spec: 'Deviasi maks. 2%', val: 'Deviasi 0.36%', res: 'PASS' },
-      { param: 'Pengukuran Rasio Tegangan & Vektor Grup (Dyn5)', spec: 'Toleransi 0.5%', val: 'Ratio err 0.12%', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Tanpa Beban & Arus Beban Kosong (Po)', spec: 'Po <= 1,450 W', val: '1,320 Watt', res: 'PASS' },
-      { param: 'Uji Rugi-Rugi Berbeban & Impedansi (Pk & Z%)', spec: 'Pk <= 9,200 W, Z=4.5%', val: 'Sedang Uji...', res: 'TESTING' },
-      { param: 'Uji Tegangan Terapan (Separate Source AC Withstand)', spec: '50 kV / 1 Menit', val: 'Menunggu Giliran', res: 'WAITING' },
-      { param: 'Uji Tegangan Induksi (Induced Overvoltage Withstand)', spec: '2x Un pada 200 Hz / 60s', val: 'Menunggu Giliran', res: 'WAITING' },
-      { param: 'Karakteristik Dielektrik Minyak Trafo (Breakdown)', spec: '>= 50 kV / 2.5mm', val: '72.5 kV / 2.5mm', res: 'PASS' },
-      { param: 'Pengukuran Partial Discharge (PD Measurement)', spec: 'PD <= 10 pC', val: 'Menunggu Giliran', res: 'WAITING' },
-      { param: 'Pengukuran Tingkat Kebisingan (Sound Level Test)', spec: 'Maks. 60 dB(A)', val: 'Menunggu Giliran', res: 'WAITING' }
-    ]
-  },
-  {
-    id: 'FAT-2026-106',
-    startDate: '2026-10-22',
-    endDate: '2026-10-24',
-    date: '2026-10-22',
-    time: '10:00',
-    trafoId: 'TRF-240522-004',
-    soNumber: 'SO 25-0563',
-    client: 'PT Antam Tbk - Pomalaa',
-    rating: '1000 kVA - 20 kV / 400 V',
-    bay: 'Test Bay 2',
-    status: 'scheduled',
-    inspector: 'Kusuma Wardhana (Antam QA Team)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Unit kedua untuk Proyek Antam. Berkas pengujian internal dan checklist kesiapan telah ditandatangani.',
-    testResults: []
-  },
-  {
-    id: 'FAT-2026-107',
-    startDate: '2026-10-26',
-    endDate: '2026-10-30',
-    date: '2026-10-26',
-    time: '09:00',
-    trafoId: 'TRF-240522-007',
-    soNumber: 'SO 25-0564',
-    client: 'PT Semen Indonesia (Persero) Tbk',
-    rating: '2000 kVA - 30 kV / 6300 V',
-    bay: 'Test Bay 1',
-    status: 'scheduled',
-    inspector: 'Eko Prasetyo (Semen ID Inspector)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Trafo Gardu Distribusi Pabrik Tuban. Pengujian disaksikan perwakilan teknis SIG.',
-    testResults: []
-  },
-  {
-    id: 'FAT-2026-108',
-    startDate: '2026-10-29',
-    endDate: '2026-10-31',
-    date: '2026-10-29',
-    time: '13:30',
-    trafoId: 'TRF-240522-008',
-    soNumber: 'SO 25-0565',
-    client: 'PT Chandra Asri Petrochemical Tbk',
-    rating: '2500 kVA - 30 kV / 6300 V',
-    bay: 'Test Bay 1',
-    status: 'scheduled',
-    inspector: 'Fajar Nugraha (Chandra Asri Lead QA)',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Trafo Daya Kilang Kimia Cilegon. Spesifikasi low loss hermetically sealed.',
-    testResults: []
-  },
-  {
-    id: 'FAT-2026-109',
-    startDate: '2026-11-02',
-    endDate: '2026-11-06',
-    date: '2026-11-02',
-    time: '09:00',
-    trafoId: 'TRF-240522-009',
-    soNumber: 'SO 25-0566',
-    client: 'PT PLN (Persero) UIP Pikitring',
-    rating: '3150 kVA - 33 kV / 11 kV',
-    bay: 'Test Bay 1',
-    status: 'scheduled',
-    inspector: 'Tim Pengawas Mutu PLN UIP',
-    qcLead: 'Shevira Indraswari (QC Lead)',
-    notes: 'Trafo Gardu Hubung Tegangan Menengah. Telah terdaftar dalam agenda serah terima Q4.',
-    testResults: []
-  }
-];
+const defaultFatSchedules = [];
 
 const FAT_STORAGE_KEY = 'SYMTRAFLOW_FAT_SCHEDULES_V3';
 

@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261021_realtime">
+  <link rel="stylesheet" href="styles.css?v=20261021_clean">
 </head>
 <body>
 
@@ -436,86 +436,6 @@
       <!-- ================= VIEW 1: SINGLE ORDER FLOW (MONITORING PRODUKSI) ================= -->
       <div class="view-section" id="viewSingleFlow">
         
-        <!-- Top 5 KPI Cards Grid -->
-        <div class="kpi-cards-grid">
-          <!-- Card 1: Total Order -->
-          <div class="kpi-card">
-            <div class="kpi-icon blue">
-              <i class="fa-solid fa-box-archive"></i>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-label">TOTAL ORDER</span>
-              <div class="kpi-value-row">
-                <span class="kpi-value" id="kpiTotalOrder">15</span>
-                <span class="kpi-unit">Order</span>
-              </div>
-              <a href="#" class="kpi-subtext">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-          </div>
-
-          <!-- Card 2: Selesai -->
-          <div class="kpi-card">
-            <div class="kpi-icon green">
-              <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-label">SELESAI</span>
-              <div class="kpi-value-row">
-                <span class="kpi-value" id="kpiSelesai">6</span>
-                <span class="kpi-unit" id="kpiSelesaiPct">Order (40%)</span>
-              </div>
-              <a href="#" class="kpi-subtext">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-          </div>
-
-          <!-- Card 3: Proses -->
-          <div class="kpi-card">
-            <div class="kpi-icon amber">
-              <i class="fa-solid fa-gears"></i>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-label">PROSES</span>
-              <div class="kpi-value-row">
-                <span class="kpi-value" id="kpiProses">7</span>
-                <span class="kpi-unit" id="kpiProsesPct">Order (46.7%)</span>
-              </div>
-              <a href="#" class="kpi-subtext">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-          </div>
-
-          <!-- Card 4: Belum Mulai -->
-          <div class="kpi-card">
-            <div class="kpi-icon purple">
-              <i class="fa-solid fa-hourglass-start"></i>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-label">BELUM MULAI</span>
-              <div class="kpi-value-row">
-                <span class="kpi-value" id="kpiBelum">2</span>
-                <span class="kpi-unit" id="kpiBelumPct">Order (13.3%)</span>
-              </div>
-              <a href="#" class="kpi-subtext">Lihat Detail <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-          </div>
-
-          <!-- Card 5: Rata-Rata Progress -->
-          <div class="kpi-card">
-            <div class="kpi-icon cyan">
-              <i class="fa-solid fa-chart-pie"></i>
-            </div>
-            <div class="kpi-content">
-              <span class="kpi-label">RATA-RATA PROGRESS</span>
-              <div class="kpi-value-row">
-                <span class="kpi-value" id="kpiAvgProgress">67%</span>
-                <span class="trend-badge"><i class="fa-solid fa-arrow-up"></i> 12%</span>
-              </div>
-              <span class="kpi-unit" style="font-size: 10px; color: var(--text-muted);">Dari kemarin</span>
-            </div>
-          </div>
-        </div>
-
-
-
         <!-- View Switcher in Monitoring Produksi: Hierarki PT vs Riwayat Produksi vs Daftar Semua Order -->
         <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:10px 16px; margin-bottom:18px; box-shadow:var(--shadow-sm); flex-wrap:wrap; gap:10px;">
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1340,53 +1260,6 @@
           </div>
         </div>
 
-        <!-- 4 Stats Cards Grid -->
-        <div class="erp-stats-grid">
-          <!-- Total Proyek -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
-              <i class="fa-regular fa-file-lines"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Total Proyek</span>
-              <span class="erp-stat-val" id="statProyekTotal">3</span>
-              <span class="erp-stat-sub">Proyek aktif</span>
-            </div>
-          </div>
-
-          <!-- Total Unit Trafo -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-blue">
-              <i class="fa-solid fa-industry"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Total Unit Trafo</span>
-              <span class="erp-stat-val" id="statProyekTrafo">17</span>
-              <span class="erp-stat-sub">Unit dalam order</span>
-            </div>
-          </div>
-
-          <!-- Nilai Proyek -->
-          <div class="erp-stat-card">
-            <div class="erp-stat-icon-wrap erp-stat-icon-amber">
-              <i class="fa-solid fa-coins"></i>
-            </div>
-            <div class="erp-stat-info">
-              <span class="erp-stat-label">Nilai Proyek</span>
-              <span class="erp-stat-val" id="statProyekNilai">Rp 48,6 M</span>
-              <span class="erp-stat-sub">Total akumulasi nilai</span>
-            </div>
-          </div>
-
-          <!-- Power Transformer 20 MVA Banner -->
-          <div class="erp-banner-card" style="background-image: url('assets/transformer_substation.jpg');">
-            <div>
-              <div class="erp-banner-tag">POWER TRANSFORMER</div>
-              <div class="erp-banner-title">20 MVA</div>
-            </div>
-          </div>
-        </div>
-
         <!-- Filter Bar -->
         <div class="erp-filter-bar">
           <div class="erp-filter-item">
@@ -1468,53 +1341,6 @@
               <button class="btn-secondary" onclick="exportMaterialBOMReport()" style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; background: #fff; border: 1px solid #cbd5e1; color: #334155; cursor: pointer;">
                 <i class="fa-solid fa-file-arrow-down"></i> Unduh Laporan BOM
               </button>
-            </div>
-          </div>
-
-          <!-- KPI Summary Cards Row -->
-          <div class="mat-kpi-grid">
-            <div class="mat-kpi-card">
-              <div class="mat-kpi-icon" style="background: #eff6ff; color: #2563eb;">
-                <i class="fa-solid fa-cubes"></i>
-              </div>
-              <div class="mat-kpi-content">
-                <span class="mat-kpi-label">Total Item Material</span>
-                <div class="mat-kpi-val" id="matKpiTotal">18 Item</div>
-                <span class="mat-kpi-sub">Katalog komponen aktif BOM</span>
-              </div>
-            </div>
-
-            <div class="mat-kpi-card">
-              <div class="mat-kpi-icon" style="background: #ecfdf5; color: #10b981;">
-                <i class="fa-solid fa-circle-check"></i>
-              </div>
-              <div class="mat-kpi-content">
-                <span class="mat-kpi-label">Stok Tersedia (Aman)</span>
-                <div class="mat-kpi-val" id="matKpiAman" style="color: #10b981;">14 Item</div>
-                <span class="mat-kpi-sub">Kesiapan stok &gt;= 100% kebutuhan</span>
-              </div>
-            </div>
-
-            <div class="mat-kpi-card">
-              <div class="mat-kpi-icon" style="background: #fffbeb; color: #f59e0b;">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-              </div>
-              <div class="mat-kpi-content">
-                <span class="mat-kpi-label">Stok Menipis / Reorder</span>
-                <div class="mat-kpi-val" id="matKpiMenipis" style="color: #f59e0b;">3 Item</div>
-                <span class="mat-kpi-sub">Perlu order tambahan segera</span>
-              </div>
-            </div>
-
-            <div class="mat-kpi-card">
-              <div class="mat-kpi-icon" style="background: #fef2f2; color: #ef4444;">
-                <i class="fa-solid fa-circle-xmark"></i>
-              </div>
-              <div class="mat-kpi-content">
-                <span class="mat-kpi-label">Kritis / Belum Ready</span>
-                <div class="mat-kpi-val" id="matKpiKritis" style="color: #ef4444;">1 Item</div>
-                <span class="mat-kpi-sub">Menunggu PO &amp; vendor delivery</span>
-              </div>
             </div>
           </div>
 
@@ -3353,9 +3179,9 @@
 
   <!-- Supabase JS Client, 3D Engine & App Logic -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabaseClient.js?v=20261021_realtime"></script>
-  <script src="realtime-sync.js?v=20261021_realtime"></script>
-  <script src="login3d.js?v=20261021_realtime"></script>
-  <script src="app.js?v=20261021_realtime"></script>
+  <script src="supabaseClient.js?v=20261021_clean"></script>
+  <script src="realtime-sync.js?v=20261021_clean"></script>
+  <script src="login3d.js?v=20261021_clean"></script>
+  <script src="app.js?v=20261021_clean"></script>
 </body>
 </html>
