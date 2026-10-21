@@ -3561,6 +3561,9 @@ let activeTrackingShipmentIndex = 0;
 
 // --- Main Tab Switcher Function ---
 function switchMainTab(tabName) {
+  try {
+    sessionStorage.setItem('SYMTRAFLOW_ACTIVE_TAB', tabName);
+  } catch(e) {}
   // Access control check: Only Super Admin can access Master Data
   if (tabName === 'master-data') {
     let authUser = null;
@@ -6749,8 +6752,19 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPengirimanTable();
   updateTrackingStepperUI();
   renderDocumentsTable();
-  if (typeof initFatCalendar === 'function') {
-    initFatCalendar();
+
+  // Restore previously active tab on page refresh
+  let savedTab = null;
+  try {
+    savedTab = sessionStorage.getItem('SYMTRAFLOW_ACTIVE_TAB');
+  } catch(e) {}
+
+  if (savedTab && ['dashboard', 'proyek', 'pengiriman', 'master-data', 'monitoring', 'single-flow', 'material', 'monitoring-material', 'produksi', 'detail', 'multi-project', 'jadwal', 'project-pt', 'riwayat', 'document-control', 'laporan', 'pengaturan'].includes(savedTab)) {
+    switchMainTab(savedTab);
+  } else {
+    if (typeof initFatCalendar === 'function') {
+      initFatCalendar();
+    }
   }
 });
 
@@ -7446,7 +7460,9 @@ let fatCurrentView = 'grid';
 const defaultFatSchedules = [
   {
     id: 'FAT-2026-101',
-    date: '2026-10-06',
+    startDate: '2026-10-05',
+    endDate: '2026-10-09',
+    date: '2026-10-05',
     time: '09:00',
     trafoId: 'TRF-240522-005',
     soNumber: 'SO 25-0560',
@@ -7471,6 +7487,8 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-102',
+    startDate: '2026-10-12',
+    endDate: '2026-10-16',
     date: '2026-10-12',
     time: '13:30',
     trafoId: 'TRF-240522-006',
@@ -7496,7 +7514,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-103',
-    date: '2026-10-15',
+    startDate: '2026-10-14',
+    endDate: '2026-10-16',
+    date: '2026-10-14',
     time: '10:00',
     trafoId: 'TRF-240522-001',
     soNumber: 'SO 25-0561',
@@ -7521,7 +7541,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-104',
-    date: '2026-10-18',
+    startDate: '2026-10-17',
+    endDate: '2026-10-18',
+    date: '2026-10-17',
     time: '09:30',
     trafoId: 'TRF-240522-002',
     soNumber: 'SO 25-0562',
@@ -7546,7 +7568,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-105',
-    date: '2026-10-20',
+    startDate: '2026-10-19',
+    endDate: '2026-10-23',
+    date: '2026-10-19',
     time: '09:15',
     trafoId: 'TRF-240522-003',
     soNumber: 'SO 25-0563',
@@ -7571,7 +7595,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-106',
-    date: '2026-10-23',
+    startDate: '2026-10-22',
+    endDate: '2026-10-24',
+    date: '2026-10-22',
     time: '10:00',
     trafoId: 'TRF-240522-004',
     soNumber: 'SO 25-0563',
@@ -7586,7 +7612,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-107',
-    date: '2026-10-27',
+    startDate: '2026-10-26',
+    endDate: '2026-10-30',
+    date: '2026-10-26',
     time: '09:00',
     trafoId: 'TRF-240522-007',
     soNumber: 'SO 25-0564',
@@ -7601,7 +7629,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-108',
-    date: '2026-10-30',
+    startDate: '2026-10-29',
+    endDate: '2026-10-31',
+    date: '2026-10-29',
     time: '13:30',
     trafoId: 'TRF-240522-008',
     soNumber: 'SO 25-0565',
@@ -7616,7 +7646,9 @@ const defaultFatSchedules = [
   },
   {
     id: 'FAT-2026-109',
-    date: '2026-11-04',
+    startDate: '2026-11-02',
+    endDate: '2026-11-06',
+    date: '2026-11-02',
     time: '09:00',
     trafoId: 'TRF-240522-009',
     soNumber: 'SO 25-0566',
@@ -7631,15 +7663,39 @@ const defaultFatSchedules = [
   }
 ];
 
+const FAT_STORAGE_KEY = 'SYMTRAFLOW_FAT_SCHEDULES_V3';
+
 function getFatSchedules() {
-  let list = defaultFatSchedules;
+  let list = null;
   try {
-    const raw = localStorage.getItem('SYMTRAFLOW_FAT_SCHEDULES');
-    if (raw) {
+    const raw = localStorage.getItem(FAT_STORAGE_KEY);
+    if (raw !== null) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
+      if (Array.isArray(parsed)) list = parsed;
     }
   } catch(e) {}
+
+  // If not found in V3, check legacy storage and migrate user additions or fall back
+  if (!list) {
+    try {
+      const legacyRaw = localStorage.getItem('SYMTRAFLOW_FAT_SCHEDULES');
+      if (legacyRaw) {
+        const legacyParsed = JSON.parse(legacyRaw);
+        if (Array.isArray(legacyParsed)) {
+          const customUserItems = legacyParsed.filter(it => it && it.id && !it.id.startsWith('FAT-2026-'));
+          if (customUserItems.length > 0) {
+            list = [...defaultFatSchedules, ...customUserItems];
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!list) {
+    list = defaultFatSchedules;
+    saveFatSchedules(list);
+  }
+
   return list.map(item => ({
     ...item,
     startDate: item.startDate || item.date,
@@ -7649,7 +7705,11 @@ function getFatSchedules() {
 
 function saveFatSchedules(list) {
   try {
+    localStorage.setItem(FAT_STORAGE_KEY, JSON.stringify(list));
     localStorage.setItem('SYMTRAFLOW_FAT_SCHEDULES', JSON.stringify(list));
+    if (typeof broadcastSync === 'function') {
+      broadcastSync('FAT_SCHEDULES_UPDATED', list);
+    }
   } catch(e) {}
 }
 
@@ -8318,6 +8378,43 @@ function exportFatSingleReport() {
 function exportFatSchedulePDF() {
   window.print();
 }
+
+/* ==========================================================================
+   REALTIME SYNCHRONIZATION EVENT LISTENERS & LIFECYCLE REFRESH
+   ========================================================================== */
+
+// 1. Storage event listener for cross-tab realtime synchronization
+window.addEventListener('storage', (event) => {
+  if (event.key === 'SYMTRAFLOW_FAT_SCHEDULES_V3' || event.key === 'SYMTRAFLOW_FAT_SCHEDULES') {
+    if (typeof renderFatCalendar === 'function') {
+      renderFatCalendar();
+    }
+  }
+});
+
+// 2. BroadcastChannel subscriber for instant zero-latency cross-tab updates
+if (typeof subscribeSync === 'function') {
+  subscribeSync('general', (data) => {
+    if (data && data.type === 'FAT_SCHEDULES_UPDATED') {
+      if (typeof renderFatCalendar === 'function') {
+        renderFatCalendar();
+      }
+    }
+  });
+}
+
+// 3. Tab visibility & focus listener to guarantee fresh data when returning to tab
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && typeof renderFatCalendar === 'function') {
+    renderFatCalendar();
+  }
+});
+
+window.addEventListener('focus', () => {
+  if (typeof renderFatCalendar === 'function') {
+    renderFatCalendar();
+  }
+});
 
 
 
