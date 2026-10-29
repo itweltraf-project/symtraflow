@@ -142,6 +142,26 @@ body {
   text-transform: uppercase;
 }
 
+.sidebar-logo-img {
+  height: 42px;
+  width: auto;
+  max-width: 195px;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.2s ease;
+}
+.sidebar-logo-img:hover {
+  transform: scale(1.02);
+}
+
+.login-brand-logo-img {
+  height: 46px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
+}
+
 .sidebar-menu {
   padding: 16px 12px;
   flex: 1;
