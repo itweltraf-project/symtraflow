@@ -28,20 +28,61 @@ if (localStorage.getItem(SYMTRAFLOW_STORAGE_RESET_KEY) !== 'done') {
   localStorage.setItem(SYMTRAFLOW_STORAGE_RESET_KEY, 'done');
 }
 
-// 11 Production Stages Definitions
-const STAGES = [
-  { id: 1, code: 'TANK MAKING', name: 'Tank Making', icon: 'fa-box-open' },
-  { id: 2, code: 'CORE MAKING', name: 'Core Making', icon: 'fa-layer-group' },
-  { id: 3, code: 'COIL MAKING', name: 'Coil Making', icon: 'fa-scroll' },
-  { id: 4, code: 'ASSEMBLY', name: 'Assembly', icon: 'fa-wrench' },
-  { id: 5, code: 'CONNECTION', name: 'Connection', icon: 'fa-diagram-project' },
-  { id: 6, code: 'FINAL ASSEMBLY', name: 'Final Assembly', icon: 'fa-cubes' },
-  { id: 7, code: 'INTERNAL TEST', name: 'Internal Test', icon: 'fa-file-signature' },
-  { id: 8, code: 'FINISHING', name: 'Finishing', icon: 'fa-spray-can' },
-  { id: 9, code: 'FAT', name: 'FAT', icon: 'fa-clipboard-check' },
-  { id: 10, code: 'PUNCHLIST', name: 'Punchlist', icon: 'fa-list-check' },
-  { id: 11, code: 'DELIVERY', name: 'Delivery', icon: 'fa-truck-fast' }
+// 11 Production Stages Definitions - Realtime Synchronized with Admin Master Data
+let STAGES = [
+  { id: 1, code: 'TANK MAKING', name: 'Tank Making', dept: 'Fabrikasi', icon: 'fa-box-open', cycle: '3 Hari' },
+  { id: 2, code: 'CORE MAKING', name: 'Core Making', dept: 'Core Stacking', icon: 'fa-layer-group', cycle: '2 Hari' },
+  { id: 3, code: 'COIL MAKING', name: 'Coil Making', dept: 'Winding', icon: 'fa-scroll', cycle: '4 Hari' },
+  { id: 4, code: 'ASSEMBLY', name: 'Assembly', dept: 'Perakitan', icon: 'fa-wrench', cycle: '2 Hari' },
+  { id: 5, code: 'CONNECTION', name: 'Connection', dept: 'Wiring & Tap', icon: 'fa-diagram-project', cycle: '1 Hari' },
+  { id: 6, code: 'FINAL ASSEMBLY', name: 'Final Assembly', dept: 'Oven & Tanking', icon: 'fa-cubes', cycle: '2 Hari' },
+  { id: 7, code: 'INTERNAL TEST', name: 'Internal Test', dept: 'Testing Lab', icon: 'fa-file-signature', cycle: '1 Hari' },
+  { id: 8, code: 'FINISHING', name: 'Finishing', dept: 'Painting', icon: 'fa-spray-can', cycle: '2 Hari' },
+  { id: 9, code: 'FAT', name: 'FAT', dept: 'Quality Control', icon: 'fa-clipboard-check', cycle: '1 Hari' },
+  { id: 10, code: 'PUNCHLIST', name: 'Punchlist', dept: 'QC & Engineering', icon: 'fa-list-check', cycle: '1 Hari' },
+  { id: 11, code: 'DELIVERY', name: 'Delivery', dept: 'Logistik', icon: 'fa-truck-fast', cycle: '1 Hari' }
 ];
+
+function getStageDefaultIcon(step, name) {
+  const n = (name || '').toLowerCase();
+  if (n.includes('tank')) return 'fa-box-open';
+  if (n.includes('core')) return 'fa-layer-group';
+  if (n.includes('coil') || n.includes('winding')) return 'fa-scroll';
+  if (n.includes('final')) return 'fa-cubes';
+  if (n.includes('assembly') || n.includes('rakit')) return 'fa-wrench';
+  if (n.includes('connect') || n.includes('wiring') || n.includes('tap')) return 'fa-diagram-project';
+  if (n.includes('internal') || n.includes('test')) return 'fa-file-signature';
+  if (n.includes('finish') || n.includes('paint')) return 'fa-spray-can';
+  if (n.includes('fat')) return 'fa-clipboard-check';
+  if (n.includes('punch')) return 'fa-list-check';
+  if (n.includes('deliver') || n.includes('kirim') || n.includes('pack')) return 'fa-truck-fast';
+  return 'fa-circle-dot';
+}
+
+function syncStagesFromMaster() {
+  if (typeof window !== 'undefined' && window.SymtraSync) {
+    try {
+      const master = window.SymtraSync.getAllMasterData();
+      if (master && Array.isArray(master.proses) && master.proses.length > 0) {
+        STAGES.length = 0;
+        master.proses.forEach((p, idx) => {
+          STAGES.push({
+            id: p.step || idx + 1,
+            code: (p.code || p.name || `STAGE ${idx + 1}`).toUpperCase(),
+            name: p.name || `Tahap ${idx + 1}`,
+            dept: p.dept || '',
+            desc: p.desc || '',
+            cycle: p.cycle || '',
+            icon: p.icon || getStageDefaultIcon(p.step || idx + 1, p.code || p.name)
+          });
+        });
+      }
+    } catch(e) {
+      console.warn('Sync stages from master notice:', e);
+    }
+  }
+}
+syncStagesFromMaster();
 
 // Sales Officers List & Avatars
 const SALES_OFFICERS = [
@@ -92,6 +133,12 @@ function getOrdersData() {
 function saveOrdersData(data) {
   try {
     localStorage.setItem('SYMTRAFLOW_ORDERS_V1', JSON.stringify(data));
+    if (typeof window !== 'undefined' && window.SymtraSync) {
+      window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
+        action: 'ORDERS_UPDATED',
+        desc: 'Antrean order monitoring diperbarui'
+      });
+    }
   } catch(e){}
 }
 const defaultOrdersData = [];
@@ -166,6 +213,12 @@ try {
 function savePTProjects() {
   try {
     localStorage.setItem('SYMTRAFLOW_PT_PROJECTS', JSON.stringify(ptProjects));
+    if (typeof window !== 'undefined' && window.SymtraSync) {
+      window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
+        action: 'PROJECTS_UPDATED',
+        desc: 'Pembaruan data PT Proyek & Unit Trafo'
+      });
+    }
   } catch (err) {
     console.error('Gagal menyimpan PT Projects ke localStorage', err);
   }
@@ -265,9 +318,104 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto-open Monitoring submenu on page load (default view is single-flow)
   const submenu = document.getElementById('submenuMonitoring');
   const menuBtn = document.getElementById('menuMonitoring');
-  if (submenu) submenu.classList.add('open');
-  if (menuBtn) menuBtn.classList.add('open');
+  // Initialize Realtime Sync with Admin & Master Data
+  initMonitoringRealtimeSync();
 });
+
+// Setup SymtraSync Realtime Listener in Monitoring Produksi
+function initMonitoringRealtimeSync() {
+  if (typeof window === 'undefined' || !window.SymtraSync) return;
+
+  // 1. Initial Sync of Stages from Master Data
+  syncStagesFromMaster();
+
+  // 2. Subscribe to Master Data Updates from Portal Admin (Stages, Customers, Trafo, etc)
+  window.SymtraSync.subscribe('master', (payload) => {
+    console.log('⚡ Realtime Master Data received in Monitoring Produksi:', payload);
+    syncStagesFromMaster();
+    // Re-render components using stages
+    if (typeof populateStepperOrderSelector === 'function') populateStepperOrderSelector();
+    if (typeof selectedOrder !== 'undefined' && selectedOrder && typeof renderStepper === 'function') {
+      renderStepper(selectedOrder);
+    }
+    if (typeof renderOrdersTable === 'function') renderOrdersTable();
+    if (typeof renderPTProjects === 'function') renderPTProjects();
+    if (typeof renderProyekTable === 'function') renderProyekTable();
+    if (typeof renderERPProduksiTable === 'function') renderERPProduksiTable();
+    if (typeof renderERPSalesOrdersTable === 'function') renderERPSalesOrdersTable();
+
+    // Show toast notification
+    if (typeof showActionNotification === 'function') {
+      showActionNotification('⚡ Master data & tahapan proses disinkronkan secara realtime dari Portal Admin!', 'success');
+    }
+  });
+
+  // 3. Subscribe to Admin Users & Permissions (RBAC) Updates
+  window.SymtraSync.subscribe('users', (admins) => {
+    console.log('⚡ Realtime Admin Users update received in Monitoring Produksi:', admins);
+    if (typeof systemAccounts !== 'undefined' && Array.isArray(admins)) {
+      const su = admins.find(a => a.role === 'Super Admin' || a.rolePreset === 'superadmin') || admins[0];
+      const ad = admins.find(a => a.id !== su.id) || admins[1] || su;
+      if (su) {
+        systemAccounts.superadmin = {
+          username: su.username,
+          name: su.name,
+          pass: su.pass,
+          role: su.role,
+          avatar: su.avatar || ''
+        };
+      }
+      if (ad) {
+        systemAccounts.admin = {
+          username: ad.username,
+          name: ad.name,
+          pass: ad.pass,
+          role: ad.role,
+          avatar: ad.avatar || ''
+        };
+      }
+    }
+    if (typeof showActionNotification === 'function') {
+      showActionNotification('⚡ Hak akses pengguna diperbarui secara realtime oleh Admin!', 'info');
+    }
+  });
+
+  // 4. Subscribe to Production Data updates across tabs
+  window.SymtraSync.subscribe('production', (payload) => {
+    console.log('⚡ Realtime Production update received across tabs:', payload);
+    reloadProductionDataFromStorage();
+  });
+}
+
+function reloadProductionDataFromStorage() {
+  try {
+    orders = getOrdersData();
+    prj1Units = getPrj1Units();
+    prj2Units = getPrj2Units();
+    
+    const savedPT = localStorage.getItem('SYMTRAFLOW_PT_PROJECTS');
+    if (savedPT) ptProjects = JSON.parse(savedPT);
+
+    erpSalesOrders = getERPSalesOrders();
+    erpProduksiUnits = getERPProduksiUnits();
+    erpShipments = getERPShipments();
+
+    if (typeof populateStepperOrderSelector === 'function') populateStepperOrderSelector();
+    if (typeof selectedOrder !== 'undefined' && selectedOrder && typeof renderStepper === 'function') {
+      renderStepper(selectedOrder);
+    }
+    if (typeof renderOrdersTable === 'function') renderOrdersTable();
+    if (typeof renderPTProjects === 'function') renderPTProjects();
+    if (typeof renderProyekTable === 'function') renderProyekTable();
+    if (typeof renderERPProduksiTable === 'function') renderERPProduksiTable();
+    if (typeof renderERPSalesOrdersTable === 'function') renderERPSalesOrdersTable();
+    if (typeof renderFatCalendar === 'function') renderFatCalendar();
+    if (typeof renderShipmentsTable === 'function') renderShipmentsTable();
+    if (typeof updateStats === 'function') updateStats();
+  } catch(e) {
+    console.error('Error reloading production data:', e);
+  }
+}
 
 window.addEventListener('load', () => {
   const u = document.getElementById('loginUsername');
@@ -3350,6 +3498,12 @@ function getERPSalesOrders() {
 function saveERPSalesOrders(data) {
   try {
     localStorage.setItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2', JSON.stringify(data));
+    if (typeof window !== 'undefined' && window.SymtraSync) {
+      window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
+        action: 'SALES_ORDERS_UPDATED',
+        desc: 'Pembaruan daftar Sales Order (SO)'
+      });
+    }
   } catch (e) {
     console.error('Error saving ERP Sales Orders:', e);
   }
@@ -3379,6 +3533,12 @@ function getERPProduksiUnits() {
 function saveERPProduksiUnits(units) {
   try {
     localStorage.setItem('SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1', JSON.stringify(units));
+    if (typeof window !== 'undefined' && window.SymtraSync) {
+      window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
+        action: 'ERP_UNITS_UPDATED',
+        desc: 'Pembaruan status unit produksi'
+      });
+    }
   } catch(e){}
 }
 
@@ -3406,6 +3566,12 @@ function getERPShipments() {
 function saveERPShipments(list) {
   try {
     localStorage.setItem('SYMTRAFLOW_ERP_SHIPMENTS_V1', JSON.stringify(list));
+    if (typeof window !== 'undefined' && window.SymtraSync) {
+      window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
+        action: 'SHIPMENTS_UPDATED',
+        desc: 'Pembaruan jadwal & data pengiriman trafo'
+      });
+    }
   } catch(e){}
 }
 
@@ -7025,10 +7191,11 @@ if (typeof window.SymtraSync !== 'undefined') {
 
   // Listen to Master Data Updates (Customer, Trafo, Proses, Material, PIC)
   window.SymtraSync.subscribe('master', (data) => {
+    syncStagesFromMaster();
+
     // If master modal is currently open, refresh it
     const masterModal = document.getElementById('modalMasterData');
     if (masterModal && masterModal.classList.contains('active')) {
-      // Re-trigger openMasterModal with current module
       const titleText = (document.getElementById('masterModalTitle')?.innerText || '').toLowerCase();
       if (titleText.includes('pelanggan')) openMasterModal('pelanggan');
       else if (titleText.includes('trafo')) openMasterModal('trafo');
@@ -7036,7 +7203,24 @@ if (typeof window.SymtraSync !== 'undefined') {
       else if (titleText.includes('material')) openMasterModal('material');
       else if (titleText.includes('pic')) openMasterModal('pic');
     }
-    showToast('⚡ Realtime: Master Data diperbarui dari Portal Admin!');
+
+    if (typeof populateStepperOrderSelector === 'function') populateStepperOrderSelector();
+    if (typeof selectedOrder !== 'undefined' && selectedOrder && typeof renderStepper === 'function') {
+      renderStepper(selectedOrder);
+    }
+    if (typeof renderPTProjects === 'function') renderPTProjects();
+    if (typeof renderProyekTable === 'function') renderProyekTable();
+    if (typeof renderERPProduksiTable === 'function') renderERPProduksiTable();
+    if (typeof renderERPSalesOrdersTable === 'function') renderERPSalesOrdersTable();
+
+    showToast('⚡ Realtime: Master Data & Tahapan Proses disinkronkan dari Portal Admin!');
+  });
+
+  // Listen to Production Data Updates across browser windows/tabs
+  window.SymtraSync.subscribe('production', (payload) => {
+    if (typeof reloadProductionDataFromStorage === 'function') {
+      reloadProductionDataFromStorage();
+    }
   });
 }
 

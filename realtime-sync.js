@@ -29,16 +29,17 @@ const DEFAULT_MASTER_DATA = {
     { model: 'TRF-PWR-20MVA', type: 'Power Transformer', cap: '20 MVA', volt: '150 kV / 20 kV', cooling: 'ONAF / OFAF Substation', standard: 'IEEE C57.12' }
   ],
   proses: [
-    { step: 1, name: 'Tank Making', dept: 'Fabrikasi', desc: 'Pemotongan, pembentukan plat, pengelasan & uji kebocoran tangki trafo', cycle: '3 Hari' },
-    { step: 2, name: 'Core Making', dept: 'Core Stacking', desc: 'Pemotongan & penyusunan plat silikon baja CRGO dengan presisi tinggi', cycle: '2 Hari' },
-    { step: 3, name: 'Coil Making (LV & HV)', dept: 'Winding', desc: 'Penggulungan kawat tembaga enamel lapis isolasi paper/nomex', cycle: '4 Hari' },
-    { step: 4, name: 'Assembly', dept: 'Perakitan', desc: 'Pemasangan kumparan ke inti besi & insulasi fasa', cycle: '2 Hari' },
-    { step: 5, name: 'Connection', dept: 'Wiring & Tap', desc: 'Penyambungan tap changer, terminal lead, dan bushing', cycle: '1 Hari' },
-    { step: 6, name: 'Final Assembly', dept: 'Oven & Tanking', desc: 'Pengeringan ruang vakum dan pemasangan trafo ke dalam tangki', cycle: '2 Hari' },
-    { step: 7, name: 'Internal Test', dept: 'Testing Lab', desc: 'Pengujian rasio tegangan, polaritas, dan tahanan isolasi Megger', cycle: '1 Hari' },
-    { step: 8, name: 'Finishing', dept: 'Painting', desc: 'Sandblasting, pelapisan primer epoxy, dan pengecatan polyurethane', cycle: '2 Hari' },
-    { step: 9, name: 'FAT (Factory Acceptance Test)', dept: 'Quality Control', desc: 'Pengujian saksi langsung bersama pihak pelanggan/PLN', cycle: '1 Hari' },
-    { step: 10, name: 'Packaging & Delivery', dept: 'Logistik', desc: 'Pengisian oli trafo, sealing, pemasangan proteksi pengiriman', cycle: '1 Hari' }
+    { step: 1, code: 'TANK MAKING', name: 'Tank Making', dept: 'Fabrikasi', desc: 'Pemotongan, pembentukan plat, pengelasan & uji kebocoran tangki trafo', cycle: '3 Hari', icon: 'fa-box-open' },
+    { step: 2, code: 'CORE MAKING', name: 'Core Making', dept: 'Core Stacking', desc: 'Pemotongan & penyusunan plat silikon baja CRGO dengan presisi tinggi', cycle: '2 Hari', icon: 'fa-layer-group' },
+    { step: 3, code: 'COIL MAKING', name: 'Coil Making', dept: 'Winding', desc: 'Penggulungan kawat tembaga enamel lapis isolasi paper/nomex (LV & HV)', cycle: '4 Hari', icon: 'fa-scroll' },
+    { step: 4, code: 'ASSEMBLY', name: 'Assembly', dept: 'Perakitan', desc: 'Pemasangan kumparan ke inti besi & insulasi fasa', cycle: '2 Hari', icon: 'fa-wrench' },
+    { step: 5, code: 'CONNECTION', name: 'Connection', dept: 'Wiring & Tap', desc: 'Penyambungan tap changer, terminal lead, dan bushing', cycle: '1 Hari', icon: 'fa-diagram-project' },
+    { step: 6, code: 'FINAL ASSEMBLY', name: 'Final Assembly', dept: 'Oven & Tanking', desc: 'Pengeringan ruang vakum dan pemasangan trafo ke dalam tangki', cycle: '2 Hari', icon: 'fa-cubes' },
+    { step: 7, code: 'INTERNAL TEST', name: 'Internal Test', dept: 'Testing Lab', desc: 'Pengujian rasio tegangan, polaritas, dan tahanan isolasi Megger', cycle: '1 Hari', icon: 'fa-file-signature' },
+    { step: 8, code: 'FINISHING', name: 'Finishing', dept: 'Painting', desc: 'Sandblasting, pelapisan primer epoxy, dan pengecatan polyurethane', cycle: '2 Hari', icon: 'fa-spray-can' },
+    { step: 9, code: 'FAT', name: 'FAT', dept: 'Quality Control', desc: 'Factory Acceptance Test & pengujian saksi langsung bersama pihak pelanggan/PLN', cycle: '1 Hari', icon: 'fa-clipboard-check' },
+    { step: 10, code: 'PUNCHLIST', name: 'Punchlist', dept: 'QC & Engineering', desc: 'Penyelesaian daftar catatan/temuan uji FAT sebelum serah terima unit', cycle: '1 Hari', icon: 'fa-list-check' },
+    { step: 11, code: 'DELIVERY', name: 'Delivery', dept: 'Logistik', desc: 'Pengisian oli trafo, sealing, pemasangan proteksi & pengiriman ke lokasi pelanggan', cycle: '1 Hari', icon: 'fa-truck-fast' }
   ],
   material: [
     { code: 'MAT-CU-01', name: 'Kawat Tembaga Enamel Kelas H', spec: '99.9% Cu ETP, Suhu 180°C', stock: '4,850 kg', uom: 'Kilogram', status: 'Aman' },
@@ -152,6 +153,7 @@ try {
 const syncListeners = {
   users: [],
   master: [],
+  production: [],
   general: []
 };
 
@@ -176,6 +178,27 @@ function initRealtimeSync(options = {}) {
       notifyListeners('users', getAllAdmins());
     } else if (event.key === STORAGE_MASTER_DATA_KEY) {
       notifyListeners('master', getAllMasterData());
+    } else if (event.key === 'SYMTRAFLOW_LAST_SYNC') {
+      try {
+        const item = JSON.parse(event.newValue || '{}');
+        if (item.type === 'PRODUCTION_DATA_UPDATED' || item.type === 'STAGE_CHANGED') {
+          notifyListeners('production', item.payload);
+        } else if (item.type === 'USERS_UPDATED') {
+          notifyListeners('users', item.payload || getAllAdmins());
+        } else if (item.type === 'MASTER_DATA_UPDATED') {
+          notifyListeners('master', item.payload?.data || getAllMasterData());
+        }
+      } catch (e) {}
+    } else if (event.key && (
+      event.key === 'SYMTRAFLOW_ORDERS_V1' ||
+      event.key === 'SYMTRAFLOW_PT_PROJECTS' ||
+      event.key === 'SYMTRAFLOW_ERP_SALES_ORDERS_V2' ||
+      event.key === 'SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1' ||
+      event.key === 'SYMTRAFLOW_ERP_SHIPMENTS_V1' ||
+      event.key === 'SYMTRAFLOW_FAT_SCHEDULES_V3' ||
+      event.key === 'SYMTRAFLOW_UNITS_DATA_V7'
+    )) {
+      notifyListeners('production', { key: event.key, action: 'STORAGE_CHANGE', desc: 'Pembaruan data produksi' });
     }
   });
 
@@ -193,6 +216,10 @@ function handleIncomingSyncMessage(data) {
       break;
     case 'MASTER_DATA_UPDATED':
       notifyListeners('master', data.payload);
+      break;
+    case 'PRODUCTION_DATA_UPDATED':
+    case 'STAGE_CHANGED':
+      notifyListeners('production', data.payload);
       break;
     case 'SYNC_PING':
       if (syncChannel) {
@@ -270,6 +297,11 @@ function formatLogTitle(type, detail) {
   } else if (type === 'MASTER_DATA_UPDATED') {
     const mod = detail?.module || 'Semua Modul';
     return `Sinkronisasi Master Data: ${mod}`;
+  } else if (type === 'PRODUCTION_DATA_UPDATED') {
+    const desc = detail?.desc || detail?.action || 'Pembaruan Data Produksi';
+    return `Sinkronisasi Monitoring: ${desc}`;
+  } else if (type === 'STAGE_CHANGED') {
+    return `Progress Produksi: Unit ${detail?.unitNo || ''} pindah ke ${detail?.stage || ''}`;
   }
   return `Sinkronisasi Sistem (${type})`;
 }
@@ -476,10 +508,19 @@ function getAllMasterData() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
+        let proses = parsed.proses;
+        // Auto-upgrade if less than 11 stages or missing Punchlist
+        if (!Array.isArray(proses) || proses.length < 11 || !proses.some(p => (p.name || '').toLowerCase().includes('punchlist'))) {
+          proses = DEFAULT_MASTER_DATA.proses;
+          parsed.proses = proses;
+          try {
+            localStorage.setItem(STORAGE_MASTER_DATA_KEY, JSON.stringify(parsed));
+          } catch (e) {}
+        }
         return {
           pelanggan: parsed.pelanggan || DEFAULT_MASTER_DATA.pelanggan,
           trafo: parsed.trafo || DEFAULT_MASTER_DATA.trafo,
-          proses: parsed.proses || DEFAULT_MASTER_DATA.proses,
+          proses: proses,
           material: parsed.material || DEFAULT_MASTER_DATA.material,
           pic: parsed.pic || DEFAULT_MASTER_DATA.pic
         };

@@ -66,6 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('⚡ Realtime: Master data diperbarui!');
   });
 
+  window.SymtraSync.subscribe('production', (payload) => {
+    renderSyncLogs();
+    const actionDesc = payload?.desc || (payload?.action ? `Aksi: ${payload.action}` : 'Pembaruan data produksi');
+    showToast(`⚡ Realtime: ${actionDesc} dari Monitoring Produksi!`);
+  });
+
   // Current Auth User Display
   if (currentAuth) {
     const nameEl = document.getElementById('currentAdminName');
@@ -620,7 +626,10 @@ function renderMasterProses() {
   tbody.innerHTML = list.map(pr => `
     <tr>
       <td><span style="display:inline-block; width:24px; height:24px; line-height:24px; text-align:center; background:#2563eb; color:#fff; border-radius:50%; font-weight:700; font-size:11px;">${pr.step}</span></td>
-      <td><strong>${pr.name}</strong></td>
+      <td>
+        <strong>${pr.name}</strong>
+        ${pr.code ? `<div style="font-size:10px; color:#2563eb; font-weight:700; font-family:monospace; margin-top:2px;">[${pr.code}]</div>` : ''}
+      </td>
       <td><span class="erp-badge erp-badge-purple">${pr.dept}</span></td>
       <td style="max-width:350px; font-size:12px; color:#64748b;">${pr.desc}</td>
       <td><span class="erp-badge erp-badge-blue">${pr.cycle}</span></td>
@@ -670,11 +679,15 @@ function handleSaveProsesSubmit(e) {
   const desc = document.getElementById('prosesDesc').value.trim();
   const cycle = document.getElementById('prosesCycle').value.trim();
 
+  const existingItem = (window.SymtraSync.getAllMasterData().proses || []).find(p => Number(p.step) === Number(oldStep || step));
+  const code = existingItem?.code || name.toUpperCase();
+  const icon = existingItem?.icon || 'fa-gear';
+
   if (oldStep && Number(oldStep) !== step) {
     window.SymtraSync.deleteMasterItem('proses', Number(oldStep), 'step');
   }
 
-  window.SymtraSync.saveMasterItem('proses', { step, name, dept, desc, cycle }, 'step');
+  window.SymtraSync.saveMasterItem('proses', { step, code, name, dept, desc, cycle, icon }, 'step');
   closeModal('modalProses');
   renderMasterProses();
   updateStatsCounters();
