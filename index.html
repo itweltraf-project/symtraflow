@@ -19,109 +19,68 @@
   <link rel="icon" type="image/png" href="assets/weltraf_favicon.png">
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261029_realtime_sync">
+  <link rel="stylesheet" href="styles.css?v=20261102_login_redesign">
 </head>
 <body>
 
-  <!-- Login Screen Overlay (Matching Reference Image with 3D WebGL Engine) -->
+  <!-- Login Screen Overlay (Matching Reference Image) -->
   <div class="login-wrapper" id="loginScreen">
     <div class="login-card">
-      <!-- Left Panel: Form -->
-      <div class="login-left">
-        <div class="login-brand-logo">
-          <img src="assets/weltraf_logo.png" alt="Weltraf Transformer - PT Symphos Electric" class="login-brand-logo-img">
+      <!-- Left Panel: Dark Navy Hero with Weltraf Transformer Visual -->
+      <div class="login-hero-panel">
+        <div class="login-hero-header">
+          <img src="assets/weltraf_logo_white.png" alt="Weltraf Transformer - PT Symphos Electric" class="login-hero-logo-img">
         </div>
 
-        <div class="login-user-icon-box">
-          <i class="fa-regular fa-user"></i>
+        <div class="login-hero-body">
+          <h1 class="login-hero-title">Symtraflow</h1>
+          <div class="login-hero-subtitle">Production ERP</div>
+          <p class="login-hero-desc">
+            Monitoring Produksi, Material, dan Pengiriman<br>Transformator dalam satu sistem.
+          </p>
         </div>
 
-        <h2 class="login-title">LOGIN</h2>
-
-        <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
-          <div class="login-form-group">
-            <label class="login-label">USERNAME</label>
-            <div class="login-input-box">
-              <i class="fa-regular fa-user login-input-icon"></i>
-              <input type="text" id="loginUsername" placeholder="Username" required autocomplete="off">
-            </div>
-          </div>
-
-          <div class="login-form-group">
-            <label class="login-label">PASSWORD</label>
-            <div class="login-input-box">
-              <i class="fa-solid fa-lock login-input-icon"></i>
-              <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="new-password">
-            </div>
-          </div>
-
-          <button type="submit" class="login-submit-btn">
-            MASUK SEKARANG
-          </button>
-        </form>
+        <div class="login-hero-visual">
+          <img src="assets/login_transformer_hd.png" alt="Transformator Weltraf" class="login-transformer-img">
+        </div>
       </div>
 
-      <!-- Right Panel: Dark Crimson Banner with Interactive 3D Weltraf Transformer -->
-      <div class="login-right" id="loginRightPanel">
-        <!-- 3D Canvas Layer -->
-        <canvas id="login3dCanvas"></canvas>
-
-        <!-- Glassmorphism Content Overlay -->
-        <div class="login-right-content">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-            <div class="login-live-badge">
-              <span class="live-dot-red"></span> SYSTEM LIVE
-            </div>
-            <div class="login-3d-badge">
-              <i class="fa-solid fa-cube"></i> WELTRAF 3D MODEL
-            </div>
+      <!-- Right Panel: Clean Light Form Panel with Floating Card -->
+      <div class="login-form-panel">
+        <div class="login-form-card">
+          <div class="login-form-header">
+            <h2 class="login-form-title">Login ke Symtraflow</h2>
+            <p class="login-form-subtitle">Masuk untuk mengakses sistem</p>
           </div>
 
-          <div style="margin-top: 18px; margin-bottom: 6px;">
-            <img src="assets/weltraf_logo_white.png" alt="Weltraf Transformer" style="height: 38px; width: auto; max-width: 195px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));">
-          </div>
-
-          <div class="login-hero-heading">
-            <div>Monitoring</div>
-            <div class="text-highlight-red">Produksi</div>
-            <div>Transformator</div>
-          </div>
-
-          <div class="login-features-list">
-            <div class="login-feature-item">
-              <div class="feature-icon-box">
-                <i class="fa-solid fa-chart-line"></i>
-              </div>
-              <div>
-                <div class="feature-title">Real-time Data Tracking</div>
-                <div class="feature-desc">Monitoring proses produksi secara instan</div>
+          <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
+            <div class="login-field-group">
+              <label class="login-field-label" for="loginUsername">Username</label>
+              <div class="login-field-input-box">
+                <span class="login-field-icon">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input type="text" id="loginUsername" placeholder="Masukkan username" required autocomplete="off">
               </div>
             </div>
 
-            <div class="login-feature-item">
-              <div class="feature-icon-box">
-                <i class="fa-solid fa-lock"></i>
-              </div>
-              <div>
-                <div class="feature-title">Secure Production Management</div>
-                <div class="feature-desc">Keamanan data dan manajemen terpusat</div>
+            <div class="login-field-group">
+              <label class="login-field-label" for="loginPassword">Password</label>
+              <div class="login-field-input-box">
+                <span class="login-field-icon">
+                  <i class="fa-solid fa-lock"></i>
+                </span>
+                <input type="password" id="loginPassword" placeholder="Masukkan password" required autocomplete="current-password">
+                <button type="button" class="login-toggle-eye" onclick="toggleLoginPassword()" title="Tampilkan/Sembunyikan Password" tabindex="-1">
+                  <i class="fa-regular fa-eye" id="loginEyeIcon"></i>
+                </button>
               </div>
             </div>
 
-            <div class="login-feature-item">
-              <div class="feature-icon-box">
-                <i class="fa-solid fa-cube" style="color:#60a5fa;"></i>
-              </div>
-              <div>
-                <div class="feature-title">Interactive 3D Trafo Model</div>
-                <div class="feature-desc">Visualisasi 3D Weltraf 2018-50-H realtime</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="login-right-footer">
-            © 2026 SYMTRAFLOW · WELTRAF 3D ENGINE. ALL RIGHTS RESERVED.
-          </div>
+            <button type="submit" class="login-btn-primary" id="loginSubmitBtn">
+              Login
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -3182,6 +3141,6 @@
   <script src="supabaseClient.js?v=20261029_realtime_sync"></script>
   <script src="realtime-sync.js?v=20261029_realtime_sync"></script>
   <script src="login3d.js?v=20261029_realtime_sync"></script>
-  <script src="app.js?v=20261029_realtime_sync"></script>
+  <script src="app.js?v=20261102_login_redesign"></script>
 </body>
 </html>

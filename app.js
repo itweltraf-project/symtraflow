@@ -3211,6 +3211,24 @@ function togglePassVisibility(inputId) {
   }
 }
 
+// Toggle Login Password Field Visibility & Eye Icon
+function toggleLoginPassword() {
+  const inp = document.getElementById('loginPassword');
+  const icon = document.getElementById('loginEyeIcon');
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (icon) {
+      icon.className = 'fa-regular fa-eye-slash';
+    }
+  } else {
+    inp.type = 'password';
+    if (icon) {
+      icon.className = 'fa-regular fa-eye';
+    }
+  }
+}
+
 // Apply avatar Base64 image to the card avatar display
 function applyAvatarToCard(roleKey, base64) {
   const isSuper = roleKey === 'superadmin';
