@@ -1849,14 +1849,27 @@ body {
   border-bottom-left-radius: 20px;
 }
 
+.login-hero-visual::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(to bottom, #081a33 10%, rgba(8, 26, 51, 0) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
 .login-transformer-img {
   width: 100%;
-  height: auto;
-  max-height: 320px;
+  height: 280px;
   object-fit: cover;
-  object-position: bottom center;
+  object-position: center bottom;
   display: block;
-  filter: brightness(0.98) contrast(1.02);
+  filter: brightness(0.96) contrast(1.04);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
 }
 
 /* Right Form Panel (Clean Light Background with Floating Card) */
