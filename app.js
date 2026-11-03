@@ -212,7 +212,11 @@ try {
 
 function savePTProjects() {
   try {
-    localStorage.setItem('SYMTRAFLOW_PT_PROJECTS', JSON.stringify(ptProjects));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save('SYMTRAFLOW_PT_PROJECTS', ptProjects, 'Pembaruan data PT Proyek & Unit Trafo');
+    } else {
+      localStorage.setItem('SYMTRAFLOW_PT_PROJECTS', JSON.stringify(ptProjects));
+    }
     if (typeof window !== 'undefined' && window.SymtraSync) {
       window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
         action: 'PROJECTS_UPDATED',
@@ -385,6 +389,27 @@ function initMonitoringRealtimeSync() {
     console.log('⚡ Realtime Production update received across tabs:', payload);
     reloadProductionDataFromStorage();
   });
+
+  // 5. Connect to Global Cloud Realtime Database (Supabase) for cross-device & cross-user sync
+  if (typeof window.SymtraGlobalSync !== 'undefined' && window.SymtraGlobalSync.isConfigured()) {
+    console.log('☁️ Mengunduh pembaruan data global terbaru dari Supabase Cloud...');
+    window.SymtraGlobalSync.loadAll().then(rows => {
+      if (rows && rows.length > 0) {
+        reloadProductionDataFromStorage();
+        if (typeof showToast === 'function') {
+          showToast(`☁️ Sinkronisasi Global Aktif: ${rows.length} data termutakhir dimuat dari Cloud!`);
+        }
+      }
+    });
+
+    window.SymtraGlobalSync.subscribeRealtime((key, data, updatedBy) => {
+      console.log(`📡 Pembaruan Global Realtime diterima: [${key}] oleh ${updatedBy}`);
+      reloadProductionDataFromStorage();
+      if (typeof showToast === 'function') {
+        showToast(`⚡ Pembaruan Realtime diterima dari ${updatedBy || 'user lain'}!`);
+      }
+    });
+  }
 }
 
 function reloadProductionDataFromStorage() {
@@ -2404,6 +2429,17 @@ function updateSupabaseStatusDisplay() {
       badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size: 7px; color: #94a3b8; margin-right: 4px;"></i> Disconnected';
     }
   }
+
+  // Update navbar indicator
+  const navLabel = document.getElementById('navRealtimeLabel');
+  const navDot = document.getElementById('navPulseDot');
+  if (navLabel) {
+    navLabel.innerText = isConnected ? 'Cloud Sync: Online' : 'Cloud Sync: Offline';
+  }
+  if (navDot) {
+    navDot.style.background = isConnected ? '#10b981' : '#f59e0b';
+    navDot.style.boxShadow = isConnected ? '0 0 0 0 rgba(16, 185, 129, 0.7)' : '0 0 0 0 rgba(245, 158, 11, 0.7)';
+  }
 }
 
 function disconnectSupabase() {
@@ -2442,16 +2478,19 @@ function saveSupabaseConfig(e) {
     updateSupabaseStatusDisplay();
     showToast('⚡ Terhubung ke Supabase Realtime Database!');
 
-    // Subscribe to realtime updates
-    if (typeof subscribeSupabaseRealtime === 'function') {
-      subscribeSupabaseRealtime(
-        (payload) => {
-          showToast(`⚡ Realtime Update Supabase: ${payload.eventType} order ${payload.new ? payload.new.id : ''}`);
-        },
-        (log) => {
-          showToast(`📢 ${log.bold_text}`);
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.loadAll().then(rows => {
+        reloadProductionDataFromStorage();
+        if (rows && rows.length > 0) {
+          showToast(`☁️ Sinkronisasi Global Aktif: ${rows.length} modul data dimuat dari Cloud!`);
+        } else {
+          showToast(`☁️ Data lokal berhasil diunggah ke Supabase Cloud!`);
         }
-      );
+      });
+      window.SymtraGlobalSync.subscribeRealtime((key, data, updatedBy) => {
+        reloadProductionDataFromStorage();
+        showToast(`⚡ Pembaruan Realtime diterima dari ${updatedBy || 'user lain'}!`);
+      });
     }
   } else {
     updateSupabaseStatusDisplay();
@@ -3515,7 +3554,11 @@ function getERPSalesOrders() {
 
 function saveERPSalesOrders(data) {
   try {
-    localStorage.setItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2', JSON.stringify(data));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save('SYMTRAFLOW_ERP_SALES_ORDERS_V2', data, 'Pembaruan daftar Sales Order (SO)');
+    } else {
+      localStorage.setItem('SYMTRAFLOW_ERP_SALES_ORDERS_V2', JSON.stringify(data));
+    }
     if (typeof window !== 'undefined' && window.SymtraSync) {
       window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
         action: 'SALES_ORDERS_UPDATED',
@@ -3550,7 +3593,11 @@ function getERPProduksiUnits() {
 
 function saveERPProduksiUnits(units) {
   try {
-    localStorage.setItem('SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1', JSON.stringify(units));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save('SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1', units, 'Pembaruan status unit produksi');
+    } else {
+      localStorage.setItem('SYMTRAFLOW_ERP_PRODUKSI_UNITS_V1', JSON.stringify(units));
+    }
     if (typeof window !== 'undefined' && window.SymtraSync) {
       window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
         action: 'ERP_UNITS_UPDATED',
@@ -3583,7 +3630,11 @@ function getERPShipments() {
 
 function saveERPShipments(list) {
   try {
-    localStorage.setItem('SYMTRAFLOW_ERP_SHIPMENTS_V1', JSON.stringify(list));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save('SYMTRAFLOW_ERP_SHIPMENTS_V1', list, 'Pembaruan jadwal & data pengiriman trafo');
+    } else {
+      localStorage.setItem('SYMTRAFLOW_ERP_SHIPMENTS_V1', JSON.stringify(list));
+    }
     if (typeof window !== 'undefined' && window.SymtraSync) {
       window.SymtraSync.broadcast('PRODUCTION_DATA_UPDATED', {
         action: 'SHIPMENTS_UPDATED',
@@ -4988,8 +5039,13 @@ function getUnitsData() {
 
 function saveUnitsData(data) {
   try {
-    localStorage.setItem('SYMTRAFLOW_UNITS_DATA_V7', JSON.stringify(data));
-    localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(data));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save('SYMTRAFLOW_UNITS_DATA_V7', data, 'Pembaruan tahapan unit trafo');
+      localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(data));
+    } else {
+      localStorage.setItem('SYMTRAFLOW_UNITS_DATA_V7', JSON.stringify(data));
+      localStorage.setItem('SYMTRAFLOW_UNITS_DATA', JSON.stringify(data));
+    }
   } catch (err) {
     console.error('Error saving units data to storage:', err);
   }
@@ -5077,7 +5133,11 @@ function getMaterialsData() {
 
 function saveMaterialsData(data) {
   try {
-    localStorage.setItem('SYMTRAFLOW_MONITORING_MATERIALS_V1', JSON.stringify(data));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save('SYMTRAFLOW_MONITORING_MATERIALS_V1', data, 'Pembaruan data Bill of Materials (BOM)');
+    } else {
+      localStorage.setItem('SYMTRAFLOW_MONITORING_MATERIALS_V1', JSON.stringify(data));
+    }
   } catch (e) {
     console.error('Error saving Materials data:', e);
   }
@@ -7339,8 +7399,13 @@ function getFatSchedules() {
 
 function saveFatSchedules(list) {
   try {
-    localStorage.setItem(FAT_STORAGE_KEY, JSON.stringify(list));
-    localStorage.setItem('SYMTRAFLOW_FAT_SCHEDULES', JSON.stringify(list));
+    if (window.SymtraGlobalSync) {
+      window.SymtraGlobalSync.save(FAT_STORAGE_KEY, list, 'Pembaruan jadwal FAT');
+      localStorage.setItem('SYMTRAFLOW_FAT_SCHEDULES', JSON.stringify(list));
+    } else {
+      localStorage.setItem(FAT_STORAGE_KEY, JSON.stringify(list));
+      localStorage.setItem('SYMTRAFLOW_FAT_SCHEDULES', JSON.stringify(list));
+    }
     if (typeof broadcastSync === 'function') {
       broadcastSync('FAT_SCHEDULES_UPDATED', list);
     }

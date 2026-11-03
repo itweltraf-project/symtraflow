@@ -356,7 +356,11 @@ function getAllAdmins() {
  * Menyimpan seluruh daftar admin ke LocalStorage dan broadcast realtime
  */
 function saveAllAdmins(admins, broadcast = true) {
-  localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(admins));
+  if (window.SymtraGlobalSync) {
+    window.SymtraGlobalSync.save(STORAGE_USERS_KEY, admins, 'Pembaruan data akun admin & hak akses');
+  } else {
+    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(admins));
+  }
 
   // Also maintain backward compatibility for legacy app.js systemAccounts
   try {
@@ -537,7 +541,11 @@ function getAllMasterData() {
  * Menyimpan seluruh Master Data
  */
 function saveAllMasterData(masterData, broadcast = true, moduleName = 'Semua Modul') {
-  localStorage.setItem(STORAGE_MASTER_DATA_KEY, JSON.stringify(masterData));
+  if (window.SymtraGlobalSync) {
+    window.SymtraGlobalSync.save(STORAGE_MASTER_DATA_KEY, masterData, `Pembaruan Master Data: ${moduleName}`);
+  } else {
+    localStorage.setItem(STORAGE_MASTER_DATA_KEY, JSON.stringify(masterData));
+  }
   if (broadcast) {
     broadcastSync('MASTER_DATA_UPDATED', { module: moduleName, data: masterData });
   }

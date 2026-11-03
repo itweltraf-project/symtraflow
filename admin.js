@@ -72,6 +72,47 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(`⚡ Realtime: ${actionDesc} dari Monitoring Produksi!`);
   });
 
+  // Setup Supabase Cloud Global Realtime Sync for cross-device synchronization
+  if (typeof window.SymtraGlobalSync !== 'undefined' && window.SymtraGlobalSync.isConfigured()) {
+    console.log('☁️ [Admin] Menghubungkan ke Supabase Cloud Database...');
+    window.SymtraGlobalSync.loadAll().then(rows => {
+      if (rows && rows.length > 0) {
+        renderAdminsTable();
+        renderMasterPelanggan();
+        renderMasterTrafo();
+        renderMasterProses();
+        renderMasterMaterial();
+        renderMasterPic();
+        renderSyncLogs();
+        updateStatsCounters();
+        showToast(`☁️ Cloud Sync Aktif: ${rows.length} modul data terbaru dimuat dari Supabase!`);
+      }
+    });
+
+    window.SymtraGlobalSync.subscribeRealtime((key, data, updatedBy) => {
+      console.log(`📡 [Admin] Pembaruan Global Realtime diterima: [${key}] oleh ${updatedBy}`);
+      renderAdminsTable();
+      renderMasterPelanggan();
+      renderMasterTrafo();
+      renderMasterProses();
+      renderMasterMaterial();
+      renderMasterPic();
+      renderSyncLogs();
+      updateStatsCounters();
+      showToast(`⚡ Realtime Cloud: Data [${key}] diperbarui oleh ${updatedBy || 'user lain'}!`);
+    });
+  }
+
+  // Update Cloud Status Indicator
+  const isConn = window.SymtraGlobalSync && window.SymtraGlobalSync.isConfigured();
+  const cloudLbl = document.getElementById('adminCloudLabel');
+  const cloudDot = document.getElementById('adminPulseDot');
+  if (cloudLbl) cloudLbl.innerText = isConn ? 'Cloud Sync: Online' : 'Cloud Sync: Offline';
+  if (cloudDot) {
+    cloudDot.style.background = isConn ? '#10b981' : '#f59e0b';
+    cloudDot.style.boxShadow = isConn ? '0 0 0 0 rgba(16, 185, 129, 0.7)' : '0 0 0 0 rgba(245, 158, 11, 0.7)';
+  }
+
   // Current Auth User Display
   if (currentAuth) {
     const nameEl = document.getElementById('currentAdminName');

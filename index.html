@@ -173,9 +173,9 @@
 
       <div class="navbar-right">
         <!-- Live Realtime Status -->
-        <div class="realtime-status">
-          <span class="pulse-dot"></span>
-          <span>Real-time</span>
+        <div class="realtime-status" id="navRealtimeStatus" onclick="openSupabaseModal()" style="cursor: pointer;" title="Klik untuk cek status & konfigurasi sinkronisasi cloud global">
+          <span class="pulse-dot" id="navPulseDot"></span>
+          <span id="navRealtimeLabel">Cloud Sync</span>
         </div>
 
         <!-- Digital Clock / Date -->
@@ -3138,9 +3138,9 @@
 
   <!-- Supabase JS Client, 3D Engine & App Logic -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabaseClient.js?v=20261029_realtime_sync"></script>
-  <script src="realtime-sync.js?v=20261029_realtime_sync"></script>
-  <script src="login3d.js?v=20261029_realtime_sync"></script>
-  <script src="app.js?v=20261102_login_real_photo"></script>
+  <script src="supabaseClient.js?v=20261103_global_sync"></script>
+  <script src="realtime-sync.js?v=20261103_global_sync"></script>
+  <script src="login3d.js?v=20261103_global_sync"></script>
+  <script src="app.js?v=20261103_global_sync"></script>
 </body>
 </html>

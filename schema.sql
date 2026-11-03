@@ -6,7 +6,21 @@
 -- 1. Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. CREATE TABLE: orders (Daftar Order Produksi Trafo)
+-- 2. CREATE TABLE: symtraflow_global_data (Tabel Utama Sinkronisasi Global Real-Time)
+CREATE TABLE IF NOT EXISTS public.symtraflow_global_data (
+    key VARCHAR(100) PRIMARY KEY,
+    data JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_by VARCHAR(100) DEFAULT 'System'
+);
+
+-- Enable RLS & Realtime on symtraflow_global_data
+ALTER TABLE public.symtraflow_global_data ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public all symtraflow_global_data" ON public.symtraflow_global_data;
+CREATE POLICY "Allow public all symtraflow_global_data" ON public.symtraflow_global_data FOR ALL USING (true) WITH CHECK (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.symtraflow_global_data;
+
+-- 3. CREATE TABLE: orders (Daftar Order Produksi Trafo)
 CREATE TABLE IF NOT EXISTS public.orders (
     id VARCHAR(50) PRIMARY KEY,
     nama VARCHAR(255) NOT NULL,

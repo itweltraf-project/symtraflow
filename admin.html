@@ -86,9 +86,9 @@
 
       <div class="navbar-right">
         <!-- Live Realtime Status -->
-        <div class="realtime-status" title="Data disinkronkan secara realtime">
-          <span class="pulse-dot"></span>
-          <span>Real-time</span>
+        <div class="realtime-status" id="adminCloudStatus" title="Status Sinkronisasi Cloud Global">
+          <span class="pulse-dot" id="adminPulseDot"></span>
+          <span id="adminCloudLabel">Cloud Sync</span>
         </div>
 
         <!-- Digital Clock / Date -->
@@ -826,9 +826,11 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Scripts -->
-  <script src="realtime-sync.js?v=20261029_realtime_sync"></script>
-  <script src="admin.js?v=20261029_realtime_sync"></script>
+  <!-- Supabase JS Client & Global Sync Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js?v=20261103_global_sync"></script>
+  <script src="realtime-sync.js?v=20261103_global_sync"></script>
+  <script src="admin.js?v=20261103_global_sync"></script>
 
 </body>
 </html>
